@@ -1,0 +1,445 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import {
+  Building2,
+  CalendarCheck,
+  CalendarClock,
+  Check,
+  GlassWater,
+  Headset,
+  House,
+  KeyRound,
+  MapPinned,
+  Receipt,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+  Wrench,
+} from "lucide-react";
+import { LeadForm } from "@/components/forms/lead-form";
+import { RentalCalculator } from "@/components/rental/rental-calculator";
+import { ArchCta } from "@/components/sections/arch-cta";
+import { BuyVsRent } from "@/components/sections/buy-vs-rent";
+import { FaqSection } from "@/components/sections/faq-section";
+import { HowItWorks } from "@/components/sections/how-it-works";
+import { PageHero } from "@/components/sections/page-hero";
+import { PurificationChooser } from "@/components/sections/purification-chooser";
+import { RentalInclusions } from "@/components/sections/rental-inclusions";
+import { ArrowCircle } from "@/components/ui/arrow-circle";
+import { ButtonLink } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
+import { PixelCluster, Rings } from "@/components/ui/decor";
+import { Highlight } from "@/components/ui/highlight";
+import { IconBadge } from "@/components/ui/icon-badge";
+import { Pill } from "@/components/ui/pill";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { faqs } from "@/content/faqs";
+import { leadForms } from "@/content/forms";
+import { photos } from "@/content/images";
+import { planFor, rentalCharges, rentalPlans } from "@/content/pricing";
+import { getProduct } from "@/content/products";
+import { howItWorks } from "@/content/services";
+import { site } from "@/content/site";
+import { formatLKR } from "@/lib/format";
+import { JsonLd } from "@/lib/jsonld";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Rental",
+  description:
+    "Rent a LUSAKO water purifier for your office or company: one predictable monthly payment for the equipment and ongoing service. PureFlow UF and RO plans.",
+  path: "/rental",
+});
+
+const delay = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
+
+/** The rental message from the brief (Doc 1 §13): sell convenience, not a machine. */
+const benefits = [
+  { icon: GlassWater, title: "Convenience", body: "Pure water on tap, with no bottle deliveries to arrange or store." },
+  { icon: CalendarClock, title: "Predictability", body: "One predictable monthly payment that’s easy to budget for." },
+  { icon: Wallet, title: "No large investment", body: "A low upfront cost, so your capital stays in your business." },
+  { icon: Wrench, title: "Maintenance", body: "Scheduled preventive maintenance, according to your rental agreement." },
+  { icon: Headset, title: "Service", body: "Technical support from LUSAKO whenever your team needs it." },
+  { icon: KeyRound, title: "No ownership headache", body: "The equipment remains LUSAKO’s, and so does looking after it." },
+];
+
+const regionalCoverage = [
+  { icon: Settings2, label: "Additional technical service" },
+  { icon: CalendarCheck, label: "Preventive maintenance" },
+  { icon: MapPinned, label: "Regional support" },
+];
+
+export default function RentalPage() {
+  const uf = planFor("UF");
+  const aquaspark = rentalPlans.find((plan) => plan.id === "aquaspark");
+  const sparklingProduct = getProduct("aquaspark-elite");
+  const regional = rentalCharges.regionalServiceMonthlyPerUnit;
+  const rentalFaqs = faqs.filter((faq) => faq.topic === "rental");
+  const nextSteps = [
+    { title: "Site assessment", body: howItWorks.rent[1]?.body ?? "We check your water source and where the machines should go." },
+    { title: "Proposal", body: "A clear proposal with the machines, the monthly rental and every charge listed separately." },
+    { title: "Installation", body: howItWorks.rent[2]?.body ?? "Professional installation, ready for your team on day one." },
+  ];
+
+  const charges = [
+    {
+      icon: Receipt,
+      title: "One-time initial payment",
+      amount: formatLKR(rentalCharges.initialPaymentPerUnit),
+      unit: "per unit",
+      body: "Payable only in the first month. From the second month onwards, you pay only the monthly rental.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Refundable security deposit",
+      amount: formatLKR(rentalCharges.domesticDepositPerUnit),
+      unit: "home rentals only",
+      body: "Applies to domestic rentals only, and is refundable according to your rental agreement.",
+    },
+    {
+      icon: MapPinned,
+      title: "Regional Hydration Service",
+      amount: regional === null ? "Confirmed in your quote" : formatLKR(regional),
+      unit: regional === null ? "" : "per unit, per month",
+      body: "Outside the Western Province only. Always shown as a separate line, never hidden inside the rental.",
+    },
+  ];
+
+  return (
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "LUSAKO water purifier rental",
+          serviceType: "Water purifier rental",
+          description:
+            "One predictable monthly payment for a LUSAKO water purifier and the ongoing service required to keep it operating.",
+          url: new URL("/rental", site.url).toString(),
+          provider: { "@type": "Organization", name: site.name, url: site.url },
+          areaServed: { "@type": "Country", name: "Sri Lanka" },
+          offers: rentalPlans
+            .filter((plan) => plan.fromMonthly !== null)
+            .map((plan) => ({
+              "@type": "Offer",
+              name: plan.name,
+              description: plan.description,
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                minPrice: plan.fromMonthly,
+                priceCurrency: "LKR",
+                unitCode: "MON",
+                valueAddedTaxIncluded: false,
+              },
+            })),
+        }}
+      />
+
+      <PageHero
+        crumbs={[{ label: "Rental", href: "/rental" }]}
+        eyebrow="LUSAKO Hydration Solutions"
+        title={
+          <>
+            Your water purifier. <Highlight>Our responsibility.</Highlight>
+          </>
+        }
+        description="For one predictable monthly payment, LUSAKO provides the equipment and ongoing service required to keep your drinking-water system operating."
+        actions={
+          <>
+            <ButtonLink href="#calculator" variant="dark" size="lg" arrow>
+              Calculate my rental
+            </ButtonLink>
+            <ButtonLink href="#enquiry" variant="outline" size="lg" arrow>
+              Rent for your office
+            </ButtonLink>
+          </>
+        }
+      >
+        <Container className="mt-12 lg:mt-16">
+          <div
+            className="rise relative aspect-[4/5] overflow-hidden rounded-card-xl bg-frost sm:aspect-[16/9] lg:aspect-[21/8]"
+            style={delay(300)}
+          >
+            <Image
+              src={photos.officePantry.src}
+              alt={photos.officePantry.alt}
+              fill
+              loading="eager"
+              fetchPriority="high"
+              sizes="(min-width: 1320px) 1224px, 100vw"
+              className="object-cover object-[50%_45%]"
+            />
+            <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 sm:top-6 sm:left-6">
+              <Pill variant="glass">Offices</Pill>
+              <Pill variant="glass">Companies</Pill>
+            </div>
+            {uf.fromMonthly && (
+              <span className="absolute right-6 bottom-6 hidden sm:block">
+                <Pill variant="glass">PureFlow from {formatLKR(uf.fromMonthly)}/month + VAT</Pill>
+              </span>
+            )}
+            <div className="corner-tab max-w-[86%] px-5 py-4 pr-6 [--tab-r:28px] sm:px-7 sm:py-5 sm:pr-8">
+              <p className="text-lg leading-tight font-medium text-ink sm:text-h3">Pure water. Zero ownership hassle.</p>
+              <p className="mt-1 text-sm text-muted">Equipment and ongoing service, for one predictable monthly payment.</p>
+            </div>
+          </div>
+        </Container>
+      </PageHero>
+
+      <section className="py-14 lg:py-20">
+        <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12">
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-28">
+              <SectionHeading
+                eyebrow="Why rent with LUSAKO"
+                title={
+                  <>
+                    Enjoy better water. <Highlight>Leave the maintenance to us.</Highlight>
+                  </>
+                }
+                description="You’re not simply renting equipment. LUSAKO provides an ongoing hydration solution, so your team just enjoys the water."
+              />
+              <ButtonLink href="#calculator" variant="pastel" arrow className="mt-8">
+                See what it costs
+              </ButtonLink>
+            </div>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:col-span-7">
+            {benefits.map(({ icon: Icon, title, body }) => (
+              <li key={title} className="flex min-h-52 flex-col rounded-card bg-frost p-6">
+                <IconBadge variant="white" size="sm">
+                  <Icon />
+                </IconBadge>
+                <h3 className="mt-auto pt-10 text-xl font-medium tracking-[-0.02em] text-ink">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
+
+      <PurificationChooser context="rental" />
+
+      {aquaspark && (
+        <div id="aquaspark" className="-mt-8 pb-14 lg:-mt-12 lg:pb-20">
+          <Container>
+            <article className="relative flex flex-col gap-6 overflow-hidden rounded-card-xl border border-line p-5 sm:flex-row sm:items-center sm:p-6 lg:pr-8">
+              {sparklingProduct && (
+                <div className="relative size-24 shrink-0 overflow-hidden rounded-full bg-pastel sm:size-28">
+                  <Image src={sparklingProduct.image} alt="" fill sizes="112px" className="object-contain p-3" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill variant="pastel">
+                    <Sparkles aria-hidden /> {aquaspark.bestFor}
+                  </Pill>
+                  <Pill>{aquaspark.stages}</Pill>
+                </div>
+                <h3 className="mt-3 text-h3 font-medium text-ink">{aquaspark.name}</h3>
+                <p className="mt-1 max-w-xl text-[15px] text-muted">{aquaspark.description}</p>
+              </div>
+              <div className="flex flex-col gap-4 sm:items-end sm:text-right">
+                <p>
+                  <span className="block text-sm text-muted">Rental</span>
+                  <span className="text-lg font-medium text-ink">
+                    {aquaspark.fromMonthly ? `From ${formatLKR(aquaspark.fromMonthly)}/month + VAT` : "Price on request"}
+                  </span>
+                </p>
+                <ButtonLink
+                  href={`/contact?type=rental&preferredSolution=${aquaspark.id}`}
+                  variant="dark"
+                  arrow
+                  className="w-full sm:w-auto"
+                >
+                  Ask about {aquaspark.name}
+                </ButtonLink>
+              </div>
+            </article>
+          </Container>
+        </div>
+      )}
+
+      <RentalInclusions showCta={false} />
+
+      <section id="calculator" className="py-14 lg:py-20">
+        <Container>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <SectionHeading
+              eyebrow="Rental calculator"
+              title={
+                <>
+                  See your costs, <Highlight>clearly</Highlight>
+                </>
+              }
+            />
+            <p className="max-w-sm text-muted lg:pb-2">
+              Start with your province. Every charge is shown as its own line, so you know what you pay in the first month and every
+              month after.
+            </p>
+          </div>
+
+          <RentalCalculator className="mt-12" />
+
+          <div className="mt-16 lg:mt-20">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <h3 className="text-h3 font-medium text-ink">Transparent charges</h3>
+              <p className="text-sm text-subtle">Shown before you enquire. All amounts exclude VAT.</p>
+            </div>
+            <ul className="mt-6 grid gap-4 md:grid-cols-3">
+              {charges.map(({ icon: Icon, title, amount, unit, body }) => (
+                <li key={title} className="flex flex-col rounded-card bg-frost p-6">
+                  <div className="flex items-center gap-3">
+                    <IconBadge variant="white" size="sm">
+                      <Icon />
+                    </IconBadge>
+                    <h4 className="text-[15px] font-medium text-ink">{title}</h4>
+                  </div>
+                  <p className="mt-8">
+                    <span className="text-[1.75rem] leading-tight font-medium tracking-[-0.03em] text-ink">{amount}</span>
+                    {unit && <span className="ml-1.5 text-sm text-muted">{unit}</span>}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">{body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Container>
+      </section>
+
+      <section id="regional-service" aria-labelledby="regional-service-title" className="pb-14 lg:pb-20">
+        <Container>
+          <div className="relative grid gap-10 overflow-hidden rounded-card-xl bg-pastel p-6 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14">
+            <Rings className="absolute -bottom-40 -left-40 size-[30rem] text-white" />
+            <PixelCluster variant="b" className="absolute top-8 right-8 hidden size-12 lg:block" />
+            <div className="relative lg:col-span-7">
+              <Pill variant="white">Regional Hydration Service</Pill>
+              <h2 id="regional-service-title" className="mt-5 max-w-2xl text-h2 font-medium text-ink">
+                The same standard of care, wherever you are
+              </h2>
+              <p className="mt-5 max-w-xl text-lead text-muted">
+                For customers outside the Western Province, a Regional Hydration Service charge applies to cover additional technical
+                service, preventive maintenance and regional support requirements.
+              </p>
+              <ul className="mt-8 flex flex-wrap gap-2">
+                {regionalCoverage.map(({ icon: Icon, label }) => (
+                  <li key={label} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-ink">
+                    <Icon aria-hidden className="size-4 text-brand" strokeWidth={1.75} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="relative flex flex-col gap-3 lg:col-span-5 lg:justify-center">
+              <h3 className="text-sm font-medium tracking-[0.14em] text-muted uppercase">How it shows on your quote</h3>
+              <div className="rounded-card bg-white p-5 sm:p-6">
+                <p className="text-sm text-muted">Western Province</p>
+                <p className="mt-1 text-xl font-medium text-ink">Rental only</p>
+                <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-[15px] text-ink">
+                  <Check aria-hidden className="size-4 text-brand" /> Monthly rental
+                </p>
+              </div>
+              <div className="rounded-card bg-white p-5 sm:p-6">
+                <p className="text-sm text-muted">Outside the Western Province</p>
+                <p className="mt-1 text-xl font-medium text-ink">Rental + Regional Hydration Service</p>
+                <ul className="mt-4 grid gap-2 border-t border-line pt-4 text-[15px] text-ink">
+                  <li className="flex items-center gap-2">
+                    <Check aria-hidden className="size-4 text-brand" /> Monthly rental
+                  </li>
+                  <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <Check aria-hidden className="size-4 text-brand" /> Regional Hydration Service
+                    <span className="text-sm text-subtle">
+                      {regional === null ? "· separate line, confirmed in your quote" : `· ${formatLKR(regional)} per unit, per month`}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <BuyVsRent />
+      <HowItWorks initial="rent" />
+
+      <section id="enquiry" className="py-14 lg:py-20">
+        <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12">
+          <div className="flex flex-col lg:col-span-5">
+            <SectionHeading
+              eyebrow="Office rental"
+              title={
+                <>
+                  Rent LUSAKO for <Highlight>your office</Highlight>
+                </>
+              }
+              description={leadForms.rental.description}
+            />
+
+            <h3 className="mt-10 text-sm font-medium tracking-[0.14em] text-muted uppercase">What happens next</h3>
+            <ol className="mt-5 grid gap-5">
+              {nextSteps.map((step, i) => (
+                <li key={step.title} className="flex gap-4">
+                  <span
+                    aria-hidden
+                    className="grid size-10 shrink-0 place-items-center rounded-full bg-pastel text-sm font-semibold text-ink"
+                  >
+                    {i + 1}
+                  </span>
+                  <span>
+                    <span className="block text-lg font-medium text-ink">{step.title}</span>
+                    <span className="mt-0.5 block text-[15px] leading-relaxed text-muted">{step.body}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-10 grid gap-3">
+              <Link
+                href="/hydration-solutions/corporate"
+                className="group/card flex items-center gap-4 rounded-card bg-frost p-4 pr-5 transition-colors duration-300 hover:bg-ice sm:p-5"
+              >
+                <IconBadge variant="white">
+                  <Building2 />
+                </IconBadge>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-ink">Renting across several locations?</span>
+                  <span className="mt-0.5 block text-sm text-muted">
+                    Get a corporate proposal, so you don’t have to choose machines one by one.
+                  </span>
+                </span>
+                <ArrowCircle />
+              </Link>
+              <Link
+                href="/water-purifiers"
+                className="group/card flex items-center gap-4 rounded-card border border-line p-4 pr-5 transition-colors duration-300 hover:border-ink/25 sm:p-5"
+              >
+                <IconBadge variant="pastel">
+                  <House />
+                </IconBadge>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-ink">Renting for your home?</span>
+                  <span className="mt-0.5 block text-sm text-muted">Buying is usually the better long-term value.</span>
+                </span>
+                <ArrowCircle variant="pastel" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-card-xl bg-frost p-5 sm:p-8 lg:col-span-7 lg:p-10">
+            <h3 className="text-h3 font-medium text-ink">Tell us about your workplace</h3>
+            <p className="mt-2 mb-8 text-[15px] text-muted">
+              Share your team size, locations and water source. We’ll reply with next steps and arrange a site assessment.
+            </p>
+            <LeadForm type="rental" />
+          </div>
+        </Container>
+      </section>
+
+      <FaqSection faqs={rentalFaqs} title="Rental questions, answered" />
+      <ArchCta />
+    </>
+  );
+}

@@ -1,0 +1,343 @@
+@import "tailwindcss";
+
+/* LUSAKO design tokens. The contract lives in DESIGN.md. */
+@theme {
+  --color-ink: #0a1f3d;
+  --color-abyss: #06142b;
+  --color-ocean: #0e3a70;
+  --color-brand: #1b66c9;
+  --color-brand-bright: #2f80ed;
+  --color-logo: #268cf1; /* the LUSAKO logo blue, from the client's artwork */
+  --color-sky: #9cc7f5;
+  --color-mist: #c4def9;
+  --color-pastel: #ddebfc;
+  --color-ice: #eef5fe;
+  --color-frost: #f4f7fb;
+  --color-aqua: #4cc3e8;
+  --color-line: #dce5f0;
+  --color-muted: #4b5d75;
+  --color-subtle: #5e6f86;
+  --color-danger: #b42318;
+
+  --text-display: clamp(2.625rem, 1.55rem + 4.3vw, 4.75rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.035em;
+  --text-h2: clamp(2rem, 1.55rem + 1.8vw, 3rem);
+  --text-h2--line-height: 1.08;
+  --text-h2--letter-spacing: -0.03em;
+  --text-h3: clamp(1.3125rem, 1.2rem + 0.45vw, 1.625rem);
+  --text-h3--line-height: 1.2;
+  --text-h3--letter-spacing: -0.02em;
+  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-lead--line-height: 1.5;
+  --text-mega: clamp(3.75rem, 12.5vw, 11.5rem);
+  --text-mega--line-height: 0.88;
+  --text-mega--letter-spacing: -0.045em;
+
+  --radius-chip: 12px;
+  --radius-card-sm: 20px;
+  --radius-card: 28px;
+  --radius-card-xl: 36px;
+
+  --shadow-float: 0 12px 32px -12px rgb(10 31 61 / 0.25);
+  --shadow-soft: 0 1px 2px rgb(10 31 61 / 0.04), 0 10px 30px -14px rgb(10 31 61 / 0.14);
+
+  --ease-emph: cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-marquee: marquee var(--marquee-duration, 40s) linear infinite;
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.2, 0, 0, 1) both;
+
+  @keyframes marquee {
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: #fff;
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: var(--color-pastel);
+    color: var(--color-ink);
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  [id] {
+    scroll-margin-top: 7rem;
+  }
+}
+
+/* Label tab cut into a card's bottom-left corner, with inverse radii on both joins. */
+@utility corner-tab {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  background: var(--tab-bg, #fff);
+  border-top-right-radius: var(--tab-r, 22px);
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: var(--tab-r, 22px);
+    height: var(--tab-r, 22px);
+    background: radial-gradient(
+      circle at 100% 0,
+      transparent calc(var(--tab-r, 22px) - 0.5px),
+      var(--tab-bg, #fff) var(--tab-r, 22px)
+    );
+    pointer-events: none;
+  }
+  &::before {
+    left: 0;
+    top: calc(var(--tab-r, 22px) * -1);
+  }
+  &::after {
+    left: 100%;
+    bottom: 0;
+  }
+}
+
+/* Round action cut into a card's bottom-right corner. */
+@utility corner-action {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  background: var(--tab-bg, #fff);
+  border-top-left-radius: var(--tab-r, 22px);
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: var(--tab-r, 22px);
+    height: var(--tab-r, 22px);
+    background: radial-gradient(
+      circle at 0 0,
+      transparent calc(var(--tab-r, 22px) - 0.5px),
+      var(--tab-bg, #fff) var(--tab-r, 22px)
+    );
+    pointer-events: none;
+  }
+  &::before {
+    right: 0;
+    top: calc(var(--tab-r, 22px) * -1);
+  }
+  &::after {
+    right: 100%;
+    bottom: 0;
+  }
+}
+
+/* Smooth notch in a card's top edge that cradles a round icon. */
+@utility notch-top {
+  --notch: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 44' preserveAspectRatio='none'><path d='M0 0H132C117 0 109 5 102 15C93 29 82 40 66 40C50 40 39 29 30 15C23 5 15 0 0 0Z'/></svg>");
+  -webkit-mask:
+    var(--notch) top center / 132px 44px no-repeat,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    var(--notch) top center / 132px 44px no-repeat exclude,
+    linear-gradient(#000 0 0);
+}
+
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: var(--outline-w, 1.5px) var(--outline-c, rgb(10 31 61 / 0.35));
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Motion: CSS-first, composited properties only, off under reduced motion. */
+/* Starts at 0.01 rather than 0 so hero text and images still count as painted for LCP. */
+@keyframes rise {
+  from {
+    opacity: 0.01;
+    transform: translate3d(0, 32px, 0) scale(0.97);
+  }
+}
+@keyframes header-shadow {
+  to {
+    box-shadow:
+      0 1px 0 var(--color-line),
+      0 12px 32px -24px rgb(10 31 61 / 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  .rise {
+    animation: rise 0.9s cubic-bezier(0.2, 0, 0, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+}
+
+/* ———————— Motion system (components/motion) ———————— */
+
+/* Word-split headings: each word rises out of a clip mask. clip-path (not overflow) keeps the baseline intact. */
+.word-mask {
+  display: inline-block;
+  clip-path: inset(-0.25em -0.15em -0.3em -0.15em);
+}
+.word {
+  display: inline-block;
+}
+
+@keyframes word-rise {
+  from {
+    transform: translate3d(0, 118%, 0);
+  }
+}
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 48px, 0);
+  }
+}
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .split-wait .word {
+    transform: translate3d(0, 118%, 0);
+  }
+  .split-in .word {
+    animation: word-rise 0.85s cubic-bezier(0.2, 0.75, 0.15, 1) both;
+    animation-delay: calc(var(--i, 0) * 40ms + var(--split-delay, 0ms));
+  }
+  .is-waiting {
+    opacity: 0;
+    transform: translate3d(0, 48px, 0);
+  }
+  .is-waiting[data-animate="fade"] {
+    transform: none;
+  }
+  .is-waiting[data-animate="scale"] {
+    transform: scale(0.94);
+  }
+  .is-revealed {
+    animation: reveal-up 0.9s cubic-bezier(0.2, 0.75, 0.15, 1) both;
+    animation-delay: calc(var(--i, 0) * 75ms);
+  }
+  .is-revealed[data-animate="fade"] {
+    animation-name: reveal-fade;
+  }
+  .is-revealed[data-animate="scale"] {
+    animation-name: reveal-scale;
+  }
+  /* 3D icons lift and tilt a little while their card is hovered. */
+  [data-brand-icon] {
+    transition: transform 0.5s cubic-bezier(0.2, 0.75, 0.15, 1);
+  }
+  @media (hover: hover) {
+    :is(li, a, button, article):hover [data-brand-icon] {
+      transform: translate3d(0, -4px, 0) rotate(-6deg) scale(1.08);
+    }
+  }
+}
+
+/* ———————— Home hero (components/home/hero.tsx) ———————— */
+
+/* Allowances that keep hero content clear of the mobile browser toolbar (lvh − svh) and, below lg,
+   the quick-actions bar (MobileCtaBar: 1px border + 8px + 56px + bottom padding). */
+.hero {
+  --hero-gap: calc(100lvh - 100svh);
+  --hero-bar: calc(65px + max(0.5rem, env(safe-area-inset-bottom)));
+}
+@media (min-width: 64rem) {
+  .hero {
+    --hero-bar: 0px;
+  }
+}
+/* "Scroll" cue: a short line glides down its track. */
+@keyframes scroll-cue {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, 200%, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-cue {
+    animation: scroll-cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+}
+
+/* ———————— Smooth scrolling (components/motion/smooth-scroll.tsx, Lenis) ———————— */
+
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* Reduced motion: every animation and transition resolves to its end state immediately. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .header-shadow {
+    animation: header-shadow linear both;
+    animation-timeline: scroll();
+    animation-range: 0 120px;
+  }
+}
