@@ -26,6 +26,11 @@ const content = "mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-12";
 /** Keeps content clear of the mobile browser toolbar and quick-actions bar (see .hero in globals.css). */
 const clearBars = "bottom-[calc(var(--hero-gap)+var(--hero-bar))]";
 const pastel = (alpha: number) => `rgba(221, 235, 252, ${alpha})`;
+/**
+ * The problem, one complaint to a line. On phones the type scales with the screen so the longest line (about
+ * 14.1em) still fits beside the 1.25rem gutters.
+ */
+const problems = ["No more bottled-water deliveries.", "No heavy bottles.", "No unnecessary storage.", "No maintenance headaches."];
 
 /**
  * Timeline positions are shares (0–100) of the scroll through the sticky film. The section is 360lvh with a
@@ -172,9 +177,13 @@ export function Hero() {
           </div>
         </div>
 
-        <div data-hero-statement className={`pointer-events-none absolute inset-x-0 top-0 ${clearBars} grid place-items-center px-6 opacity-0`}>
-          <p className="max-w-[17ch] text-center text-[clamp(2.25rem,1.3rem+4vw,5rem)] leading-[1.02] font-medium tracking-[-0.045em] text-balance text-white">
-            {splitWords("No more bottled-water deliveries. No heavy bottles. No unnecessary storage. No maintenance headaches.")}
+        <div data-hero-statement className={`pointer-events-none absolute inset-x-0 top-0 ${clearBars} grid place-items-center px-5 opacity-0 sm:px-8`}>
+          <p className="text-center text-[length:min((100vw_-_2.5rem)/14.6,1rem_+_2.4vw,3.25rem)] leading-[1.1] font-medium tracking-[-0.03em] text-white">
+            {problems.map((line) => (
+              <span key={line} className="block text-balance not-first:mt-[0.12em]">
+                {splitWords(line)}
+              </span>
+            ))}
           </p>
         </div>
 

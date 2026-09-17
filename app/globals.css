@@ -173,6 +173,21 @@
     linear-gradient(#000 0 0);
 }
 
+/* Highlight pill (components/ui/highlight.tsx). An inline background fills the font's content area, which in
+   Outfit reaches a full 1em above the baseline while the letters stop at 0.72em, so a plain pill sits top-heavy
+   and runs into the line above. The outer span is set smaller to shrink that area (--fit), the inner span
+   restores the text, and the padding (in headline ems) leaves an even margin round ascenders and descenders. */
+@utility highlight {
+  --fit: 0.79;
+  font-size: calc(1em * var(--fit));
+  padding: 0 calc(0.3em / var(--fit)) calc(0.075em / var(--fit));
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  & > span {
+    font-size: calc(1em / var(--fit));
+  }
+}
+
 @utility text-outline {
   color: transparent;
   -webkit-text-stroke: var(--outline-w, 1.5px) var(--outline-c, rgb(10 31 61 / 0.35));
