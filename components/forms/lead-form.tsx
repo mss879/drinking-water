@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, CircleAlert } from "lucide-react";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { submitLead, type LeadState } from "@/app/actions/leads";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -11,8 +11,9 @@ import { cn } from "@/lib/cn";
 
 const initialState: LeadState = { status: "idle" };
 
+/** StomDent-style underlined fields; focus thickens the rule to deep blue, errors turn it coral. */
 const control =
-  "block w-full rounded-chip border border-line bg-white px-4 text-[15px] text-ink transition-[border-color,box-shadow] duration-200 placeholder:text-subtle hover:border-ink/25 focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:outline-none aria-[invalid=true]:border-danger";
+  "block w-full rounded-none border-0 border-b border-line bg-transparent px-0 text-base text-ink transition-[border-color,box-shadow] duration-200 hover:border-brand focus-visible:border-deep focus-visible:shadow-[inset_0_-1px_0_var(--color-deep)] focus-visible:outline-none aria-[invalid=true]:border-danger aria-[invalid=true]:shadow-[inset_0_-1px_0_var(--color-danger)]";
 
 function Field({
   field,
@@ -40,13 +41,13 @@ function Field({
 
   return (
     <div className={cn("flex flex-col gap-2", !field.half && "sm:col-span-2")}>
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <label htmlFor={id} className="text-[13px] font-semibold tracking-[0.02em] text-deep">
         {field.label}
-        {!field.required && <span className="font-normal text-subtle"> (optional)</span>}
+        {!field.required && <span className="font-normal text-muted"> (optional)</span>}
       </label>
       {field.type === "select" ? (
         <div className="relative">
-          <select {...shared} className={cn(control, "h-12 cursor-pointer appearance-none pr-11")}>
+          <select {...shared} className={cn(control, "h-12 cursor-pointer appearance-none pr-8")}>
             <option value="">Select…</option>
             {field.options?.map((option) => (
               <option key={option.value} value={option.value}>
@@ -54,10 +55,10 @@ function Field({
               </option>
             ))}
           </select>
-          <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-subtle" />
+          <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-1 size-4 -translate-y-1/2 text-deep" />
         </div>
       ) : field.type === "textarea" ? (
-        <textarea {...shared} rows={4} placeholder={field.placeholder} className={cn(control, "min-h-28 py-3")} />
+        <textarea {...shared} rows={4} placeholder={field.placeholder} className={cn(control, "min-h-28 resize-y py-3")} />
       ) : (
         <input
           {...shared}
@@ -70,12 +71,13 @@ function Field({
         />
       )}
       {field.hint && (
-        <p id={hintId} className="text-xs text-subtle">
+        <p id={hintId} className="text-xs text-muted">
           {field.hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-sm text-danger">
+        <p id={errorId} className="flex items-center gap-1.5 text-sm text-ink">
+          <CircleAlert aria-hidden className="size-4 shrink-0 text-danger" />
           {error}
         </p>
       )}
@@ -97,6 +99,23 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
   const [state, formAction, pending] = useActionState(submitLead, initialState);
   const uid = useId();
   const tracked = useRef<string | null>(null);
+  const form = useRef<HTMLFormElement>(null);
+  const confirmation = useRef<HTMLDivElement>(null);
+
+  // Once the server replies, bring the result to the visitor: the first field to fix, or the confirmation.
+  // On a phone the submit button sits a long way below both, so without this nothing seems to happen.
+  useEffect(() => {
+    const target =
+      state.status === "success"
+        ? confirmation.current
+        : state.status === "error"
+          ? (form.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? form.current?.querySelector<HTMLElement>('[role="alert"]'))
+          : null;
+    if (!target) return;
+    // An instant jump: the content has just changed, and an animated scroll is cut short by the smooth scroller.
+    target.scrollIntoView({ block: "center", behavior: "instant" });
+    target.focus({ preventScroll: true });
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== "success" || !state.reference || tracked.current === state.reference) return;
@@ -106,16 +125,21 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
 
   if (state.status === "success") {
     return (
-      <div role="status" className={cn("flex flex-col items-start gap-5 rounded-card-xl bg-pastel p-8 sm:p-10", className)}>
-        <IconBadge variant="ocean" size="lg">
+      <div
+        ref={confirmation}
+        role="status"
+        tabIndex={-1}
+        className={cn("flex flex-col items-start gap-5 rounded-card-xl bg-tint-2 p-8 outline-none sm:p-10", className)}
+      >
+        <IconBadge variant="deep" size="lg" brand={false}>
           <Check />
         </IconBadge>
-        <h3 className="text-h3 font-medium text-ink">Thank you. We’ve received your request.</h3>
+        <h3 className="font-display text-h3 font-bold text-ink">Thank you. We’ve received your request.</h3>
         <p className="text-muted">
-          Your reference is <strong className="font-medium text-ink">{state.reference}</strong>. {config.successNote}
+          Your reference is <strong className="font-semibold text-deep">{state.reference}</strong>. {config.successNote}
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="dark" onClick={onReset}>
+          <Button type="button" variant="primary" onClick={onReset}>
             Send another request
           </Button>
           <ButtonLink href="/" variant="white" arrow>
@@ -127,7 +151,7 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
   }
 
   return (
-    <form action={formAction} noValidate className={cn("relative grid gap-5 sm:grid-cols-2", className)}>
+    <form ref={form} action={formAction} noValidate className={cn("relative grid gap-x-8 gap-y-7 sm:grid-cols-2", className)}>
       <input type="hidden" name="formType" value={type} />
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label>
@@ -137,7 +161,12 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
       </div>
 
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-chip border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger sm:col-span-2">
+        <p
+          role="alert"
+          tabIndex={-1}
+          className="flex items-start gap-2.5 rounded-chip border border-danger bg-white px-4 py-3 text-sm text-ink sm:col-span-2"
+        >
+          <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
           {state.message}
         </p>
       )}
@@ -152,11 +181,11 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
         />
       ))}
 
-      <div className="flex flex-col-reverse gap-4 pt-2 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-subtle">We’ll use your details only to respond to this request.</p>
-        <Button type="submit" size="lg" loading={pending} arrow>
+      <div className="flex flex-col gap-4 pt-2 sm:col-span-2">
+        <Button type="submit" size="lg" loading={pending} arrow className="w-full">
           {pending ? "Sending…" : config.submitLabel}
         </Button>
+        <p className="text-center text-xs text-muted">We’ll use your details only to respond to this request.</p>
       </div>
     </form>
   );

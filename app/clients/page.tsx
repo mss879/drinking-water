@@ -18,11 +18,11 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { ArchCta } from "@/components/sections/arch-cta";
+import { CtaBand } from "@/components/sections/cta-band";
 import { PageHero } from "@/components/sections/page-hero";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { Pill } from "@/components/ui/pill";
@@ -63,19 +63,19 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
   const model = study.solution.split(" · ")[0];
   const titleId = `${study.slug}-title`;
   return (
-    <article aria-labelledby={titleId} className="grid gap-8 rounded-card-xl border border-line p-6 sm:p-8 lg:grid-cols-12 lg:gap-12 lg:p-10">
+    <article aria-labelledby={titleId} className="card-line grid gap-8 rounded-card-xl p-6 sm:p-8 lg:grid-cols-12 lg:gap-12 lg:p-10">
       <div className="lg:col-span-4">
         <div className="flex flex-wrap gap-2">
-          {study.sample && <Pill variant="pastel">Sample story</Pill>}
+          {study.sample && <Pill variant="tint">Sample story</Pill>}
           <Pill>{model}</Pill>
         </div>
         <p
           aria-hidden
-          className="mt-8 text-[3.25rem] leading-none font-medium tracking-[-0.04em] text-outline [--outline-c:var(--color-brand)]"
+          className="mt-8 font-sans text-[3.75rem] leading-none font-extralight tracking-[-0.04em] text-brand"
         >
           {String(index + 1).padStart(2, "0")}
         </p>
-        <h3 id={titleId} className="mt-4 text-h3 font-medium text-ink">
+        <h3 id={titleId} className="mt-4 font-display text-h3 font-bold text-ink">
           {/* Keep each "·" with the word before it, so a wrapped line never starts with it. */}
           {study.industry.replaceAll(" · ", "\u00a0· ")}
         </h3>
@@ -91,11 +91,11 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
           return (
             <li key={key} className="relative flex gap-4 pb-6 last:pb-0 sm:gap-5">
               {!last && <span aria-hidden className="absolute top-12 bottom-1 left-5 w-px bg-line" />}
-              <IconBadge variant={last ? "ocean" : "pastel"} size="sm" brand={false}>
+              <IconBadge variant={last ? "deep" : "tint"} size="sm" brand={false}>
                 <Icon />
               </IconBadge>
-              <div className={cn("min-w-0 flex-1", last ? "rounded-card-sm bg-pastel px-4 py-3" : "pt-1")}>
-                <p className="text-xs font-medium tracking-[0.16em] text-muted uppercase">{label}</p>
+              <div className={cn("min-w-0 flex-1", last ? "rounded-card-sm bg-tint-2 px-4 py-3" : "pt-1")}>
+                <p className="font-display text-xs font-bold tracking-[0.16em] text-deep uppercase">{label}</p>
                 <p className="mt-1 text-[15px] leading-relaxed text-ink">{study[key]}</p>
               </div>
             </li>
@@ -122,9 +122,10 @@ export default function ClientsPage() {
         description="From single offices to multi-site organisations, LUSAKO plans, installs and looks after drinking water. Here’s how that work comes together."
       />
 
-      <section className="pb-14 lg:pb-20">
+      <section className="pb-16 md:pb-20 lg:pb-28">
         <Container>
           <SectionHeading
+            layout="split"
             eyebrow="Sectors we serve"
             title={
               <>
@@ -133,17 +134,22 @@ export default function ClientsPage() {
             }
             description="Every sector uses water differently. We match machines, placement and service to how your people drink."
           />
-          <ul className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
             {sectors.map((sector) => {
               const detail = sectorDetails[sector];
               const Icon = detail?.icon ?? Building2;
               return (
-                <li key={sector} className="flex gap-4 rounded-card bg-frost p-5 sm:min-h-52 sm:flex-col sm:justify-between sm:gap-8 sm:p-7">
-                  <IconBadge variant="white">
-                    <Icon />
-                  </IconBadge>
+                <li
+                  key={sector}
+                  className="card-line flex gap-4 p-5 transition-colors duration-300 hover:border-brand hover:bg-tint sm:min-h-56 sm:flex-col sm:justify-between sm:gap-8 sm:p-7"
+                >
+                  <span className="grid size-16 shrink-0 place-items-center rounded-card-sm bg-tint-2">
+                    <IconBadge size="sm">
+                      <Icon />
+                    </IconBadge>
+                  </span>
                   <div>
-                    <h3 className="text-lg leading-snug font-medium text-ink sm:text-xl">{sector}</h3>
+                    <h3 className="font-display text-lg leading-snug font-bold text-ink sm:text-xl">{sector}</h3>
                     {detail && <p className="mt-1.5 text-sm leading-relaxed text-muted">{detail.hint}</p>}
                   </div>
                 </li>
@@ -153,7 +159,7 @@ export default function ClientsPage() {
         </Container>
       </section>
 
-      <section className="pb-14 lg:pb-20">
+      <section className="pb-16 md:pb-20 lg:pb-28">
         <Container>
           <SectionHeading
             eyebrow="Client logos"
@@ -166,7 +172,7 @@ export default function ClientsPage() {
           {clientLogos.length > 0 ? (
             <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {clientLogos.map((logo) => (
-                <li key={logo.name} className="grid aspect-[3/2] place-items-center rounded-card bg-frost p-6">
+                <li key={logo.name} className="card-line grid aspect-[3/2] place-items-center p-6">
                   <span className="relative block size-full">
                     <Image src={logo.src} alt={`${logo.name} logo`} fill sizes="(min-width: 1024px) 200px, 40vw" className="object-contain" />
                   </span>
@@ -174,18 +180,18 @@ export default function ClientsPage() {
               ))}
             </ul>
           ) : (
-            <div className="relative mt-12 overflow-hidden rounded-card-xl bg-frost p-6 sm:p-10">
+            <div data-reveal="up" className="relative mt-12 overflow-hidden rounded-card-xl bg-tint p-6 sm:p-10">
               <ul aria-hidden className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                 {Array.from({ length: 12 }, (_, i) => (
-                  <li key={i} className="aspect-[3/2] rounded-card-sm border border-dashed border-ink/15" />
+                  <li key={i} className="aspect-[3/2] rounded-card-sm border border-dashed border-brand/30 bg-white" />
                 ))}
               </ul>
               <div className="absolute inset-0 grid place-items-center p-6">
-                <div className="max-w-md rounded-card bg-white p-6 text-center shadow-soft sm:p-8">
-                  <IconBadge variant="pastel">
+                <div className="flex max-w-md flex-col items-center rounded-card bg-white p-6 text-center shadow-float sm:p-8">
+                  <IconBadge size="lg">
                     <ShieldCheck />
                   </IconBadge>
-                  <h3 className="mt-4 text-xl font-medium text-ink">Published with permission</h3>
+                  <h3 className="mt-4 font-display text-xl font-bold text-ink">Published with permission</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">
                     We show a client’s name or logo only with their written approval. Approved logos will appear here.
                   </p>
@@ -196,29 +202,25 @@ export default function ClientsPage() {
         </Container>
       </section>
 
-      <section className="pb-14 lg:pb-20">
+      <section className="pb-16 md:pb-20 lg:pb-28">
         <Container>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <SectionHeading
-              eyebrow="Success stories"
-              title={
-                <>
-                  From challenge <Highlight>to result</Highlight>
-                </>
-              }
-            />
-            <p className="max-w-sm text-muted lg:pb-2">
-              Every LUSAKO project follows the same path: understand the challenge, match the solution, install it properly and keep it
-              performing.
-            </p>
-          </div>
+          <SectionHeading
+            layout="split"
+            eyebrow="Success stories"
+            title={
+              <>
+                From challenge <Highlight>to result</Highlight>
+              </>
+            }
+            description="Every LUSAKO project follows the same path: understand the challenge, match the solution, install it properly and keep it performing."
+          />
           {hasSamples && (
-            <p className="mt-8 flex items-start gap-3 rounded-card-sm bg-ice p-4 text-sm leading-relaxed text-muted sm:items-center sm:px-5">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-brand sm:mt-0" />
+            <p className="mt-10 flex items-start gap-3 rounded-card-sm border border-line bg-tint p-4 text-sm leading-relaxed text-ink sm:items-center sm:px-5">
+              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-deep sm:mt-0" />
               Stories marked “Sample story” show how a typical LUSAKO project runs. They will be replaced with approved client stories.
             </p>
           )}
-          <div className="mt-8 grid gap-4">
+          <div data-stagger className="mt-6 grid gap-4 lg:gap-5">
             {caseStudies.map((study, i) => (
               <CaseStudyCard key={study.slug} study={study} index={i} />
             ))}
@@ -228,16 +230,16 @@ export default function ClientsPage() {
 
       <section className="pb-4">
         <Container>
-          <div className="relative overflow-hidden rounded-card-xl bg-ocean p-7 text-white sm:p-10 lg:p-14">
-            <Rings count={9} className="absolute -right-32 -bottom-40 size-[32rem] text-aqua/20" />
+          <div data-expand className="relative isolate overflow-hidden rounded-card-xl bg-deep p-7 text-white sm:p-10 lg:p-14">
+            <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative max-w-2xl">
               <Pill variant="glass">Corporate hydration</Pill>
-              <h2 className="mt-5 text-h2 font-medium">Planning water for a whole organisation?</h2>
-              <p className="mt-4 text-lead text-white/80">
+              <h2 className="mt-5 text-h2 font-bold">Planning water for a whole organisation?</h2>
+              <p className="mt-4 text-lead text-white">
                 One partner for your workplace hydration: site assessment, the right mix of machines, installation and ongoing service,
                 across one site or many.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <ButtonLink href="/hydration-solutions/corporate" variant="white" size="lg" arrow>
                   Explore corporate hydration
                 </ButtonLink>
@@ -250,7 +252,7 @@ export default function ClientsPage() {
         </Container>
       </section>
 
-      <ArchCta />
+      <CtaBand />
     </>
   );
 }

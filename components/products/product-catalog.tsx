@@ -65,7 +65,7 @@ function FilterGroup<T extends string>({
     <div role="group" aria-labelledby={labelId} className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
       <span
         id={labelId}
-        className="shrink-0 text-xs font-medium tracking-[0.16em] text-subtle uppercase sm:flex sm:h-11 sm:w-32 sm:items-center xl:w-auto"
+        className="shrink-0 text-xs font-medium tracking-[0.16em] text-muted uppercase sm:flex sm:h-11 sm:w-32 sm:items-center xl:w-auto"
       >
         {label}
       </span>
@@ -79,7 +79,7 @@ function FilterGroup<T extends string>({
               type="button"
               aria-pressed={active}
               onClick={() => onChange(option.value)}
-              className={cn(chip, active ? "border-ink bg-ink text-white" : "border-line bg-white text-ink hover:border-ink/30")}
+              className={cn(chip, active ? "border-deep bg-deep text-white" : "border-line bg-white text-ink hover:border-brand")}
             >
               {option.label}
             </button>
@@ -147,7 +147,7 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
           {purificationHelpHref && (
             <a
               href={purificationHelpHref}
-              className="inline-flex h-11 items-center px-2 text-sm font-medium text-ink underline decoration-sky underline-offset-4 transition-colors hover:decoration-brand"
+              className="inline-flex h-11 items-center px-2 text-sm font-medium text-ink underline decoration-brand underline-offset-4 transition-colors hover:decoration-deep"
             >
               What’s the difference?
             </a>
@@ -173,13 +173,13 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
         </ul>
       ) : (
         <div className="mt-6 flex flex-col items-center rounded-card-xl border border-dashed border-line px-5 py-14 text-center sm:px-10 sm:py-20">
-          <IconBadge variant="pastel" size="lg">
+          <IconBadge variant="tint" size="lg">
             <SearchX />
           </IconBadge>
-          <h3 className="mt-6 text-h3 font-medium text-ink">No matches for that combination</h3>
+          <h3 className="mt-6 font-display text-h3 font-bold text-ink">No matches for that combination</h3>
           <p className="mt-2 max-w-md text-muted">{emptyReason(type)}</p>
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button type="button" variant="dark" onClick={clearFilters}>
+            <Button type="button" variant="primary" onClick={clearFilters}>
               Clear filters
             </Button>
             {group && (

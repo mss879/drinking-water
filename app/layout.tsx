@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
+import { Montserrat, Raleway } from "next/font/google";
 import { Analytics } from "@/components/layout/analytics";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
@@ -12,7 +12,9 @@ import { JsonLd } from "@/lib/jsonld";
 import { ogImage } from "@/lib/seo";
 import "./globals.css";
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
+// Brand sheet type: Raleway for headings, Montserrat for body, UI and figures.
+const raleway = Raleway({ subsets: ["latin"], variable: "--font-raleway", display: "swap" });
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -24,7 +26,15 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, address: false, email: false },
 };
 
-export const viewport: Viewport = { themeColor: "#ffffff", colorScheme: "light" };
+// The theme colour matches the page canvas (--color-canvas). `viewportFit: "cover"` lets fixed bars read the
+// iPhone safe-area insets through env(); containers pad themselves out of the notch in landscape.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f6fafe",
+  colorScheme: "light",
+};
 
 const organization = {
   "@context": "https://schema.org",
@@ -46,11 +56,11 @@ const organization = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full`} data-scroll-behavior="smooth">
+    <html lang="en" className={`${raleway.variable} ${montserrat.variable} h-full`} data-scroll-behavior="smooth">
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
-          className="sr-only rounded-full bg-ink px-5 py-3 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60]"
+          className="sr-only rounded-full bg-deep px-5 py-3 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60]"
         >
           Skip to content
         </a>

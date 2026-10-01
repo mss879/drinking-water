@@ -2,7 +2,7 @@
  * LUSAKO logo geometry: the client's logo rebuilt as clean vectors (measured from their artwork, then
  * constructed from exact curves). Generated file; the full lockups live in public/brand.
  */
-export const logoColors = { blue: "#268CF1", tagline: "#444444" } as const;
+export const logoColors = { blue: "#278CF0", tagline: "#545454" } as const;
 
 export const wordmark = {
   width: 295.8,

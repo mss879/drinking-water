@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { ArchCta } from "@/components/sections/arch-cta";
-import { PageHero } from "@/components/sections/page-hero";
+import { CtaBand } from "@/components/sections/cta-band";
+import { HeroMedia, PageHero } from "@/components/sections/page-hero";
 import { SolutionsTrio } from "@/components/sections/solutions-trio";
 import { Container } from "@/components/ui/container";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { Logo } from "@/components/ui/logo";
 import { Pill } from "@/components/ui/pill";
@@ -38,7 +38,7 @@ type Division = {
   journey?: string[];
   href: string;
   cta: string;
-  tone: "frost" | "pastel" | "ocean";
+  tone: "outline" | "tint" | "deep";
 };
 
 /** LUSAKO brand architecture: DIRECT SALES · RENTAL · SERVICE (brief Doc 1). */
@@ -51,7 +51,7 @@ const divisions: Division[] = [
     journey: ["Buy", "Own", "Service"],
     href: "/water-purifiers",
     cta: "Explore purifiers",
-    tone: "frost",
+    tone: "outline",
   },
   {
     division: "Rental",
@@ -61,7 +61,7 @@ const divisions: Division[] = [
     journey: ["Rent", "Use", "We maintain"],
     href: "/rental",
     cta: "Explore rental",
-    tone: "pastel",
+    tone: "tint",
   },
   {
     division: "Service",
@@ -70,14 +70,14 @@ const divisions: Division[] = [
     items: ["Installation", "Preventive maintenance", "Filter replacement", "Technical service", "Water testing", "AMC", "Relocation"],
     href: "/service-support",
     cta: "Service & support",
-    tone: "ocean",
+    tone: "deep",
   },
 ];
 
 const tones = {
-  frost: { card: "bg-frost text-ink", sub: "text-muted", micro: "text-subtle", pill: "white" },
-  pastel: { card: "bg-pastel text-ink", sub: "text-muted", micro: "text-muted", pill: "white" },
-  ocean: { card: "bg-ocean text-white", sub: "text-white/75", micro: "text-white/65", pill: "glass" },
+  outline: { card: "card-line text-ink", sub: "text-muted", micro: "text-deep", pill: "tint" },
+  tint: { card: "rounded-card bg-tint-2 text-ink", sub: "text-muted", micro: "text-deep", pill: "white" },
+  deep: { card: "rounded-card bg-deep text-white", sub: "text-white", micro: "text-white", pill: "glass" },
 } as const;
 
 const promise = [
@@ -98,34 +98,36 @@ export default function AboutPage() {
           </>
         }
         description="From homes to offices and large organisations, LUSAKO provides the right purification technology, the right equipment and the right service for your water needs."
-      />
+      >
+        <HeroMedia image={photos.corporateTeam} priority />
+      </PageHero>
 
-      <section className="py-14 lg:py-20">
-        <Container className="grid gap-10 lg:grid-cols-12 lg:gap-12">
-          <div className="flex items-center gap-5 lg:col-span-4 lg:flex-col lg:items-start lg:pt-3">
-            <span className="relative block size-28 shrink-0 overflow-hidden rounded-full border border-line p-2 sm:size-40">
+      <section className="py-16 md:py-20 lg:py-28">
+        <Container className="grid gap-10 lg:grid-cols-12 lg:gap-12" data-no-reveal>
+          <div data-reveal="up" className="flex flex-col items-start gap-5 sm:flex-row sm:items-center lg:col-span-4 lg:flex-col lg:items-start">
+            <span className="relative block size-28 shrink-0 overflow-hidden rounded-full border border-line p-2 sm:size-40 lg:size-56">
               <span className="relative block size-full overflow-hidden rounded-full">
-                <Image src={photos.waterPour.src} alt="" fill sizes="160px" className="scale-[1.12] object-cover" />
+                <Image src={photos.waterPour.src} alt="" fill sizes="224px" data-no-parallax className="scale-[1.12] object-cover" />
               </span>
             </span>
-            <p className="max-w-xs text-sm leading-relaxed text-muted">
+            <p className="label max-w-xs">
               {site.name} · {site.descriptor}
             </p>
           </div>
           <div className="lg:col-span-8">
-            <h2 className="text-[clamp(1.75rem,1.2rem+2.2vw,3rem)] leading-[1.12] font-medium tracking-[-0.03em] text-ink">
+            <h2 data-reveal="up" className="font-display text-[clamp(1.75rem,1.2rem+2.2vw,3rem)] leading-[1.12] font-semibold tracking-[-0.025em] text-ink">
               LUSAKO is a water purification and hydration solutions company.{" "}
-              <span className="text-subtle">Not simply a seller of purifiers.</span>
+              <span className="block text-brand">Not simply a seller of purifiers.</span>
             </h2>
-            <p className="mt-6 max-w-2xl text-lead text-muted">
+            <p data-reveal="up" className="mt-6 max-w-2xl text-lead text-muted">
               We help homes, offices and organisations move beyond bottled-water deliveries to purified water on tap, and we look after it
               long after installation.
             </p>
-            <dl className="mt-10 grid gap-3 sm:grid-cols-3">
+            <dl data-stagger className="mt-10 grid gap-3 sm:grid-cols-3">
               {promise.map((item) => (
-                <div key={item.title} className="rounded-card-sm bg-frost p-5">
-                  <dt className="text-xs font-medium tracking-[0.18em] text-brand uppercase">{item.title}</dt>
-                  <dd className="mt-2 text-[15px] leading-snug text-ink">{item.body}</dd>
+                <div key={item.title} className="card-line p-6">
+                  <dt className="font-display text-2xl font-bold text-brand">{item.title}</dt>
+                  <dd className="mt-3 text-[15px] leading-snug text-ink">{item.body}</dd>
                 </div>
               ))}
             </dl>
@@ -133,7 +135,7 @@ export default function AboutPage() {
         </Container>
       </section>
 
-      <section className="py-14 lg:py-20">
+      <section className="py-16 md:py-20 lg:py-28">
         <Container>
           <SectionHeading
             align="center"
@@ -147,29 +149,29 @@ export default function AboutPage() {
           />
 
           <div className="mt-14 flex flex-col items-center">
-            <div className="flex items-center gap-4 rounded-card-sm bg-ink py-4 pr-6 pl-5 text-left text-white">
+            <div className="flex items-center gap-4 rounded-full bg-deep py-4 pr-7 pl-6 text-left text-white">
               <Logo inverted title="LUSAKO" className="h-6 w-auto" />
-              <span aria-hidden className="h-7 w-px bg-white/20" />
-              <span className="text-sm text-white/70">{site.descriptor}</span>
+              <span aria-hidden className="h-7 w-px bg-white/30" />
+              <span className="text-sm font-medium text-white">{site.descriptor}</span>
             </div>
-            <span aria-hidden className="h-10 w-px bg-line" />
+            <span aria-hidden className="h-10 w-px bg-brand/40" />
           </div>
 
           <div className="relative lg:pt-10">
             <span
               aria-hidden
-              className="absolute top-0 right-[calc((100%_-_2rem)/6)] left-[calc((100%_-_2rem)/6)] hidden h-px bg-line lg:block"
+              className="absolute top-0 right-[calc((100%_-_2rem)/6)] left-[calc((100%_-_2rem)/6)] hidden h-px bg-brand/40 lg:block"
             />
             <ul className="grid gap-4 lg:grid-cols-3">
               {divisions.map((division) => {
                 const tone = tones[division.tone];
                 return (
                   <li key={division.division} className="relative">
-                    <span aria-hidden className="absolute -top-10 left-1/2 hidden h-10 w-px bg-line lg:block" />
-                    <article className={cn("relative flex h-full flex-col overflow-hidden rounded-card-xl p-7 sm:p-8", tone.card)}>
-                      {division.tone === "ocean" && <Rings className="absolute -right-24 -bottom-24 size-80 text-aqua/20" />}
-                      <p className={cn("relative text-xs font-medium tracking-[0.18em] uppercase", tone.micro)}>{division.division}</p>
-                      <h3 className="relative mt-3 text-h3 font-medium">{division.brand}</h3>
+                    <span aria-hidden className="absolute -top-10 left-1/2 hidden h-10 w-px bg-brand/40 lg:block" />
+                    <article className={cn("relative flex h-full flex-col overflow-hidden p-7 sm:p-8", tone.card)}>
+                      {division.tone === "deep" && <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />}
+                      <p className={cn("relative font-display text-xs font-bold tracking-[0.18em] uppercase", tone.micro)}>{division.division}</p>
+                      <h3 className="relative mt-3 font-display text-h3 font-bold">{division.brand}</h3>
                       <p className={cn("relative mt-2 text-[15px] leading-relaxed", tone.sub)}>{division.summary}</p>
                       <ul className="relative mt-6 flex flex-wrap gap-2">
                         {division.items.map((item) => (
@@ -180,18 +182,18 @@ export default function AboutPage() {
                       </ul>
                       {division.journey && (
                         <>
-                          <p className={cn("relative mt-7 text-xs font-medium tracking-[0.18em] uppercase", tone.micro)}>Journey</p>
+                          <p className={cn("relative mt-7 font-display text-xs font-bold tracking-[0.18em] uppercase", tone.micro)}>Journey</p>
                           <ol className="relative mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                             {division.journey.map((stage, i) => (
                               <li key={stage} className="flex items-center gap-2">
-                                {i > 0 && <ArrowRight aria-hidden className="size-4 opacity-60" />}
+                                {i > 0 && <ArrowRight aria-hidden className="size-4 text-brand" />}
                                 {stage}
                               </li>
                             ))}
                           </ol>
                         </>
                       )}
-                      <Link href={division.href} className="group relative mt-auto inline-flex w-fit items-center gap-2 pt-8 text-[15px] font-medium">
+                      <Link href={division.href} className="group relative mt-auto inline-flex w-fit items-center gap-2 pt-8 text-[15px] font-semibold">
                         {division.cta}
                         <ArrowUpRight aria-hidden className="size-4 transition-transform duration-200 group-hover:rotate-45" />
                       </Link>
@@ -205,7 +207,7 @@ export default function AboutPage() {
       </section>
 
       <SolutionsTrio />
-      <ArchCta />
+      <CtaBand />
     </>
   );
 }

@@ -13,7 +13,7 @@ export function Logo({ className, inverted = false, title }: { className?: strin
       role={title ? "img" : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
-      className={cn("block shrink-0 transition-colors duration-300", inverted ? "text-white" : "text-logo", className)}
+      className={cn("block shrink-0 transition-colors duration-300", inverted ? "text-white" : "text-brand", className)}
     >
       <path fill="currentColor" d={wordmark.d} />
     </svg>

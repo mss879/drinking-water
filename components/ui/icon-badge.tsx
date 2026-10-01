@@ -4,11 +4,11 @@ import { BrandIcon } from "./brand-icon";
 import { cn } from "@/lib/cn";
 
 const variants = {
-  pastel: "bg-pastel text-ink",
-  ocean: "bg-ocean text-white",
+  tint: "bg-tint-2 text-deep",
+  deep: "bg-deep text-white",
+  white: "bg-white text-deep shadow-soft",
+  outline: "border border-line bg-white text-deep",
   ink: "bg-ink text-white",
-  outline: "border border-ink/20 bg-white text-ink",
-  white: "bg-white text-ink shadow-soft",
 } as const;
 
 const sizes = {
@@ -22,14 +22,13 @@ const brandSizes = { sm: 44, md: 56, lg: 64 } as const;
 const framedSizes = { sm: 28, md: 34, lg: 40 } as const;
 
 /**
- * Round icon badge (the reference's floating circles). When the Lucide icon passed in has a 3D brand
- * icon (content/brand-icons.ts), that image is shown instead: bare on light cards, or inside the circle
- * with `framed` (for dark surfaces). `brandIcon` picks a specific brand icon; `brand={false}` keeps the
- * line icon, e.g. in timelines.
+ * Round icon badge. When the Lucide icon passed in has a 3D brand icon (content/brand-icons.ts), that image is
+ * shown instead: bare on light cards, or inside the circle with `framed` (for dark surfaces). `brandIcon` picks
+ * a specific brand icon; `brand={false}` keeps the line icon, e.g. in timelines.
  */
 export function IconBadge({
   children,
-  variant = "pastel",
+  variant = "tint",
   size = "md",
   brand = true,
   brandIcon,

@@ -1,7 +1,11 @@
 import { ImageResponse } from "next/og";
+import { wavePath } from "@/components/ui/decor";
 import { logoColors, wordmark } from "@/content/brand-logo";
 
 export const dynamic = "force-static";
+
+/** Brand sheet colours as literals: next/og can't read CSS variables (DESIGN.md › Palette). */
+const brand = { blue: "#278CF0", deep: "#0055A8", mist: "#9DC4DF", ink: "#0A0A0D", grey: "#545454", white: "#FFFFFF" };
 
 /** Shared social card, referenced by every page's metadata (lib/seo.ts). */
 export function GET() {
@@ -15,27 +19,33 @@ export function GET() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px 72px",
-          background: "linear-gradient(180deg, #FFFFFF 0%, #EEF5FE 100%)",
-          color: "#0A1F3D",
+          background: brand.white,
+          color: brand.ink,
+          position: "relative",
         }}
       >
+        <svg width={1200} height={220} viewBox="0 0 1440 260" style={{ position: "absolute", left: 0, bottom: -40 }}>
+          <path d={wavePath({ width: 1440, y: 150, amplitude: 34, wavelength: 720 })} fill="none" stroke={brand.blue} strokeWidth={3} />
+          <path d={wavePath({ width: 1440, y: 185, amplitude: 26, wavelength: 480, phase: 0.3 })} fill="none" stroke={brand.mist} strokeWidth={3} />
+          <path d={wavePath({ width: 1440, y: 215, amplitude: 40, wavelength: 1440, phase: 0.6 })} fill="none" stroke={brand.deep} strokeWidth={3} />
+        </svg>
         <div style={{ display: "flex" }}>
           <svg width={236} height={Math.round((236 * wordmark.height) / wordmark.width)} viewBox={`0 0 ${wordmark.width} ${wordmark.height}`}>
             <path fill={logoColors.blue} d={wordmark.d} />
           </svg>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", fontSize: 96, lineHeight: 1.08, letterSpacing: -3 }}>
-            <span style={{ background: "#DDEBFC", borderRadius: 999, padding: "0 28px", marginRight: 22 }}>Pure water</span>
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 100, lineHeight: 1.02, letterSpacing: -3, fontWeight: 700 }}>
+            <span style={{ color: brand.blue }}>Pure water</span>
             <span>without the hassle</span>
           </div>
-          <div style={{ fontSize: 32, color: "#4B5D75" }}>
+          <div style={{ fontSize: 30, color: brand.grey, maxWidth: 900 }}>
             Water purification and hydration solutions for homes, offices and businesses in Sri Lanka.
           </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, letterSpacing: 6, color: "#1B66C9" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, letterSpacing: 6, color: brand.deep, paddingBottom: 36 }}>
           <span>BUY • RENT • HYDRATE • CARE</span>
-          <span style={{ letterSpacing: 1, color: "#4B5D75" }}>drinkingwater.lk</span>
+          <span style={{ letterSpacing: 1, color: brand.grey }}>drinkingwater.lk</span>
         </div>
       </div>
     ),

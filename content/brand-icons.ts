@@ -105,7 +105,7 @@ export type BrandIconName =
   | "well"
   | "wrench";
 
-export const brandIconSrc = (name: BrandIconName) => `/images/icons/${name}.webp`;
+export const brandIconSrc = (name: BrandIconName) => `/images/brand-icons/${name}.webp`;
 
 /**
  * Lucide icon → brand icon, matched by component rather than name (Lucide's display names follow

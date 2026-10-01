@@ -22,9 +22,10 @@ const modes = [
   { id: "rent", title: "Rent", subtitle: "From a monthly payment", href: "/rental", cta: "Explore rental" },
 ] as const;
 
+/** Outlined comparison table; the Rent column is the solid deep-blue feature column. */
 export function BuyVsRent() {
   return (
-    <section id="buy-or-rent" className="py-14 lg:py-20">
+    <section id="buy-or-rent" className="py-16 md:py-20 lg:py-28">
       <Container>
         <SectionHeading
           align="center"
@@ -37,35 +38,35 @@ export function BuyVsRent() {
           description="Both give you better water. The difference is how you pay, and who looks after the system."
         />
 
-        <div data-reveal="up" className="mt-12 hidden overflow-hidden rounded-card-xl border border-line sm:block">
+        <div className="card-line mt-12 hidden overflow-hidden rounded-card-xl sm:block lg:mt-14">
           <table className="w-full border-collapse text-left">
             <caption className="sr-only">Buying compared with renting a LUSAKO water purifier</caption>
             <thead>
               <tr>
                 <td className="w-[30%] p-6 align-bottom lg:p-8">
-                  <span className="text-sm text-subtle">Compare</span>
+                  <span className="label">Compare</span>
                 </td>
                 <th scope="col" className="p-6 align-top font-normal lg:p-8">
-                  <span className="block text-h3 font-medium text-ink">Buy</span>
+                  <span className="block font-display text-h3 font-bold text-ink">Buy</span>
                   <span className="mt-1 block text-sm text-muted">Own your system</span>
                 </th>
-                <th scope="col" className="bg-pastel p-6 align-top font-normal lg:p-8">
+                <th scope="col" className="bg-deep p-6 align-top font-normal text-white lg:p-8">
                   <span className="flex flex-wrap items-center gap-3">
-                    <span className="text-h3 font-medium text-ink">Rent</span>
+                    <span className="font-display text-h3 font-bold">Rent</span>
                     <Pill variant="white">Popular for offices</Pill>
                   </span>
-                  <span className="mt-1 block text-sm text-muted">From a monthly payment</span>
+                  <span className="mt-1 block text-sm">From a monthly payment</span>
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody data-stagger>
               {rows.map((row) => (
                 <tr key={row.label} className="border-t border-line">
-                  <th scope="row" className="px-6 py-4 text-[15px] font-normal text-muted lg:px-8">
+                  <th scope="row" className="px-6 py-4 text-[15px] font-medium text-muted lg:px-8">
                     {row.label}
                   </th>
                   <td className="px-6 py-4 text-[15px] text-ink lg:px-8">{row.buy}</td>
-                  <td className="bg-pastel/50 px-6 py-4 text-[15px] text-ink lg:px-8">{row.rent}</td>
+                  <td className="border-t border-white/15 bg-deep px-6 py-4 text-[15px] font-medium text-white lg:px-8">{row.rent}</td>
                 </tr>
               ))}
               <tr className="border-t border-line">
@@ -75,8 +76,8 @@ export function BuyVsRent() {
                     Explore purifiers
                   </ButtonLink>
                 </td>
-                <td className="bg-pastel/50 px-6 py-6 lg:px-8">
-                  <ButtonLink href="/rental" variant="dark" size="sm" arrow>
+                <td className="border-t border-white/15 bg-deep px-6 py-6 lg:px-8">
+                  <ButtonLink href="/rental" variant="white" size="sm" arrow>
                     Explore rental
                   </ButtonLink>
                 </td>
@@ -86,28 +87,34 @@ export function BuyVsRent() {
         </div>
 
         <div className="mt-10 grid gap-4 sm:hidden">
-          {modes.map((mode) => (
-            <div key={mode.id} className={cn("rounded-card-xl p-6", mode.id === "rent" ? "bg-pastel" : "border border-line")}>
-              <p className="text-h3 font-medium text-ink">{mode.title}</p>
-              <p className="text-sm text-muted">{mode.subtitle}</p>
-              <dl className="mt-5 grid gap-3">
-                {rows.map((row) => (
-                  <div key={row.label} className="flex justify-between gap-4 border-t border-ink/10 pt-3 text-sm">
-                    <dt className="text-muted">{row.label}</dt>
-                    <dd className="text-right text-ink">{row[mode.id]}</dd>
-                  </div>
-                ))}
-              </dl>
-              <ButtonLink href={mode.href} variant={mode.id === "rent" ? "dark" : "outline"} arrow className="mt-6 w-full">
-                {mode.cta}
-              </ButtonLink>
-            </div>
-          ))}
+          {modes.map((mode) => {
+            const rent = mode.id === "rent";
+            return (
+              <div key={mode.id} className={cn("p-6", rent ? "rounded-card bg-deep text-white" : "card-line")}>
+                <p className="font-display text-h3 font-bold">{mode.title}</p>
+                <p className={cn("text-sm", rent ? "text-white" : "text-muted")}>{mode.subtitle}</p>
+                <dl className="mt-5 grid gap-3">
+                  {rows.map((row) => (
+                    <div
+                      key={row.label}
+                      className={cn("flex justify-between gap-4 border-t pt-3 text-sm", rent ? "border-white/20" : "border-line")}
+                    >
+                      <dt className={rent ? "text-white" : "text-muted"}>{row.label}</dt>
+                      <dd className="text-right font-semibold">{row[mode.id]}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <ButtonLink href={mode.href} variant={rent ? "white" : "outline"} arrow className="mt-6 w-full">
+                  {mode.cta}
+                </ButtonLink>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-4 text-center">
-          <p className="text-lead text-ink">Not sure which is right for you?</p>
-          <ButtonLink href="/find-my-solution" variant="dark" size="lg" arrow>
+        <div data-reveal="up" className="mt-12 flex flex-col items-center gap-5 text-center">
+          <p className="font-display text-2xl font-semibold text-ink">Not sure which is right for you?</p>
+          <ButtonLink href="/find-my-solution" size="lg" arrow>
             Help me choose
           </ButtonLink>
         </div>

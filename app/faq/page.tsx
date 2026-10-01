@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { MessageCircle } from "lucide-react";
-import { ArchCta } from "@/components/sections/arch-cta";
+import { CtaBand } from "@/components/sections/cta-band";
 import { PageHero } from "@/components/sections/page-hero";
 import { Accordion } from "@/components/ui/accordion";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
@@ -50,15 +50,15 @@ export default function FaqPage() {
       >
         <Container className="mt-10">
           <nav aria-label="FAQ topics" className="rise" style={{ "--d": "280ms" } as CSSProperties}>
-            <ul className="flex flex-wrap justify-center gap-2">
+            <ul className="flex flex-wrap gap-2">
               {groups.map((group) => (
                 <li key={group.id}>
                   <a
                     href={`#${group.id}`}
-                    className="inline-flex h-11 items-center gap-2 rounded-full border border-ink/15 bg-white pr-2 pl-5 text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-frost"
+                    className="inline-flex h-12 items-center gap-2.5 rounded-full border border-line bg-white pr-2 pl-5 text-sm font-semibold text-ink transition-colors hover:border-deep hover:text-deep"
                   >
                     {group.label}
-                    <span aria-hidden className="grid h-7 min-w-7 place-items-center rounded-full bg-pastel px-2 text-xs">
+                    <span aria-hidden className="grid h-8 min-w-8 place-items-center rounded-full bg-deep px-2 text-xs text-white">
                       {group.items.length}
                     </span>
                     <span className="sr-only">, {group.items.length} questions</span>
@@ -71,17 +71,14 @@ export default function FaqPage() {
       </PageHero>
 
       {groups.map((group, i) => (
-        <section key={group.id} id={group.id} aria-labelledby={`${group.id}-heading`} className="py-10 lg:py-14">
+        <section key={group.id} id={group.id} aria-labelledby={`${group.id}-heading`} className="py-12 lg:py-16">
           <Container>
-            <div className={cn("grid gap-8 lg:grid-cols-12 lg:gap-12", i > 0 && "border-t border-line pt-10 lg:pt-14")}>
-              <div className="lg:col-span-4">
-                <p
-                  aria-hidden
-                  className="text-[2.75rem] leading-none font-medium tracking-[-0.04em] text-outline [--outline-c:var(--color-brand)]"
-                >
+            <div data-no-reveal className={cn("grid gap-8 lg:grid-cols-12 lg:gap-12", i > 0 && "border-t border-line pt-12 lg:pt-16")}>
+              <div data-reveal="up" className="lg:col-span-4">
+                <p aria-hidden className="font-sans text-[3.75rem] leading-none font-extralight tracking-[-0.04em] text-brand">
                   {String(i + 1).padStart(2, "0")}
                 </p>
-                <h2 id={`${group.id}-heading`} className="mt-4 text-h3 font-medium text-ink">
+                <h2 id={`${group.id}-heading`} className="mt-4 font-display text-h3 font-bold text-ink">
                   {group.label}
                 </h2>
                 <p className="mt-2 text-sm text-muted">
@@ -98,15 +95,15 @@ export default function FaqPage() {
         </section>
       ))}
 
-      <section className="pt-10 lg:pt-14">
+      <section className="pt-12 lg:pt-16">
         <Container>
-          <div className="flex flex-col gap-6 rounded-card-xl bg-frost p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
+          <div data-reveal="up" className="card-line flex flex-col gap-6 rounded-card-xl p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-h3 font-medium text-ink">Still have a question?</h2>
+              <h2 className="font-display text-h3 font-bold text-ink">Still have a question?</h2>
               <p className="mt-2 text-muted">Our team is happy to help. {site.contact.hours}.</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/contact" variant="dark" arrow>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <ButtonLink href="/contact" variant="primary" arrow>
                 Ask our team
               </ButtonLink>
               <a
@@ -124,7 +121,7 @@ export default function FaqPage() {
         </Container>
       </section>
 
-      <ArchCta />
+      <CtaBand />
     </>
   );
 }

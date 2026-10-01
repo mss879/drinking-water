@@ -22,11 +22,11 @@ export function ChannelRow({ channel }: { channel: Channel }) {
   const { icon: Icon, label, value, href, external } = channel;
   const content = (
     <>
-      <IconBadge variant="pastel" size="sm" brand={false}>
+      <IconBadge variant="tint" size="sm" brand={false}>
         <Icon />
       </IconBadge>
       <span className="min-w-0">
-        <span className="block text-xs text-subtle">{label}</span>
+        <span className="block text-xs text-muted">{label}</span>
         <span className="block text-[15px] font-medium break-words text-ink">{value}</span>
       </span>
     </>
@@ -37,7 +37,7 @@ export function ChannelRow({ channel }: { channel: Channel }) {
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="-mx-3 flex min-h-14 items-center gap-4 rounded-card-sm px-3 py-2 transition-colors hover:bg-frost"
+      className="-mx-3 flex min-h-14 items-center gap-4 rounded-card-sm px-3 py-2 transition-colors hover:bg-tint"
     >
       {content}
     </a>

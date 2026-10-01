@@ -1,51 +1,73 @@
 @import "tailwindcss";
 
-/* LUSAKO design tokens. The contract lives in DESIGN.md. */
+/*
+ * LUSAKO design tokens. The contract lives in DESIGN.md.
+ * Palette lock: every colour below comes from the client's brand sheet — its swatches, its text colours and
+ * points on its white → #278CF0 → #0055A8 tint strip. Tailwind's default palette is removed so nothing else
+ * can slip in.
+ */
 @theme {
-  --color-ink: #0a1f3d;
-  --color-abyss: #06142b;
-  --color-ocean: #0e3a70;
-  --color-brand: #1b66c9;
-  --color-brand-bright: #2f80ed;
-  --color-logo: #268cf1; /* the LUSAKO logo blue, from the client's artwork */
-  --color-sky: #9cc7f5;
-  --color-mist: #c4def9;
-  --color-pastel: #ddebfc;
-  --color-ice: #eef5fe;
-  --color-frost: #f4f7fb;
-  --color-aqua: #4cc3e8;
-  --color-line: #dce5f0;
-  --color-muted: #4b5d75;
-  --color-subtle: #5e6f86;
-  --color-danger: #b42318;
+  --color-*: initial;
 
-  --text-display: clamp(2.625rem, 1.55rem + 4.3vw, 4.75rem);
-  --text-display--line-height: 1.04;
-  --text-display--letter-spacing: -0.035em;
-  --text-h2: clamp(2rem, 1.55rem + 1.8vw, 3rem);
-  --text-h2--line-height: 1.08;
-  --text-h2--letter-spacing: -0.03em;
-  --text-h3: clamp(1.3125rem, 1.2rem + 0.45vw, 1.625rem);
-  --text-h3--line-height: 1.2;
-  --text-h3--letter-spacing: -0.02em;
-  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
-  --text-lead--line-height: 1.5;
-  --text-mega: clamp(3.75rem, 12.5vw, 11.5rem);
-  --text-mega--line-height: 0.88;
-  --text-mega--letter-spacing: -0.045em;
+  --color-white: #ffffff;
+  --color-brand: #278cf0; /* main blue */
+  --color-steel: #438ccf;
+  --color-mist: #9dc4df;
+  --color-deep: #0055a8; /* dark end of the sheet's blue strip: buttons, links, small blue text */
+  --color-ink: #0a0a0d; /* headings */
+  --color-muted: #545454; /* body text (the sheet's grey swatch) */
+  --color-danger: #ef554b; /* form errors only */
+
+  /* Tints: points on the sheet's white → #278CF0 strip. The page canvas is the faintest; panels step up from it. */
+  --color-canvas: color-mix(in srgb, #278cf0 4%, #ffffff);
+  --color-tint: color-mix(in srgb, #278cf0 8%, #ffffff);
+  --color-tint-2: color-mix(in srgb, #278cf0 14%, #ffffff);
+  --color-line: color-mix(in srgb, #278cf0 20%, #ffffff);
+  /* Button hover: 30% along the strip from #0055A8 towards #278CF0 (white text still 5.8:1). */
+  --color-deep-hover: color-mix(in srgb, #0055a8 70%, #278cf0);
+
+  --text-display: clamp(2.125rem, 1.6rem + 3.3vw, 4.25rem); /* 36px at 320px wide, 38px at 390px: long words still fit */
+  --text-display--line-height: 1.06;
+  --text-display--letter-spacing: -0.03em;
+  --text-h2: clamp(2rem, 1.55rem + 1.9vw, 3.25rem);
+  --text-h2--line-height: 1.1;
+  --text-h2--letter-spacing: -0.025em;
+  --text-h3: clamp(1.3rem, 1.2rem + 0.45vw, 1.6rem);
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.015em;
+  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.2rem);
+  --text-lead--line-height: 1.6;
+  --text-stat: clamp(2.75rem, 2rem + 3vw, 4.5rem);
+  --text-stat--line-height: 1;
+  --text-stat--letter-spacing: -0.04em;
+  --text-mega: clamp(5rem, 22vw, 10rem);
+  --text-mega--line-height: 0.9;
+  --text-mega--letter-spacing: -0.04em;
 
   --radius-chip: 12px;
-  --radius-card-sm: 20px;
-  --radius-card: 28px;
-  --radius-card-xl: 36px;
+  --radius-card-sm: 16px;
+  --radius-card: 24px;
+  --radius-card-xl: 32px;
 
-  --shadow-float: 0 12px 32px -12px rgb(10 31 61 / 0.25);
-  --shadow-soft: 0 1px 2px rgb(10 31 61 / 0.04), 0 10px 30px -14px rgb(10 31 61 / 0.14);
+  /* Tailwind's stock shadows are black; drop them so only brand-tinted shadows exist. */
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --shadow-float: 0 18px 40px -18px color-mix(in srgb, #0055a8 45%, transparent);
+  --shadow-soft:
+    0 1px 2px color-mix(in srgb, #0a0a0d 6%, transparent), 0 14px 36px -18px color-mix(in srgb, #0055a8 30%, transparent);
+
+  --drop-shadow-icon: 0 10px 14px color-mix(in srgb, #0055a8 22%, transparent);
+  --drop-shadow-float: 0 30px 40px color-mix(in srgb, #0055a8 25%, transparent);
 
   --ease-emph: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-soft: cubic-bezier(0.2, 0.75, 0.15, 1);
 
   --animate-marquee: marquee var(--marquee-duration, 40s) linear infinite;
   --animate-fade-up: fade-up 0.45s cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-spin-slow: spin 18s linear infinite;
 
   @keyframes marquee {
     to {
@@ -58,139 +80,137 @@
       transform: translate3d(0, 8px, 0);
     }
   }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0) rotate(1.5deg);
+    }
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 }
 
 @theme inline {
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-raleway), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @layer base {
   :root {
     color-scheme: light;
+    /* Room kept at the top for the floating navigation pill (components/layout/header.tsx); sticky stages and
+       anchors clear it. */
+    --header-h: 72px;
+    /* Height of the phone action bar fixed to the bottom (components/layout/mobile-cta-bar.tsx); none from lg. */
+    --cta-bar-h: calc(4.0625rem + max(0.5rem, env(safe-area-inset-bottom)));
+    /* Left and right edge of the navigation bar and the home hero text on large screens. */
+    --edge: clamp(1.25rem, 4vw, 4rem);
+    /* Page side gutter (the `px-gutter` utility, used by Container). */
+    --gutter: 1.25rem;
+    @media (min-width: 40rem) {
+      --gutter: 2rem;
+    }
+    @media (min-width: 64rem) {
+      --header-h: 80px;
+      --cta-bar-h: 0px;
+      --gutter: 3rem;
+    }
   }
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    /* Raleway defaults to old-style figures; prices and steps read better lining. */
+    font-variant-numeric: lining-nums;
   }
   body {
-    background: #fff;
+    background: var(--color-canvas);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   ::selection {
-    background: var(--color-pastel);
+    background: var(--color-line);
     color: var(--color-ink);
   }
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-deep);
     outline-offset: 3px;
   }
   h1,
   h2,
   h3 {
+    font-family: var(--font-display);
     text-wrap: balance;
   }
   p {
     text-wrap: pretty;
   }
   [id] {
-    scroll-margin-top: 7rem;
+    scroll-margin-top: calc(var(--header-h) + 2rem);
+  }
+  /* A grid with no column count yet (the phone layout of `grid lg:grid-cols-3`) gets one column that can
+     shrink. Without this the implicit column grows to its widest unbreakable child (a long pill, a nowrap
+     heading) and pushes the page sideways on small screens. Any `grid-cols-*` utility overrides it. */
+  :where(.grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  ::placeholder {
+    color: color-mix(in srgb, #545454 70%, transparent);
   }
 }
 
-/* Label tab cut into a card's bottom-left corner, with inverse radii on both joins. */
-@utility corner-tab {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  z-index: 1;
-  background: var(--tab-bg, #fff);
-  border-top-right-radius: var(--tab-r, 22px);
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    width: var(--tab-r, 22px);
-    height: var(--tab-r, 22px);
-    background: radial-gradient(
-      circle at 100% 0,
-      transparent calc(var(--tab-r, 22px) - 0.5px),
-      var(--tab-bg, #fff) var(--tab-r, 22px)
-    );
-    pointer-events: none;
-  }
+/* Section label, after the brand sheet's "SUB HEADING": uppercase Raleway with a short brand-blue rule. */
+@utility label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-deep);
   &::before {
-    left: 0;
-    top: calc(var(--tab-r, 22px) * -1);
-  }
-  &::after {
-    left: 100%;
-    bottom: 0;
-  }
-}
-
-/* Round action cut into a card's bottom-right corner. */
-@utility corner-action {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  background: var(--tab-bg, #fff);
-  border-top-left-radius: var(--tab-r, 22px);
-  &::before,
-  &::after {
     content: "";
-    position: absolute;
-    width: var(--tab-r, 22px);
-    height: var(--tab-r, 22px);
-    background: radial-gradient(
-      circle at 0 0,
-      transparent calc(var(--tab-r, 22px) - 0.5px),
-      var(--tab-bg, #fff) var(--tab-r, 22px)
-    );
-    pointer-events: none;
-  }
-  &::before {
-    right: 0;
-    top: calc(var(--tab-r, 22px) * -1);
-  }
-  &::after {
-    right: 100%;
-    bottom: 0;
+    width: 1.75rem;
+    height: 2px;
+    flex: none;
+    border-radius: 2px;
+    background: var(--color-brand);
   }
 }
 
-/* Smooth notch in a card's top edge that cradles a round icon. */
-@utility notch-top {
-  --notch: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 44' preserveAspectRatio='none'><path d='M0 0H132C117 0 109 5 102 15C93 29 82 40 66 40C50 40 39 29 30 15C23 5 15 0 0 0Z'/></svg>");
-  -webkit-mask:
-    var(--notch) top center / 132px 44px no-repeat,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    var(--notch) top center / 132px 44px no-repeat exclude,
-    linear-gradient(#000 0 0);
+/* Side padding of the page, kept clear of an iPhone's notch and rounded corners in landscape. */
+@utility px-gutter {
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
 }
 
-/* Highlight pill (components/ui/highlight.tsx). An inline background fills the font's content area, which in
-   Outfit reaches a full 1em above the baseline while the letters stop at 0.72em, so a plain pill sits top-heavy
-   and runs into the line above. The outer span is set smaller to shrink that area (--fit), the inner span
-   restores the text, and the padding (in headline ems) leaves an even margin round ascenders and descenders. */
-@utility highlight {
-  --fit: 0.79;
-  font-size: calc(1em * var(--fit));
-  padding: 0 calc(0.3em / var(--fit)) calc(0.075em / var(--fit));
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  & > span {
-    font-size: calc(1em / var(--fit));
-  }
+/* Thin blue-outlined card (StomDent). Hover states are added where the card is interactive. */
+@utility card-line {
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+/* Blue gradient text for a single run of text (not word-split headings: see .line in the hero). */
+@utility text-gradient {
+  background-image: linear-gradient(100deg, var(--color-deep) 0%, var(--color-brand) 60%, var(--color-steel) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 @utility text-outline {
   color: transparent;
-  -webkit-text-stroke: var(--outline-w, 1.5px) var(--outline-c, rgb(10 31 61 / 0.35));
+  -webkit-text-stroke: var(--outline-w, 1.5px) var(--outline-c, var(--color-brand));
 }
 
 @utility no-scrollbar {
@@ -208,14 +228,11 @@
     transform: translate3d(0, 32px, 0) scale(0.97);
   }
 }
-@keyframes header-shadow {
-  to {
-    box-shadow:
-      0 1px 0 var(--color-line),
-      0 12px 32px -24px rgb(10 31 61 / 0.35);
+@keyframes line-rise {
+  from {
+    transform: translate3d(0, 115%, 0);
   }
 }
-
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -224,6 +241,35 @@
     animation: rise 0.9s cubic-bezier(0.2, 0, 0, 1) both;
     animation-delay: var(--d, 0ms);
   }
+  /* Headline lines rising out of their masks on load (home hero). */
+  .line-in > .line {
+    animation: line-rise 1s cubic-bezier(0.2, 0.75, 0.15, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+  .float {
+    animation: var(--animate-float);
+    animation-delay: var(--float-delay, 0s);
+  }
+  /* WaveLines (components/ui/decor.tsx): each line slides one viewBox width, then repeats seamlessly. */
+  .wave-drift {
+    animation: wave-drift var(--wave-speed, 36s) linear infinite;
+  }
+}
+@keyframes wave-drift {
+  to {
+    transform: translate3d(-1440px, 0, 0);
+  }
+}
+
+/* A line of display type that rises out of a clip mask; padding keeps descenders inside the mask. */
+.line-mask {
+  display: block;
+  overflow: clip;
+  padding-block: 0.06em 0.12em;
+  margin-block: -0.06em -0.12em;
+}
+.line {
+  display: inline-block;
 }
 
 /* ———————— Motion system (components/motion) ———————— */
@@ -299,34 +345,6 @@
   }
 }
 
-/* ———————— Home hero (components/home/hero.tsx) ———————— */
-
-/* Allowances that keep hero content clear of the mobile browser toolbar (lvh − svh) and, below lg,
-   the quick-actions bar (MobileCtaBar: 1px border + 8px + 56px + bottom padding). */
-.hero {
-  --hero-gap: calc(100lvh - 100svh);
-  --hero-bar: calc(65px + max(0.5rem, env(safe-area-inset-bottom)));
-}
-@media (min-width: 64rem) {
-  .hero {
-    --hero-bar: 0px;
-  }
-}
-/* "Scroll" cue: a short line glides down its track. */
-@keyframes scroll-cue {
-  from {
-    transform: translate3d(0, -100%, 0);
-  }
-  to {
-    transform: translate3d(0, 200%, 0);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .scroll-cue {
-    animation: scroll-cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-  }
-}
-
 /* ———————— Smooth scrolling (components/motion/smooth-scroll.tsx, Lenis) ———————— */
 
 .lenis [data-lenis-prevent] {
@@ -349,10 +367,26 @@
   }
 }
 
+/* Floating buttons (WhatsApp) stay out of the way of the first screen, then fade in once the page is scrolled.
+   On large screens the home hero film fills the first screen, so the button waits until it has scrolled away. */
+@keyframes appear-on-scroll {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, 16px, 0) scale(0.92);
+  }
+}
 @supports (animation-timeline: scroll()) {
-  .header-shadow {
-    animation: header-shadow linear both;
-    animation-timeline: scroll();
-    animation-range: 0 120px;
+  @media (prefers-reduced-motion: no-preference) {
+    .appear-on-scroll {
+      animation: appear-on-scroll linear both;
+      animation-timeline: scroll();
+      animation-range: 120px 420px;
+    }
+    @media (min-width: 64rem) {
+      body:has([data-hero]) .appear-on-scroll {
+        animation-range: 100vh 130vh;
+      }
+    }
   }
 }

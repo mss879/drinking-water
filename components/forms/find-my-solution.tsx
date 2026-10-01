@@ -100,7 +100,7 @@ function Progress({ step }: { step: Step }) {
             <span
               className={cn(
                 "block h-full origin-left rounded-full transition-transform duration-500 ease-emph motion-reduce:transition-none",
-                i < step ? "bg-brand" : i === step ? "bg-sky" : "scale-x-0 bg-brand",
+                i < step ? "bg-brand" : i === step ? "bg-mist" : "scale-x-0 bg-brand",
               )}
             />
           </span>
@@ -149,10 +149,10 @@ function OptionList<T extends string>({
             onClick={() => onChoose(value)}
             className={cn(
               "group/opt flex min-h-24 w-full cursor-pointer items-center gap-4 rounded-card p-4 text-left ring-1 transition-[transform,box-shadow,background-color] duration-200 ease-emph hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] sm:gap-5 sm:p-5",
-              isSelected ? "bg-pastel ring-brand" : "bg-white ring-line hover:shadow-soft hover:ring-ink/25",
+              isSelected ? "bg-tint-2 ring-brand" : "bg-white ring-line hover:shadow-soft hover:ring-brand",
             )}
           >
-            <IconBadge variant={isSelected ? "ocean" : "pastel"} brandIcon={brand}>
+            <IconBadge variant={isSelected ? "deep" : "tint"} brandIcon={brand}>
               <Icon />
             </IconBadge>
             <span className="min-w-0 flex-1">
@@ -163,7 +163,7 @@ function OptionList<T extends string>({
               aria-hidden
               className={cn(
                 "grid size-10 shrink-0 place-items-center rounded-full transition-transform duration-200 ease-emph",
-                isSelected ? "bg-ink text-white" : "bg-frost text-ink group-hover/opt:translate-x-0.5",
+                isSelected ? "bg-deep text-white" : "bg-tint text-ink group-hover/opt:translate-x-0.5",
               )}
             >
               {isSelected ? <Check className="size-[18px]" strokeWidth={2} /> : <ArrowRight className="size-[18px]" strokeWidth={1.75} />}
@@ -226,11 +226,11 @@ function Result({
           <Sparkles aria-hidden className="text-brand" />
           Recommended solution
         </Pill>
-        <h2 id={headingId} ref={headingRef} tabIndex={-1} className="mt-5 text-h2 font-medium text-ink focus:outline-none">
+        <h2 id={headingId} ref={headingRef} tabIndex={-1} className="mt-5 text-h2 font-semibold text-ink focus:outline-none">
           {rec.headline}
         </h2>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Pill variant="pastel">{rec.plan}</Pill>
+          <Pill variant="tint">{rec.plan}</Pill>
           <Pill>{pathLabels[rec.path]}</Pill>
         </div>
         {rec.path === "rent" && from !== null && (
@@ -252,7 +252,7 @@ function Result({
 
         {rec.waterCheck && (
           <div className="mt-6 flex items-start gap-4 rounded-card-sm bg-white p-5 ring-1 ring-line">
-            <IconBadge variant="pastel" size="sm">
+            <IconBadge variant="tint" size="sm">
               <FlaskConical />
             </IconBadge>
             <p className="text-sm leading-relaxed text-muted">
@@ -263,7 +263,7 @@ function Result({
         )}
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href={action.href} variant="dark" size="lg" arrow>
+          <ButtonLink href={action.href} variant="primary" size="lg" arrow>
             {action.label}
           </ButtonLink>
           {product && (
@@ -278,7 +278,7 @@ function Result({
         <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-white sm:aspect-square lg:col-span-5 lg:self-start">
           <span
             aria-hidden
-            className="absolute top-[56%] left-1/2 size-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-pastel"
+            className="absolute top-[56%] left-1/2 size-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-tint-2"
           />
           <Image
             src={product.image}
@@ -368,7 +368,7 @@ export function FindMySolution({ className }: { className?: string }) {
   const question = questions[Math.min(step, 2)];
 
   return (
-    <div className={cn("relative overflow-hidden rounded-card-xl bg-frost p-5 sm:p-8 lg:p-12", className)}>
+    <div className={cn("relative overflow-hidden rounded-card-xl bg-tint p-5 sm:p-8 lg:p-12", className)}>
       <Progress step={step} />
 
       <div key={step} className="mt-8 animate-fade-up motion-reduce:animate-none sm:mt-10">
@@ -386,7 +386,7 @@ export function FindMySolution({ className }: { className?: string }) {
         ) : (
           <div className="grid gap-8 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-12">
             <div className="lg:col-span-5">
-              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-h2 font-medium text-ink focus:outline-none">
+              <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-h2 font-semibold text-ink focus:outline-none">
                 {question.title}
               </h2>
               <p className="mt-4 text-muted">{question.help}</p>
@@ -406,7 +406,7 @@ export function FindMySolution({ className }: { className?: string }) {
                   Back
                 </Button>
               ) : (
-                <p className="text-sm text-subtle">Three quick questions. No sign-up needed.</p>
+                <p className="text-sm text-muted">Three quick questions. No sign-up needed.</p>
               )}
             </div>
           </div>

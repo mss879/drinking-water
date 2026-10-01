@@ -71,10 +71,10 @@ export function ContactTabs({
               onClick={() => setActive(type)}
               className={cn(
                 "flex min-h-12 cursor-pointer items-center gap-2.5 rounded-card-sm px-3.5 py-2 text-left text-sm leading-tight font-medium transition-colors duration-200 sm:h-11 sm:min-h-0 sm:rounded-full sm:px-4 sm:py-0",
-                selected ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-line hover:ring-ink/30",
+                selected ? "bg-deep text-white" : "bg-white text-ink ring-1 ring-line hover:ring-brand",
               )}
             >
-              <Icon aria-hidden className={cn("size-4 shrink-0", selected ? "text-aqua" : "text-brand")} strokeWidth={1.75} />
+              <Icon aria-hidden className={cn("size-4 shrink-0", selected ? "text-mist" : "text-brand")} strokeWidth={1.75} />
               {leadForms[type].label}
             </button>
           );
@@ -96,7 +96,7 @@ export function ContactTabs({
           >
             {selected && (
               <>
-                <h2 className="text-h3 font-medium text-ink">{config.title}</h2>
+                <h2 className="font-display text-h3 font-bold text-ink">{config.title}</h2>
                 <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">{config.description}</p>
                 <LeadForm key={type} type={type} prefill={type === initialType ? prefill : undefined} className="mt-8" />
               </>

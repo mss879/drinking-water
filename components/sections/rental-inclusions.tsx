@@ -1,43 +1,75 @@
-import { ArrowUpRight } from "lucide-react";
-import { Accordion } from "@/components/ui/accordion";
+import { splitWords } from "@/components/motion/split-words";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { Rule } from "@/components/ui/decor";
+import { Highlight } from "@/components/ui/highlight";
+import type { BrandIconName } from "@/content/brand-icons";
 import { rentalInclusions } from "@/content/services";
 
-/** "One Monthly Payment. Complete Water Care." — laid out like the reference "Get Involved" list. */
+/** One 3D icon per inclusion, in the order of `rentalInclusions`. */
+const icons: BrandIconName[] = ["countertop", "wrench", "calendar", "filter", "headset", "shield"];
+
+/**
+ * "One monthly payment. Complete water care." as the GrowSphere capabilities list: the heading holds still on
+ * the left while the six inclusions scroll past on the right, each with its 3D icon; dividers draw as they come in.
+ */
 export function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
   return (
-    <section id="included" className="py-14 lg:py-20">
-      <Container>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <h2 className="max-w-3xl text-h2 font-medium text-ink">
-            One monthly payment. Complete water care.{" "}
-            <ArrowUpRight aria-hidden className="inline size-[0.8em] align-[-0.1em] text-brand" strokeWidth={1.5} />
-          </h2>
-          <p className="max-w-xs text-sm leading-relaxed text-muted lg:pb-2">
-            Rental is a service, not just a machine lease: equipment, installation, preventive maintenance and support according to your
-            agreed plan.
-          </p>
+    <section id="included" className="py-16 md:py-20 lg:py-28">
+      <Container className="grid gap-12 lg:grid-cols-12 lg:gap-10" data-no-reveal>
+        <div className="lg:col-span-5">
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+3rem)]">
+            {/* One idea per line: each sentence gets its own line at every width. */}
+            <h2
+              data-split
+              className="split font-display text-[length:clamp(1.6rem,0.9rem+3.4vw,2.9rem)] leading-[1.1] font-semibold tracking-[-0.025em] text-ink lg:text-[length:clamp(2.2rem,0.4rem+2.5vw,2.9rem)]"
+            >
+              {splitWords(
+                <>
+                  <span className="block whitespace-nowrap">One monthly payment.</span>{" "}
+                  <Highlight className="block whitespace-nowrap">Complete water care.</Highlight>
+                </>,
+              )}
+            </h2>
+            <p data-reveal="up" className="mt-6 max-w-sm leading-relaxed text-muted">
+              Rental is a service, not just a machine lease: equipment, installation, preventive maintenance and support according to your
+              agreed plan.
+            </p>
+            {showCta && (
+              <div data-reveal="up" className="mt-8">
+                <ButtonLink href="/rental" arrow>
+                  Explore rental
+                </ButtonLink>
+              </div>
+            )}
+          </div>
         </div>
-        <Accordion
-          className="mt-10"
-          defaultOpen={1}
-          items={rentalInclusions.map((item) => ({
-            title: item.lead,
-            content: (
-              <>
-                <strong className="font-medium text-ink">{item.title}.</strong> {item.body}
-              </>
-            ),
-          }))}
-        />
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-subtle">Exact inclusions are confirmed in your rental agreement.</p>
-          {showCta && (
-            <ButtonLink href="/rental" variant="dark" arrow className="w-full sm:w-auto">
-              Explore rental
-            </ButtonLink>
-          )}
+
+        <div className="lg:col-span-7">
+          <Rule />
+          <ol data-stagger>
+            {rentalInclusions.map((item, i) => (
+              <li key={item.title} className="group">
+                <div className="grid grid-cols-[auto_1fr] gap-5 py-7 sm:gap-8 sm:py-9">
+                  <div className="flex items-start gap-5 sm:gap-8">
+                    <span className="grid size-16 place-items-center rounded-card-sm bg-tint sm:size-20">
+                      <BrandIcon name={icons[i]} size={56} className="sm:size-16" />
+                    </span>
+                    <span aria-hidden className="h-full w-px bg-line" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-h3 font-semibold text-ink">{item.lead}</h3>
+                    <p className="mt-2 max-w-lg leading-relaxed text-muted">
+                      <strong className="font-semibold text-deep">{item.title}.</strong> {item.body}
+                    </p>
+                  </div>
+                </div>
+                <Rule />
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 text-sm text-muted">Exact inclusions are confirmed in your rental agreement.</p>
         </div>
       </Container>
     </section>

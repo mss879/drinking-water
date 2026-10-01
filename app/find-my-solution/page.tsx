@@ -5,10 +5,9 @@ import { FindMySolution } from "@/components/forms/find-my-solution";
 import { PageHero } from "@/components/sections/page-hero";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { Pill } from "@/components/ui/pill";
 import { site } from "@/content/site";
 import { pageMetadata } from "@/lib/seo";
 
@@ -59,18 +58,20 @@ export default function FindMySolutionPage() {
 
       <section className="pb-16 lg:pb-24">
         <Container>
-          <div className="grid gap-10 border-t border-line pt-12 lg:grid-cols-12 lg:gap-12 lg:pt-16">
-            <div className="lg:col-span-4">
-              <Pill>Why we ask</Pill>
-              <h2 className="mt-5 max-w-sm text-h3 font-medium text-ink">Three answers are all it takes to recommend the right system.</h2>
+          <div data-no-reveal className="grid gap-10 border-t border-line pt-12 lg:grid-cols-12 lg:gap-12 lg:pt-16">
+            <div data-reveal="up" className="lg:col-span-4">
+              <span className="label">Why we ask</span>
+              <h2 className="mt-5 max-w-sm font-display text-h3 font-bold text-ink">Three answers are all it takes to recommend the right system.</h2>
             </div>
-            <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6 lg:col-span-8">
+            <ul data-stagger className="grid gap-4 sm:grid-cols-3 lg:col-span-8">
               {reasons.map(({ icon: Icon, title, body }) => (
-                <li key={title}>
-                  <IconBadge variant="pastel">
-                    <Icon />
-                  </IconBadge>
-                  <h3 className="mt-5 text-lg font-medium text-ink">{title}</h3>
+                <li key={title} className="card-line p-6">
+                  <span className="grid size-14 place-items-center rounded-card-sm bg-tint">
+                    <IconBadge size="sm">
+                      <Icon />
+                    </IconBadge>
+                  </span>
+                  <h3 className="mt-6 font-display text-lg font-bold text-ink">{title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
                 </li>
               ))}
@@ -81,24 +82,24 @@ export default function FindMySolutionPage() {
 
       <section className="pb-14 lg:pb-20">
         <Container>
-          <div className="relative flex flex-col gap-8 overflow-hidden rounded-card-xl bg-pastel p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between lg:p-12">
-            <Rings className="absolute -right-20 -bottom-28 size-96 text-white" />
+          <div data-expand className="relative isolate flex flex-col gap-8 overflow-hidden rounded-card-xl bg-deep p-7 text-white sm:p-10 lg:flex-row lg:items-center lg:justify-between lg:p-12">
+            <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative max-w-xl">
-              <h2 className="text-h3 font-medium text-ink">Prefer to talk it through?</h2>
-              <p className="mt-3 text-muted">
+              <h2 className="font-display text-h3 font-bold">Prefer to talk it through?</h2>
+              <p className="mt-3 text-white">
                 Our team can recommend a system by phone or on WhatsApp, or you can{" "}
-                <Link href="/contact" className="font-medium text-ink underline decoration-sky underline-offset-4 transition-colors hover:decoration-brand">
+                <Link href="/contact" className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:text-mist">
                   send us an enquiry
                 </Link>
                 .
               </p>
-              <p className="mt-4 flex items-center gap-2 text-sm text-muted">
-                <Clock aria-hidden className="size-4 shrink-0 text-brand" />
+              <p className="mt-4 flex items-center gap-2 text-sm text-white">
+                <Clock aria-hidden className="size-4 shrink-0 text-mist" />
                 {site.contact.hours}
               </p>
             </div>
-            <div className="relative flex flex-col gap-3 sm:flex-row">
-              <a href={site.contact.phoneHref} className={buttonClasses({ variant: "dark", size: "lg" })}>
+            <div className="relative flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <a href={site.contact.phoneHref} className={buttonClasses({ variant: "white", size: "lg" })}>
                 <Phone aria-hidden className="size-4" />
                 {site.contact.phoneDisplay}
               </a>
@@ -106,7 +107,7 @@ export default function FindMySolutionPage() {
                 href={site.contact.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={buttonClasses({ variant: "white", size: "lg" })}
+                className={buttonClasses({ variant: "glass", size: "lg" })}
               >
                 <MessageCircle aria-hidden className="size-4" />
                 WhatsApp us

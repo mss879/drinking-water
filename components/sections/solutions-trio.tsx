@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { Container } from "@/components/ui/container";
 import { Highlight } from "@/components/ui/highlight";
 import { Pill } from "@/components/ui/pill";
@@ -39,13 +39,14 @@ export const solutions = [
   },
 ];
 
+/** Three outlined photo cards (the StomDent doctor cards): black & white photo, then title, text and a link. */
 export function SolutionsTrio({ showHeading = true }: { showHeading?: boolean }) {
   return (
-    <section className="py-14 lg:py-20">
+    <section className="py-16 md:py-20 lg:py-28">
       <Container>
         {showHeading && (
           <SectionHeading
-            align="center"
+            layout="split"
             eyebrow="LUSAKO Hydration Solutions"
             title={
               <>
@@ -55,27 +56,32 @@ export function SolutionsTrio({ showHeading = true }: { showHeading?: boolean })
             description="Buy for your home, rent for your office, or let us manage hydration across your whole organisation."
           />
         )}
-        <ul className={cn("grid gap-4 md:grid-cols-3", showHeading && "mt-12")}>
+        <ul className={cn("grid gap-4 md:grid-cols-3 lg:gap-5", showHeading && "mt-12 lg:mt-14")}>
           {solutions.map((solution) => (
             <li key={solution.label}>
-              <Link href={solution.href} className="group/card relative block aspect-[4/5] overflow-hidden rounded-card-xl bg-frost">
-                <Image
-                  src={solution.photo.src}
-                  alt=""
-                  fill
-                  sizes="(min-width: 768px) 33vw, 100vw"
-                  className={`object-cover transition-transform duration-700 ease-emph group-hover/card:scale-[1.04] ${solution.position}`}
-                />
-                <span aria-hidden className="absolute inset-0 bg-linear-to-b from-ink/30 via-transparent to-transparent" />
-                <Pill variant="glass" className="absolute top-5 left-5">
-                  {solution.label}
-                </Pill>
-                <span className="corner-tab max-w-[88%] p-5 pr-6 [--tab-r:28px] sm:p-6">
-                  <h3 className="text-h3 font-medium text-ink">{solution.title}</h3>
-                  <span className="mt-2 block text-sm leading-relaxed text-muted">{solution.body}</span>
-                  <span className="mt-4 inline-flex items-center gap-2 text-[15px] font-medium text-ink">
+              <Link
+                href={solution.href}
+                className="group/card card-line flex h-full flex-col p-2.5 transition-colors duration-300 hover:border-brand"
+              >
+                <span className="relative block aspect-[4/3] overflow-hidden rounded-card-sm">
+                  <Image
+                    src={solution.photo.src}
+                    alt=""
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    data-no-parallax
+                    className={`object-cover transition-transform duration-700 ease-emph group-hover/card:scale-[1.04] ${solution.position}`}
+                  />
+                  <Pill variant="white" className="absolute top-4 left-4">
+                    {solution.label}
+                  </Pill>
+                </span>
+                <span className="flex flex-1 flex-col px-3.5 pt-6 pb-4">
+                  <h3 className="font-display text-h3 font-bold text-ink">{solution.title}</h3>
+                  <span className="mt-2 block text-[15px] leading-relaxed text-muted">{solution.body}</span>
+                  <span className="mt-auto flex items-center gap-3 pt-7 text-sm font-semibold text-deep">
+                    <ArrowCircle variant="deep" className="size-10" />
                     {solution.cta}
-                    <ArrowUpRight aria-hidden className="size-4 transition-transform duration-200 group-hover/card:rotate-45" />
                   </span>
                 </span>
               </Link>

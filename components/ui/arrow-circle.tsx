@@ -2,13 +2,13 @@ import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const variants = {
-  white: "bg-white text-ink",
-  ink: "bg-ink text-white",
-  pastel: "bg-pastel text-ink",
-  outline: "border border-ink/20 text-ink",
+  white: "bg-white text-deep",
+  deep: "bg-deep text-white",
+  tint: "bg-tint-2 text-deep",
+  outline: "border border-line text-deep",
 } as const;
 
-/** Round arrow button used on cards; rotates when its `group/card` parent is hovered. */
+/** Round arrow on cards; it turns to point ahead when its `group/card` parent is hovered. */
 export function ArrowCircle({
   variant = "white",
   className,

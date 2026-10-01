@@ -1,113 +1,142 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
+import { ButtonArrow } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { SnapRow } from "@/components/ui/snap-row";
 import { planFor } from "@/content/pricing";
 import { getProduct } from "@/content/products";
-import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 
-/** BUY | RENT | CARE (+ CORPORATE) — the reference "Our Projects" card row. */
+/** "Find my solution" set round a ring (StomDent's round "find out prices" cell); the ring turns slowly. */
+function SolutionCircle() {
+  return (
+    <Link
+      href="/find-my-solution"
+      aria-label="Find my solution"
+      className="group/circle relative mx-auto grid aspect-square w-full max-w-[19rem] place-items-center overflow-hidden rounded-full bg-brand text-white transition-transform duration-500 ease-emph hover:scale-[1.03] md:max-w-none lg:w-[88%]"
+    >
+      <svg viewBox="0 0 200 200" aria-hidden className="absolute inset-[6%] animate-spin-slow motion-reduce:animate-none">
+        <defs>
+          <path id="solution-ring" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" />
+        </defs>
+        <text className="fill-white font-display text-[15.5px] font-bold tracking-[0.2em] uppercase">
+          <textPath href="#solution-ring">Find my solution • Find my solution •</textPath>
+        </text>
+      </svg>
+      <span className="grid size-20 place-items-center rounded-full bg-white text-deep transition-transform duration-500 ease-emph group-hover/circle:rotate-45 sm:size-24">
+        <svg viewBox="0 0 24 24" aria-hidden className="size-8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M7 17 17 7M8 7h9v9" />
+        </svg>
+      </span>
+    </Link>
+  );
+}
+
+/** BUY | RENT | CARE (+ CORPORATE) as the StomDent service grid: outlined cards, one solid feature, one circle. */
 export function ChooseYourWay() {
   const featured = getProduct("aquaelite-3x")!;
   const from = planFor("UF").fromMonthly;
 
-  const cards = [
-    {
-      title: "Rent",
-      line: "Complete hydration for one predictable monthly payment.",
-      meta: from ? `From ${formatLKR(from)}/month + VAT` : "Monthly plans",
-      cta: "Explore rental",
-      href: "/rental",
-      dark: false,
-    },
-    {
-      title: "Care",
-      line: "Professional installation, maintenance and technical support.",
-      meta: "LUSAKO Care",
-      cta: "Service & support",
-      href: "/service-support",
-      dark: false,
-    },
-    {
-      title: "Corporate",
-      line: "One partner for your workplace hydration, across one site or many.",
-      meta: "Corporate Hydration Solutions",
-      cta: "Talk to our team",
-      href: "/hydration-solutions/corporate",
-      dark: true,
-    },
-  ];
-
   return (
-    <section className="py-14 lg:py-20">
+    <section className="py-16 md:py-20 lg:py-28">
       <Container>
         <SectionHeading
           eyebrow="Choose your way"
           title={
             <>
-              Buy it. Rent it. <Highlight>We take care of it.</Highlight>
+              <span className="inline-block">Buy it. Rent it.</span> <Highlight className="inline-block">We take care of it.</Highlight>
             </>
           }
         />
-      </Container>
 
-      <SnapRow label="Ways to choose LUSAKO" className="mt-12">
-        <li className="w-[88vw] shrink-0 snap-start sm:w-[600px]">
-          <Link
-            href="/water-purifiers"
-            className="group/card grid h-full min-h-[21rem] gap-6 rounded-card-xl bg-frost p-6 transition-colors duration-300 hover:bg-ice sm:grid-cols-[1.1fr_1fr] sm:p-7"
-          >
-            <div className="flex flex-col">
-              <h3 className="text-h3 font-medium text-ink">Buy</h3>
-              <p className="mt-1 text-[15px] text-ink">Own your water purification system.</p>
-              <p className="mt-4 text-sm leading-relaxed text-muted">
-                Invest once in a LUSAKO purification system and enjoy reliable purified water for years.
-              </p>
-              <span className="mt-auto flex items-center justify-between gap-4 pt-8 text-sm font-medium text-ink">
-                Explore purifiers
-                <ArrowCircle />
-              </span>
-            </div>
-            <div className="relative min-h-56 overflow-hidden rounded-card bg-pastel">
-              <Rings className="absolute -right-12 -bottom-12 size-72 text-white" />
-              <Image
-                src={featured.image}
-                alt=""
-                fill
-                sizes="(min-width: 640px) 280px, 80vw"
-                className="object-contain p-7 transition-transform duration-500 ease-emph group-hover/card:scale-105"
-              />
-            </div>
-          </Link>
-        </li>
-
-        {cards.map((card) => (
-          <li key={card.title} className="w-[78vw] shrink-0 snap-start sm:w-[340px]">
+        <ul className="mt-12 grid gap-4 md:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
+          <li className="md:col-span-2">
             <Link
-              href={card.href}
-              className={cn(
-                "group/card relative flex h-full min-h-[21rem] flex-col overflow-hidden rounded-card-xl p-6 sm:p-7",
-                card.dark ? "bg-ocean text-white" : "bg-pastel text-ink",
-              )}
+              href="/water-purifiers"
+              className="group/card card-line grid h-full gap-6 p-6 transition-colors duration-300 hover:border-brand hover:bg-tint sm:grid-cols-[1.1fr_1fr] sm:p-8 lg:min-h-[24rem]"
             >
-              <span aria-hidden className={cn("absolute -right-16 -bottom-20 size-64 rounded-full", card.dark ? "bg-white/10" : "bg-white/45")} />
-              <span aria-hidden className={cn("absolute right-20 bottom-28 size-14 rounded-full", card.dark ? "bg-white/10" : "bg-white/60")} />
-              <h3 className="relative w-fit rounded-full bg-white px-4 py-2 text-xl font-medium text-ink">{card.title}</h3>
-              <p className="relative mt-6 text-lg leading-snug">{card.line}</p>
-              <p className={cn("relative mt-3 text-sm", card.dark ? "text-white/70" : "text-muted")}>{card.meta}</p>
-              <span className="relative mt-auto flex items-center justify-between gap-4 pt-8 text-sm font-medium">
-                {card.cta}
-                <ArrowCircle />
+              <div className="flex flex-col">
+                <h3 className="font-display text-[2rem] leading-none font-bold text-brand">Buy</h3>
+                <p className="mt-4 font-display text-xl font-semibold text-ink">Own your water purification system.</p>
+                <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-muted">
+                  Invest once in a LUSAKO purification system and enjoy reliable purified water for years.
+                </p>
+                <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold text-deep">
+                  <ArrowCircle variant="deep" className="size-10" />
+                  Explore purifiers
+                </span>
+              </div>
+              <div className="relative min-h-60 overflow-hidden rounded-card bg-tint-2">
+                <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-3/5 w-full text-brand/50" />
+                <Image
+                  src={featured.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 90vw"
+                  className="object-contain p-8 transition-transform duration-700 ease-emph group-hover/card:scale-105"
+                />
+              </div>
+            </Link>
+          </li>
+
+          <li>
+            <Link
+              href="/rental"
+              className="group/card relative flex h-full min-h-[19rem] flex-col overflow-hidden rounded-card bg-brand p-6 text-white sm:p-8 md:min-h-[22rem]"
+            >
+              <WaveLines lines={4} className="absolute inset-x-0 -bottom-6 h-1/2 w-full text-white/35" />
+              <h3 className="relative font-display text-[2rem] leading-none font-bold">Rent</h3>
+              <p className="relative mt-4 font-display text-xl leading-snug font-bold">Complete hydration for one predictable monthly payment.</p>
+              <p className="relative mt-5 w-fit rounded-full bg-white px-3.5 py-1.5 text-[13px] font-semibold text-deep">
+                {from ? `From ${formatLKR(from)}/month + VAT` : "Monthly plans"}
+              </p>
+              <span className="relative mt-auto flex w-fit items-center gap-3 rounded-full bg-white py-1.5 pr-1.5 pl-5 text-sm font-semibold text-deep">
+                Explore rental
+                <ButtonArrow variant="white" size="sm" />
               </span>
             </Link>
           </li>
-        ))}
-      </SnapRow>
+
+          <li>
+            <Link
+              href="/service-support"
+              className="group/card card-line flex h-full flex-col p-6 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-8 md:min-h-[22rem]"
+            >
+              <h3 className="font-display text-[2rem] leading-none font-bold text-brand">Care</h3>
+              <p className="mt-4 font-display text-xl leading-snug font-semibold text-ink">
+                Professional installation, maintenance and technical support.
+              </p>
+              <p className="mt-3 text-sm font-medium text-muted">LUSAKO Care</p>
+              <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold text-deep">
+                <ArrowCircle variant="deep" className="size-10" />
+                Service &amp; support
+              </span>
+            </Link>
+          </li>
+
+          <li>
+            <Link
+              href="/hydration-solutions/corporate"
+              className="group/card relative flex h-full flex-col overflow-hidden rounded-card bg-ink p-6 text-white transition-colors duration-300 hover:bg-deep sm:p-8 md:min-h-[22rem]"
+            >
+              <h3 className="font-display text-[2rem] leading-none font-bold">Corporate</h3>
+              <p className="mt-4 font-display text-xl leading-snug font-semibold">One partner for your workplace hydration, across one site or many.</p>
+              <p className="mt-3 text-sm font-medium text-mist">Corporate Hydration Solutions</p>
+              <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold">
+                <ArrowCircle variant="white" className="size-10" />
+                Talk to our team
+              </span>
+            </Link>
+          </li>
+
+          <li className="flex items-center justify-center py-4 md:py-0">
+            <SolutionCircle />
+          </li>
+        </ul>
+      </Container>
     </section>
   );
 }

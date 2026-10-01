@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Droplets, KeyRound, PiggyBank, ShieldCheck, Wrench, type LucideIcon } from "lucide-react";
 import { ProductCatalog } from "@/components/products/product-catalog";
-import { ArchCta } from "@/components/sections/arch-cta";
+import { CtaBand } from "@/components/sections/cta-band";
 import { BuyVsRent } from "@/components/sections/buy-vs-rent";
 import { FaqSection } from "@/components/sections/faq-section";
 import { PageHero } from "@/components/sections/page-hero";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { Pill } from "@/components/ui/pill";
@@ -90,23 +90,23 @@ const itemList = {
 /** "Which purifier is right for me?" — the brief's decision tool, closing the catalogue (Doc 2 §5). */
 function DecisionCard() {
   return (
-    <div className="relative mt-6 overflow-hidden rounded-card-xl bg-frost p-6 sm:p-8 lg:p-10">
-      <Rings count={8} className="absolute -top-28 -right-28 size-96 text-white" />
+    <div data-reveal="up" className="card-line relative mt-6 overflow-hidden rounded-card-xl p-6 sm:p-8 lg:p-10">
+      <WaveLines lines={3} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-brand/30" />
       <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex gap-6">
           <div className="relative hidden size-20 shrink-0 overflow-hidden rounded-full sm:block">
             <Image src={photos.waterTest.src} alt="" fill sizes="80px" className="object-cover" />
           </div>
           <div>
-            <h3 className="text-h3 font-medium text-ink">Which purifier is right for me?</h3>
+            <h3 className="font-display text-h3 font-bold text-ink">Which purifier is right for me?</h3>
             <p className="mt-2 max-w-xl text-muted">
               Answer three quick questions and we’ll recommend the right system and purification for your water.
             </p>
             <ol className="mt-5 flex flex-wrap gap-2">
               {questions.map((question, i) => (
                 <li key={question}>
-                  <Pill variant="white">
-                    <span aria-hidden className="font-semibold text-brand">
+                  <Pill variant="tint">
+                    <span aria-hidden className="font-bold text-deep">
                       {i + 1}
                     </span>
                     {question}
@@ -116,7 +116,7 @@ function DecisionCard() {
             </ol>
           </div>
         </div>
-        <ButtonLink href="/find-my-solution" variant="dark" size="lg" arrow className="w-full sm:w-fit">
+        <ButtonLink href="/find-my-solution" variant="primary" size="lg" arrow className="w-full sm:w-fit">
           Find my solution
         </ButtonLink>
       </div>
@@ -126,47 +126,45 @@ function DecisionCard() {
 
 function WhyOwn() {
   return (
-    <section className="py-14 lg:py-20">
+    <section className="py-16 md:py-20 lg:py-28">
       <Container>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <SectionHeading
-            eyebrow="Why buy"
-            title={
-              <>
-                Why own a <Highlight>LUSAKO system</Highlight>
-              </>
-            }
-          />
-          <p className="max-w-sm text-muted lg:pb-2">
-            For most homes, buying is the best long-term value. The system is yours, it’s covered by warranty, and LUSAKO Care is there
-            whenever you need us.
-          </p>
-        </div>
+        <SectionHeading
+          layout="split"
+          eyebrow="Why buy"
+          title={
+            <>
+              Why own a <Highlight className="inline-block">LUSAKO system</Highlight>
+            </>
+          }
+          description="For most homes, buying is the best long-term value. The system is yours, it’s covered by warranty, and LUSAKO Care is there whenever you need us."
+        />
 
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
           {reasons.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="flex min-h-60 flex-col rounded-card bg-frost p-6 sm:p-7">
-              <IconBadge variant="white">
-                <Icon />
-              </IconBadge>
-              <h3 className="mt-auto pt-10 text-h3 font-medium text-ink">{title}</h3>
+            <li key={title} className="card-line flex flex-col p-6 sm:min-h-60 sm:p-7">
+              <span className="grid size-16 place-items-center rounded-card-sm bg-tint">
+                <IconBadge size="sm">
+                  <Icon />
+                </IconBadge>
+              </span>
+              <h3 className="mt-auto pt-6 font-display text-h3 font-bold text-ink sm:pt-10">{title}</h3>
               <p className="mt-2 text-[15px] leading-relaxed text-muted">{body}</p>
             </li>
           ))}
           <li>
             <Link
               href="/service-support"
-              className="group/card relative flex h-full min-h-60 flex-col overflow-hidden rounded-card bg-ocean p-6 text-white sm:p-7"
+              className="group/card relative flex h-full flex-col overflow-hidden rounded-card bg-deep p-6 sm:min-h-60 text-white transition-colors duration-300 hover:bg-deep-hover sm:p-7"
             >
-              <Rings className="absolute -right-20 -bottom-20 size-72 text-aqua/25" />
+              <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />
               <span className="relative flex items-start justify-between gap-4">
                 <IconBadge variant="white" framed>
                   <Wrench />
                 </IconBadge>
                 <ArrowCircle />
               </span>
-              <h3 className="relative mt-auto pt-10 text-h3 font-medium">LUSAKO Care</h3>
-              <span className="relative mt-2 block text-[15px] leading-relaxed text-white/75">
+              <h3 className="relative mt-auto pt-6 font-display text-h3 font-bold sm:pt-10">LUSAKO Care</h3>
+              <span className="relative mt-2 block text-[15px] leading-relaxed text-white">
                 After-sales support whenever you need it: installation, preventive maintenance, filter replacement and technical support
                 through a service plan or AMC.
               </span>
@@ -181,38 +179,38 @@ function WhyOwn() {
 /** A compact UF / RO explainer: city water → UF, well water / higher TDS → RO (brief Doc 1 §14). */
 function UfOrRo() {
   return (
-    <section id="uf-or-ro" className="py-14 lg:py-20">
+    <section id="uf-or-ro" className="py-16 md:py-20 lg:py-28">
       <Container>
-        <div className="relative overflow-hidden rounded-card-xl bg-frost p-6 sm:p-10 lg:p-14">
-          <Rings count={8} className="absolute -bottom-48 -left-48 size-[32rem] text-white" />
-          <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
+        <div data-expand className="relative isolate overflow-hidden rounded-card-xl bg-tint-2 p-6 sm:p-10 lg:p-14">
+          <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-brand/35" />
+          <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16" data-no-reveal>
+            <div data-reveal="up">
               <Pill variant="white">UF or RO?</Pill>
-              <h2 className="mt-5 text-h2 font-medium text-ink">
+              <h2 className="mt-5 text-h2 font-semibold text-ink">
                 Matched to <Highlight>your water</Highlight>
               </h2>
               <p className="mt-5 max-w-md text-lead text-muted">
                 You don’t need to be a water expert. Tell us where your water comes from and we’ll recommend the right purification.
               </p>
-              <ButtonLink href="/find-my-solution" variant="dark" arrow className="mt-8 w-full sm:w-auto">
+              <ButtonLink href="/find-my-solution" variant="primary" arrow className="mt-8 w-full sm:w-auto">
                 Check my water
               </ButtonLink>
             </div>
 
             <div>
-              <ul className="grid gap-3">
+              <ul data-stagger className="grid gap-3">
                 {waterMatches.map((match) => (
-                  <li key={match.tech} className="rounded-card bg-white p-5 sm:p-6">
+                  <li key={match.tech} className="rounded-card bg-white p-5 shadow-soft sm:p-6">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <p className="min-w-0 flex-1">
-                        <span className="block text-sm text-subtle">If you have</span>
-                        <span className="block text-lg leading-snug font-medium text-ink">{match.source}</span>
+                        <span className="block text-sm text-muted">If you have</span>
+                        <span className="block font-display text-lg leading-snug font-bold text-ink">{match.source}</span>
                       </p>
-                      <ArrowRight aria-hidden className="size-5 shrink-0 text-brand" />
+                      <ArrowRight aria-hidden className="size-5 shrink-0 text-deep" />
                       <p
                         className={cn(
-                          "grid size-14 shrink-0 place-items-center rounded-full text-lg font-semibold",
-                          match.dark ? "bg-ocean text-white" : "bg-pastel text-ink",
+                          "grid size-14 shrink-0 place-items-center rounded-full font-display text-lg font-bold",
+                          match.dark ? "bg-deep text-white" : "bg-brand text-white",
                         )}
                       >
                         <span className="sr-only">we recommend </span>
@@ -220,12 +218,12 @@ function UfOrRo() {
                       </p>
                     </div>
                     <p className="mt-4 border-t border-line pt-4 text-sm leading-relaxed text-muted">
-                      <strong className="font-medium text-ink">{match.name}.</strong> {match.body}
+                      <strong className="font-semibold text-deep">{match.name}.</strong> {match.body}
                     </p>
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-sm text-subtle">RO also suits city water. The final recommendation depends on your water condition.</p>
+              <p className="mt-4 text-sm text-muted">RO also suits city water. The final recommendation depends on your water condition.</p>
             </div>
           </div>
         </div>
@@ -249,32 +247,28 @@ export default function WaterPurifiersPage() {
         description="Invest once in a LUSAKO purification system and enjoy reliable purified water for years. Find the right system for your water and lifestyle."
         actions={
           <>
-            <ButtonLink href="/find-my-solution" variant="pastel" size="lg" arrow>
+            <ButtonLink href="/find-my-solution" variant="outline" size="lg" arrow>
               Find my solution
             </ButtonLink>
-            <ButtonLink href="/contact?type=buy" variant="dark" size="lg" arrow>
+            <ButtonLink href="/contact?type=buy" variant="primary" size="lg" arrow>
               Get a quote
             </ButtonLink>
           </>
         }
       />
 
-      <section id="catalogue" aria-label="Water purifier catalogue" className="pt-4 pb-14 lg:pt-6 lg:pb-20">
+      <section id="catalogue" aria-label="Water purifier catalogue" className="pb-16 md:pb-20 lg:pb-28">
         <Container>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <SectionHeading
-              eyebrow="Catalogue"
-              title={
-                <>
-                  Choose your <Highlight>purifier</Highlight>
-                </>
-              }
-            />
-            <p className="max-w-sm text-muted lg:pb-2">
-              Countertop, freestanding and sparkling purifiers, plus a bottle dispenser. Filter by type or purification, or let us recommend
-              one.
-            </p>
-          </div>
+          <SectionHeading
+            layout="split"
+            eyebrow="Catalogue"
+            title={
+              <>
+                Choose your <Highlight>purifier</Highlight>
+              </>
+            }
+            description="Countertop, freestanding and sparkling purifiers, plus a bottle dispenser. Filter by type or purification, or let us recommend one."
+          />
           <ProductCatalog className="mt-10 lg:mt-12" purificationHelpHref="#uf-or-ro" />
           <DecisionCard />
         </Container>
@@ -284,7 +278,7 @@ export default function WaterPurifiersPage() {
       <UfOrRo />
       <BuyVsRent />
       <FaqSection faqs={faqs.filter((faq) => faq.topic === "buying" || faq.topic === "purification")} />
-      <ArchCta />
+      <CtaBand />
     </>
   );
 }

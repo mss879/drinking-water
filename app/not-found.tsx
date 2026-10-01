@@ -4,11 +4,10 @@ import Link from "next/link";
 import { Building2, Droplets, House, MessageCircle, type LucideIcon } from "lucide-react";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { Container } from "@/components/ui/container";
-import { PixelCluster } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { Pill } from "@/components/ui/pill";
-import { photos } from "@/content/images";
 
 // Next.js adds `noindex` to 404 responses automatically.
 export const metadata: Metadata = {
@@ -25,22 +24,25 @@ const links: { href: string; label: string; hint: string; icon: LucideIcon }[] =
 
 export default function NotFound() {
   return (
-    <section className="relative overflow-hidden pt-10 pb-14 lg:pt-14 lg:pb-20">
-      <PixelCluster className="absolute top-24 left-[4%] hidden size-14 lg:block" />
-      <PixelCluster variant="b" className="absolute top-60 right-[5%] hidden size-12 lg:block" />
+    <section className="relative isolate overflow-x-clip pt-10 pb-16 md:pb-20 lg:pt-14 lg:pb-28">
+      <WaveLines lines={3} className="pointer-events-none absolute inset-x-0 top-16 -z-10 h-64 w-full text-brand/15" />
       <Container className="relative flex flex-col items-center text-center">
-        <div aria-hidden className="rise flex items-center justify-center gap-3 sm:gap-6">
-          <span className="text-mega font-bold text-outline [--outline-w:2px]">4</span>
-          <span className="relative shrink-0 rounded-full border border-line p-2 sm:p-3">
-            <span className="relative block size-[clamp(5.5rem,17vw,10.5rem)] overflow-hidden rounded-full">
-              <Image src={photos.waterRipple.src} alt="" fill sizes="(min-width: 1024px) 168px, 18vw" className="object-cover" />
-            </span>
+        {/* 4 ◯ 4: the LUSAKO drop "o" stands in for the zero. */}
+        <div
+          aria-hidden
+          className="rise flex items-center justify-center gap-[0.12em] font-display text-mega font-extrabold"
+        >
+          <span className="text-outline [--outline-w:2px]">4</span>
+          <span className="float relative block size-[0.95em] shrink-0">
+            <Image src="/brand/lusako-mark.svg" alt="" fill sizes="(min-width: 728px) 152px, 21vw" className="object-contain drop-shadow-icon" />
           </span>
-          <span className="text-mega font-bold text-ink">4</span>
+          <span className="text-brand">4</span>
         </div>
 
-        <Pill className="rise mt-10">Error 404</Pill>
-        <h1 className="rise mt-6 max-w-[18ch] text-display font-medium text-ink">
+        <Pill variant="tint" className="rise mt-10">
+          Error 404
+        </Pill>
+        <h1 className="rise mt-6 max-w-[18ch] text-display font-bold text-ink">
           We can’t find <Highlight>that page</Highlight>
         </h1>
         <p className="rise mt-6 max-w-xl text-lead text-muted">
@@ -52,16 +54,16 @@ export default function NotFound() {
             <li key={href}>
               <Link
                 href={href}
-                className="group/card flex h-full items-center gap-4 rounded-card bg-frost p-4 transition-colors duration-300 hover:bg-ice sm:p-5"
+                className="group/card card-line flex h-full items-center gap-4 p-4 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-5"
               >
-                <IconBadge variant="white">
+                <IconBadge>
                   <Icon />
                 </IconBadge>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-medium text-ink">{label}</span>
+                  <span className="block font-display font-bold text-ink">{label}</span>
                   <span className="block text-sm text-muted">{hint}</span>
                 </span>
-                <ArrowCircle variant="pastel" />
+                <ArrowCircle variant="deep" />
               </Link>
             </li>
           ))}
@@ -71,7 +73,7 @@ export default function NotFound() {
           Not sure where to start?{" "}
           <Link
             href="/find-my-solution"
-            className="font-medium text-ink underline decoration-sky underline-offset-4 transition-colors hover:decoration-brand"
+            className="font-semibold text-deep underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:decoration-deep"
           >
             Find my solution
           </Link>

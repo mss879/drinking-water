@@ -7,8 +7,8 @@ import officePantry from "@/public/images/office-pantry.jpg";
 import careTechnician from "@/public/images/care-technician.jpg";
 import corporateTeam from "@/public/images/corporate-team.jpg";
 import waterTest from "@/public/images/water-test.jpg";
-import waterRipple from "@/public/images/water-ripple.jpg";
 import waterPour from "@/public/images/water-pour.jpg";
+import waterRibbonImage from "@/public/images/3d/water-ribbon.webp";
 
 export const photos = {
   heroHome: { src: heroHome, alt: "A mother and daughter filling glasses from a countertop water purifier in a bright kitchen" },
@@ -16,6 +16,11 @@ export const photos = {
   careTechnician: { src: careTechnician, alt: "A LUSAKO technician replacing a filter inside a water purifier" },
   corporateTeam: { src: corporateTeam, alt: "An office team sharing glasses of purified water around a freestanding purifier" },
   waterTest: { src: waterTest, alt: "A technician testing a glass of water with a digital TDS meter" },
-  waterRipple: { src: waterRipple, alt: "Clear water rippling in soft blue light" },
   waterPour: { src: waterPour, alt: "Pure water being poured into a glass" },
 };
+
+/**
+ * 3D centrepiece: a liquid-water ribbon looping into an infinity sign (Higgsfield gpt_image_2_5, then locked to
+ * the brand sheet's blue strip with scripts/brand-recolor.py). Decorative wherever it appears.
+ */
+export const waterRibbon = { src: waterRibbonImage, alt: "" };

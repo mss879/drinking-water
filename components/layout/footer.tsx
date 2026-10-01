@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { WaveLines } from "@/components/ui/decor";
 import { Logo } from "@/components/ui/logo";
 import { products } from "@/content/products";
 import { footerNav, site, type NavLink } from "@/content/site";
@@ -10,11 +11,12 @@ import { footerNav, site, type NavLink } from "@/content/site";
 function FooterColumn({ title, links }: { title: string; links: NavLink[] }) {
   return (
     <div>
-      <h2 className="text-xs font-medium tracking-[0.18em] text-white/55 uppercase">{title}</h2>
-      <ul className="mt-5 grid gap-3">
+      <h2 className="font-display text-xs font-bold tracking-[0.18em] text-mist uppercase">{title}</h2>
+      {/* The rhythm comes from each link's own padding, so the whole row is a comfortable tap target. */}
+      <ul className="mt-3.5">
         {links.map((link) => (
           <li key={link.label}>
-            <Link href={link.href} className="text-[15px] text-white/85 transition-colors hover:text-white">
+            <Link href={link.href} className="inline-block py-1.5 text-[15px] text-white transition-colors hover:text-brand">
               {link.label}
             </Link>
           </li>
@@ -33,8 +35,9 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative z-10 overflow-hidden rounded-t-[40px] bg-abyss text-white lg:rounded-t-[56px]">
-      <Container className="pt-16 pb-36 lg:pt-20 lg:pb-12">
+    <footer className="relative z-10 overflow-hidden bg-ink text-white">
+      <WaveLines lines={3} className="absolute inset-x-0 -top-10 h-40 w-full text-brand/40" />
+      <Container className="relative pt-20 pb-36 lg:pt-24 lg:pb-12">
         <div className="grid gap-14 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-4">
             <Image
@@ -45,8 +48,8 @@ export function Footer() {
               unoptimized
               className="h-auto w-[210px]"
             />
-            <p className="mt-7 text-2xl leading-snug">Better water. Better way.</p>
-            <p className="mt-3 max-w-sm text-white/65">
+            <p className="mt-8 font-display text-2xl leading-snug font-semibold">Better water. Better way.</p>
+            <p className="mt-3 max-w-sm text-mist">
               Water purification and hydration solutions for homes, offices and organisations across Sri Lanka.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -57,7 +60,7 @@ export function Footer() {
                 href={site.contact.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 px-6 text-[15px] font-medium transition-colors hover:bg-white/10"
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 px-6 text-sm font-semibold transition-colors hover:border-brand hover:text-brand"
               >
                 <MessageCircle aria-hidden className="size-4" /> WhatsApp
               </a>
@@ -74,12 +77,14 @@ export function Footer() {
           </div>
         </div>
 
-        <ul className="mt-14 grid gap-5 border-t border-white/10 pt-8 text-sm text-white/70 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-16 grid gap-5 border-t border-muted pt-8 text-sm text-white sm:grid-cols-2 lg:grid-cols-4">
           {contact.map(({ icon: Icon, label, href }) => (
             <li key={label} className="flex items-center gap-3">
-              <Icon aria-hidden className="size-4 shrink-0 text-aqua" />
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-deep">
+                <Icon aria-hidden className="size-4 text-white" />
+              </span>
               {href ? (
-                <a href={href} className="transition-colors hover:text-white">
+                <a href={href} className="py-2 transition-colors hover:text-brand">
                   {label}
                 </a>
               ) : (
@@ -89,11 +94,11 @@ export function Footer() {
           ))}
         </ul>
 
-        <div data-wordmark className="mx-auto mt-12 w-full max-w-[1100px] opacity-[0.06] select-none">
-          <Logo inverted className="h-auto w-full" />
+        <div data-wordmark className="mx-auto mt-14 w-full max-w-[1100px] opacity-20 select-none">
+          <Logo className="h-auto w-full" />
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 text-xs text-mist sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} LUSAKO. All rights reserved.</p>
           <p className="tracking-[0.22em]">BUY • RENT • HYDRATE • CARE</p>
         </div>

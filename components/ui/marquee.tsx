@@ -2,28 +2,36 @@ import { Droplet } from "lucide-react";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 
-/** Endless ticker band. Pauses on hover; static for reduced-motion users. */
+const tones = {
+  // Large type only on #278CF0, so white text keeps enough contrast.
+  brand: { band: "bg-brand text-white", drop: "fill-white text-white" },
+  tint: { band: "bg-tint-2 text-deep", drop: "fill-brand text-brand" },
+  ink: { band: "bg-ink text-white", drop: "fill-brand text-brand" },
+} as const;
+
+/** Endless ticker band. Speed follows the scroll (MotionRoot); pauses on hover; static for reduced motion. */
 export function Marquee({
   items,
-  tone = "pastel",
+  tone = "brand",
   duration = 45,
   className,
 }: {
   items: string[];
-  tone?: "pastel" | "ink";
+  tone?: keyof typeof tones;
   duration?: number;
   className?: string;
 }) {
+  const t = tones[tone];
   const row = (
     <ul className="flex shrink-0 items-center">
       {[0, 1, 2].flatMap((copy) =>
         items.map((item) => (
           <li
             key={`${copy}-${item}`}
-            className="flex items-center gap-6 pr-6 text-sm font-medium whitespace-nowrap sm:gap-8 sm:pr-8 sm:text-[15px]"
+            className="flex items-center gap-8 pr-8 font-display text-2xl font-bold tracking-[-0.01em] whitespace-nowrap uppercase sm:gap-10 sm:pr-10 sm:text-[1.75rem]"
           >
             {item}
-            <Droplet className={cn("size-3.5", tone === "pastel" ? "fill-brand text-brand" : "fill-aqua text-aqua")} />
+            <Droplet className={cn("size-5", t.drop)} />
           </li>
         )),
       )}
@@ -31,7 +39,7 @@ export function Marquee({
   );
 
   return (
-    <div className={cn("group relative flex overflow-hidden py-3.5", tone === "pastel" ? "bg-pastel text-ink" : "bg-ink text-white", className)}>
+    <div className={cn("group relative flex overflow-hidden py-6 sm:py-7", t.band, className)}>
       <p className="sr-only">{items.join(". ")}</p>
       <div
         aria-hidden

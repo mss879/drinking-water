@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
-import { Rings } from "@/components/ui/decor";
+import { WaveLines } from "@/components/ui/decor";
 import { IconBadge } from "@/components/ui/icon-badge";
 import {
   buildRentalQuote,
@@ -50,15 +50,15 @@ const purificationOptions = rentalPlans.flatMap((plan) =>
 );
 
 const field =
-  "block w-full rounded-chip border border-line bg-white text-ink transition-[border-color,box-shadow] duration-200 hover:border-ink/25 focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:outline-none";
+  "block w-full rounded-chip border border-line bg-white text-ink transition-[border-color,box-shadow] duration-200 hover:border-brand focus-visible:border-brand focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:outline-none";
 
 const segment =
   "relative cursor-pointer select-none font-medium transition-colors duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand";
 
 const stepper =
-  "grid size-12 shrink-0 cursor-pointer place-items-center rounded-full border border-line bg-white text-ink transition-colors duration-200 hover:border-ink/30 aria-disabled:cursor-not-allowed aria-disabled:opacity-40";
+  "grid size-12 shrink-0 cursor-pointer place-items-center rounded-full border border-line bg-white text-ink transition-colors duration-200 hover:border-brand aria-disabled:cursor-not-allowed aria-disabled:opacity-40";
 
-const inlineLink = "font-medium text-ink underline decoration-sky underline-offset-4 transition-colors hover:decoration-brand";
+const inlineLink = "font-medium text-ink underline decoration-brand underline-offset-4 transition-colors hover:decoration-deep";
 
 const isProvinceId = (value: string): value is ProvinceId => provinces.some((p) => p.id === value);
 const provinceLabel = (id: ProvinceId) => provinces.find((p) => p.id === id)?.label ?? id;
@@ -78,7 +78,7 @@ function Step({ children, done = false }: { children: ReactNode; done?: boolean 
       aria-hidden
       className={cn(
         "grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold transition-colors duration-200",
-        done ? "bg-ink text-white" : "bg-pastel text-ink",
+        done ? "bg-deep text-white" : "bg-tint-2 text-ink",
       )}
     >
       {done ? <Check className="size-3.5" strokeWidth={2.5} /> : children}
@@ -170,7 +170,7 @@ export function RentalCalculator({ className }: { className?: string }) {
     );
 
   return (
-    <div className={cn("grid gap-2.5 rounded-card-xl bg-frost p-2.5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]", className)}>
+    <div className={cn("grid gap-2.5 rounded-card-xl bg-tint p-2.5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]", className)}>
       <div className="flex flex-col gap-9 rounded-card bg-white p-5 sm:p-8 lg:p-10">
         <div>
           <label htmlFor={`${uid}-province`} className="flex items-center gap-3 text-[15px] font-medium text-ink">
@@ -193,7 +193,7 @@ export function RentalCalculator({ className }: { className?: string }) {
                 </option>
               ))}
             </select>
-            <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-subtle" />
+            <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted" />
           </div>
           <p id={`${uid}-province-hint`} className="mt-2 text-sm text-muted">
             We ask first, because rentals outside the Western Province include the Regional Hydration Service.
@@ -207,14 +207,14 @@ export function RentalCalculator({ className }: { className?: string }) {
               Who is it for?
             </span>
           </legend>
-          <div className="mt-3 grid grid-cols-3 gap-1 rounded-full bg-frost p-1">
+          <div className="mt-3 grid grid-cols-3 gap-1 rounded-full bg-tint p-1">
             {customerOptions.map(({ id, label, icon: Icon }) => (
               <label
                 key={id}
                 className={cn(
                   segment,
-                  "flex h-11 items-center justify-center gap-2 rounded-full text-[15px]",
-                  customer === id ? "bg-ink text-white" : "text-ink hover:bg-white",
+                  "flex h-11 items-center justify-center gap-2 rounded-full text-[13px] min-[360px]:text-[15px]",
+                  customer === id ? "bg-deep text-white" : "text-ink hover:bg-white",
                 )}
               >
                 <input
@@ -250,8 +250,8 @@ export function RentalCalculator({ className }: { className?: string }) {
                   key={option.filtration}
                   className={cn(
                     segment,
-                    "flex items-center justify-between gap-4 rounded-card-sm border p-4 sm:flex-col sm:items-start sm:justify-start sm:gap-2",
-                    selected ? "border-ink bg-ink text-white" : "border-line bg-white text-ink hover:border-ink/30",
+                    "flex flex-col items-start gap-2 rounded-card-sm border p-4",
+                    selected ? "border-deep bg-deep text-white" : "border-line bg-white text-ink hover:border-brand",
                   )}
                 >
                   <input
@@ -264,7 +264,7 @@ export function RentalCalculator({ className }: { className?: string }) {
                   />
                   <span className="min-w-0">
                     <span className="block text-[15px]">{option.plan.name}</span>
-                    <span className={cn("block text-[13px] leading-snug font-normal", selected ? "text-white/75" : "text-muted")}>
+                    <span className={cn("mt-0.5 block text-[13px] leading-snug font-normal", selected ? "text-white/85" : "text-muted")}>
                       {option.plan.stages} · {option.plan.bestFor}
                     </span>
                   </span>
@@ -335,11 +335,11 @@ export function RentalCalculator({ className }: { className?: string }) {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-card bg-ocean p-5 text-white sm:p-8 lg:p-10">
-        <Rings count={6} className="absolute -top-28 -right-28 size-80 text-white/10" />
+      <div className="relative overflow-hidden rounded-card bg-deep p-5 text-white sm:p-8 lg:p-10">
+        <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />
         <div className="relative flex h-full flex-col">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-h3 font-medium">Your rental estimate</h3>
+            <h3 className="font-display text-h3 font-bold">Your rental estimate</h3>
             {province && <span className="rounded-full bg-white/15 px-3 py-1 text-[13px] font-medium">{provinceLabel(province)}</span>}
           </div>
           <p aria-live="polite" aria-atomic="true" className="sr-only">
@@ -358,18 +358,18 @@ export function RentalCalculator({ className }: { className?: string }) {
                       ) : (
                         <span className="text-[15px] font-medium whitespace-nowrap tabular-nums">
                           {formatLKR(line.amount)}
-                          {line.kind === "monthly" && <span className="text-sm font-normal text-white/70">/month</span>}
+                          {line.kind === "monthly" && <span className="text-sm font-normal text-white/85">/month</span>}
                         </span>
                       )}
                     </dd>
-                    <dd className="col-span-2 text-sm leading-relaxed text-white/70">{lineDetail(line)}</dd>
+                    <dd className="col-span-2 text-sm leading-relaxed text-white/85">{lineDetail(line)}</dd>
                   </div>
                 ))}
               </dl>
 
               <dl className="mt-6 grid gap-2 sm:grid-cols-2">
                 <div className="rounded-card-sm bg-white/10 p-4">
-                  <dt className="text-sm text-white/75">Due in the first month</dt>
+                  <dt className="text-sm text-white/85">Due in the first month</dt>
                   <dd className="mt-1">
                     {quote.firstMonth !== null ? (
                       <span className="text-[1.625rem] leading-tight font-medium tracking-[-0.02em] tabular-nums">
@@ -398,7 +398,7 @@ export function RentalCalculator({ className }: { className?: string }) {
               </dl>
 
               <p className="mt-5 flex gap-3 text-sm leading-relaxed text-white/80">
-                <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-aqua" />
+                <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-mist" />
                 <span>
                   Western Province: rental only. Outside the Western Province, the Regional Hydration Service is shown as a separate line,
                   never hidden in the rental.
@@ -409,7 +409,7 @@ export function RentalCalculator({ className }: { className?: string }) {
                 <ButtonLink href={quoteHref} variant="white" size="lg" arrow className="w-full sm:w-auto">
                   Get this quote
                 </ButtonLink>
-                <p className="text-xs leading-relaxed text-white/60 sm:max-w-[16rem]">
+                <p className="text-xs leading-relaxed text-white/85 sm:max-w-[16rem]">
                   Estimates use each plan’s starting monthly rental and exclude VAT. Your quote confirms the machine, term and final
                   amounts.
                 </p>
@@ -421,7 +421,7 @@ export function RentalCalculator({ className }: { className?: string }) {
                 <MapIcon />
               </IconBadge>
               <p className="text-xl font-medium">Start with your province</p>
-              <p className="max-w-sm text-[15px] leading-relaxed text-white/75">
+              <p className="max-w-sm text-[15px] leading-relaxed text-white/85">
                 Choose where your purifier will be installed and we’ll show every charge, line by line: the monthly rental, the one-time
                 initial payment and anything else that applies to you.
               </p>
