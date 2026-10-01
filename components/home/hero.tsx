@@ -58,7 +58,7 @@ export function Hero() {
     >
       <div
         aria-hidden
-        className="absolute inset-0 -z-20 lg:left-auto lg:w-[74%] lg:[mask-image:linear-gradient(to_right,transparent,black_24%)]"
+        className="film-enter absolute inset-0 -z-20 lg:left-auto lg:w-[74%] lg:[mask-image:linear-gradient(to_right,transparent,black_24%)]"
       >
         <video
           ref={video}

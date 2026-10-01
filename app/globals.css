@@ -127,6 +127,8 @@
     -webkit-tap-highlight-color: transparent;
     /* Raleway defaults to old-style figures; prices and steps read better lining. */
     font-variant-numeric: lining-nums;
+    /* Classic scrollbars keep their room while the intro or the mobile menu locks scrolling, so nothing shifts. */
+    scrollbar-gutter: stable;
   }
   body {
     background: var(--color-canvas);
@@ -388,5 +390,256 @@
         animation-range: 100vh 130vh;
       }
     }
+  }
+}
+
+/* ———————— Intro (components/preloader) ————————
+   The LUSAKO drop, played over the home page on a first visit. The early script (intro-script.ts) sets data-intro on
+   <html> before the first paint, so the intro covers the page from the first frame and its animation runs on CSS
+   alone while the app loads; until the page opens, only transform and opacity move, so it stays smooth while the page
+   hydrates underneath. Meanwhile the page's own entrance animations wait at their first frame. The Preloader then
+   opens a hole from the drop (--hole) and releases the page a moment later, so the two overlap.
+   Eases: power2.in = cubic-bezier(0.32, 0, 0.67, 0), power1.out = (0.5, 1, 0.89, 1), power2.out = (0.33, 1, 0.68, 1),
+   power3.inOut = (0.76, 0, 0.24, 1), and back.out(1.9) as a linear() curve. */
+@property --hole {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: -1.5px;
+}
+
+.intro {
+  /* The logo's width, and one unit of its drawing (content/brand-logo.ts is 295.8 units wide). */
+  --logo-w: min(60cqw, 30rem);
+  --u: calc(var(--logo-w) / 295.8);
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  overflow: hidden;
+  container-type: size;
+  touch-action: none;
+}
+html[data-intro] .intro {
+  display: block;
+}
+.intro-panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-canvas);
+}
+.intro-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.intro-logo {
+  position: relative;
+  width: var(--logo-w);
+  aspect-ratio: 295.8 / 74.5;
+}
+.intro-lockup {
+  position: absolute;
+  inset: 0;
+  animation: intro-slide 0.85s cubic-bezier(0.76, 0, 0.24, 1) 1.05s both;
+}
+/* A piece of the logo, placed in logo units (components/preloader/preloader.tsx). */
+.intro-piece {
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: calc(var(--w) * var(--u));
+  height: calc(var(--h) * var(--u));
+  transform-origin: 50% 50%;
+}
+.intro svg {
+  display: block;
+  overflow: visible;
+}
+.intro path {
+  fill: var(--color-brand);
+}
+.intro-ring circle {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 1;
+}
+
+/* 0.05–0.87s: the drop falls into the middle of the screen, squashes as it lands and sinks into the "o". */
+.intro-drop {
+  animation: intro-drop 0.82s 0.05s both;
+}
+@keyframes intro-drop {
+  0% {
+    transform: translateY(-62cqh) scale(0.82, 1.25);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
+  }
+  67.07% {
+    transform: translateY(0) scale(0.82, 1.25);
+    animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1);
+  }
+  78.05% {
+    transform: translateY(0) scale(1.4, 0.55);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
+  }
+  100% {
+    transform: translateY(0) scale(0);
+    opacity: 0;
+  }
+}
+/* 0.62s: the "o" springs up where it landed. */
+.intro-o {
+  animation: intro-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.62s both;
+  animation-timing-function: linear(0, 0.054 1.1%, 0.148 3.2%, 0.262 5.8%, 0.386 8.9%, 0.512 12.5%, 0.634 16.4%, 0.749 20.7%, 0.851 25.3%, 0.939 30.2%, 1.011 35.4%, 1.064 40.8%, 1.1 46.5%, 1.118 52.4%, 1.12 58.6%, 1.109 65%, 1.087 71.5%, 1.06 78.4%, 1.032 85.4%, 1.009 92.6%, 1);
+}
+@keyframes intro-pop {
+  from {
+    transform: scale(0);
+  }
+}
+/* Ripples from the landing (each waits as a ring under the drop until then); the last repeats until the page opens. */
+.intro-ring {
+  animation: intro-ripple 1.25s cubic-bezier(0.33, 1, 0.68, 1) var(--at) both;
+}
+.intro-ring[data-loop] {
+  animation-iteration-count: infinite;
+}
+@keyframes intro-ripple {
+  from {
+    transform: scale(0.7);
+    opacity: 0.75;
+  }
+  to {
+    transform: scale(5.2);
+    opacity: 0;
+  }
+}
+/* 1.05–1.9s: the logo slides to the middle while the name unrolls leftwards out of the "o": a window slides left over
+   letters that it carries the opposite way, so they stay put (a moving clip, done with transforms alone). */
+@keyframes intro-slide {
+  from {
+    transform: translateX(var(--shift));
+  }
+}
+.intro-name {
+  overflow: hidden;
+  animation: intro-unroll 0.85s cubic-bezier(0.76, 0, 0.24, 1) 1.05s both;
+}
+.intro-name > span {
+  position: absolute;
+  inset: 0;
+  animation: intro-unroll-under 0.85s cubic-bezier(0.76, 0, 0.24, 1) 1.05s both;
+}
+@keyframes intro-unroll {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes intro-unroll-under {
+  from {
+    transform: translateX(-100%);
+  }
+}
+/* 1.6s: the brand line. The negative margin takes back the tracking after its last letter, so it centres. */
+.intro-tagline {
+  margin-top: 3.2cqmin;
+  margin-right: -0.32em;
+  font-family: var(--font-display);
+  font-size: max(9px, 1.7cqmin);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-deep);
+  animation: intro-rise 0.5s cubic-bezier(0.33, 1, 0.68, 1) 1.6s both;
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* The page opens out from the drop: a hole in the sheet, rimmed with a fading blue line, grows to the far corner. */
+.intro-edge {
+  position: absolute;
+  left: var(--hole-x, 50%);
+  top: var(--hole-y, 50%);
+  width: calc(var(--hole) * 2);
+  height: calc(var(--hole) * 2);
+  border: 2px solid var(--color-brand);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+html:is([data-intro="reveal"], [data-intro="open"]) .intro {
+  --hole: var(--reach, 150vmax);
+  transition: --hole 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+}
+html:is([data-intro="reveal"], [data-intro="open"]) .intro-panel {
+  /* Only the mask's alpha matters. */
+  --mask: radial-gradient(
+    circle at var(--hole-x, 50%) var(--hole-y, 50%),
+    transparent var(--hole),
+    var(--color-ink) calc(var(--hole) + 1.5px)
+  );
+  mask-image: var(--mask);
+}
+html:is([data-intro="reveal"], [data-intro="open"]) .intro-edge {
+  animation: intro-edge 0.85s both;
+}
+@keyframes intro-edge {
+  0% {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1);
+  }
+  23.5% {
+    opacity: 0.6;
+  }
+  41.2% {
+    opacity: 0.6;
+    animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* Once the page is released it takes clicks straight away, through the opening hole. */
+html[data-intro="open"] .intro {
+  pointer-events: none;
+}
+/* Fallback when the app never opens it (see intro-script.ts). */
+html[data-intro="out"] .intro {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+/* Until the page is released its entrance animations wait at their first frame; in a background tab the intro waits
+   too. */
+html:is([data-intro="wait"], [data-intro="play"], [data-intro="reveal"]) :is(.rise, .line-in > .line, .split-in .word, .nav-enter, .film-enter),
+html[data-intro="wait"] .intro * {
+  animation-play-state: paused;
+}
+
+/* The page's side of the hand-over: the navigation bar drops in and the hero film settles back. */
+@keyframes nav-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -130%, 0);
+  }
+}
+@keyframes film-enter {
+  from {
+    opacity: 0.01;
+    transform: scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nav-enter {
+    animation: nav-enter 0.9s cubic-bezier(0.2, 0.75, 0.15, 1) 0.1s both;
+  }
+  .film-enter {
+    animation: film-enter 1.8s cubic-bezier(0.2, 0.75, 0.15, 1) both;
   }
 }

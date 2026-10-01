@@ -199,7 +199,7 @@ export function Header() {
         <div className="w-full px-3 pt-3 sm:px-5 lg:px-(--edge) lg:pt-3.5">
           <div
             className={cn(
-              "pointer-events-auto flex h-13 items-center justify-between gap-3 rounded-2xl border pr-1.5 pl-5 backdrop-blur-xl transition-[background-color,border-color,box-shadow,color] duration-500 lg:h-14.5 lg:pr-2 lg:pl-6",
+              "nav-enter pointer-events-auto flex h-13 items-center justify-between gap-3 rounded-2xl border pr-1.5 pl-5 backdrop-blur-xl transition-[background-color,border-color,box-shadow,color] duration-500 lg:h-14.5 lg:pr-2 lg:pl-6",
               bar[tone],
             )}
           >

@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * Inertial smooth scrolling (Lenis) for wheel and trackpad, run on GSAP's ticker so every ScrollTrigger
  * effect moves in step with it. Touch keeps native scrolling. Off for reduced motion, and paused while
- * something locks the page (the mobile menu sets overflow: hidden on <html>).
+ * something locks the page (the intro and the mobile menu set overflow: hidden on <html>).
  */
 export function SmoothScroll() {
   useEffect(() => {
@@ -25,6 +25,8 @@ export function SmoothScroll() {
       lenis.on("scroll", ScrollTrigger.update);
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
+      // The intro locks the page before this runs, so the observer below never sees it happen.
+      if (root.style.overflow === "hidden") lenis.stop();
     };
     const disable = () => {
       gsap.ticker.remove(tick);

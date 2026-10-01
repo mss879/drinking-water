@@ -21,6 +21,7 @@ Copy `.env.example` to `.env.local` to configure the site URL, lead delivery and
 | `content/` | All copy and data: products, rental pricing, FAQs, services, clients, forms, navigation. Edit content here, not in components. |
 | `components/ui` | Primitives: buttons, pills and tags, highlight, icon badge and 3D brand icons, section heading, accordion, marquee, snap row, wave-line decor. |
 | `components/motion` | The motion system: `MotionRoot` (scroll reveals, parallax and scroll-scrubbed moments with GSAP ScrollTrigger, re-run on every route), `SmoothScroll` (Lenis), `PageTransition` (used by `app/template.tsx`), `createVideoScrub` (the scroll-played film in the stats band) and `splitWords` for word-by-word headlines. See `DESIGN.md` §7. |
+| `components/preloader` | The home page intro ("Drop"): `intro-script.ts` decides before the first paint whether a visit gets it, `preloader.tsx` holds its markup and opens it onto the page; the animation itself is CSS in `app/globals.css`. Add `?intro` to the address to replay it. See `DESIGN.md` §7. |
 | `components/sections` | Reusable sections: page hero and hero media, buy vs rent, how it works, UF/RO chooser, rental inclusions, the black FAQ block, the closing CTA band. |
 | `components/home`, `products`, `rental`, `forms`, `layout` | Page-specific components and the site chrome. |
 | `lib/` | SEO metadata, JSON-LD, analytics, lead delivery, formatting, Find My Solution logic. |

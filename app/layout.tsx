@@ -7,6 +7,8 @@ import { MobileCtaBar } from "@/components/layout/mobile-cta-bar";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { MotionRoot } from "@/components/motion/motion-root";
 import { SmoothScroll } from "@/components/motion/smooth-scroll";
+import { introScript } from "@/components/preloader/intro-script";
+import { Preloader } from "@/components/preloader/preloader";
 import { site } from "@/content/site";
 import { JsonLd } from "@/lib/jsonld";
 import { ogImage } from "@/lib/seo";
@@ -56,8 +58,16 @@ const organization = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${raleway.variable} ${montserrat.variable} h-full`} data-scroll-behavior="smooth">
+    // The intro script marks <html> before React takes over, hence suppressHydrationWarning.
+    <html
+      lang="en"
+      className={`${raleway.variable} ${montserrat.variable} h-full`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col">
+        <script dangerouslySetInnerHTML={{ __html: introScript }} />
+        <Preloader />
         <a
           href="#main"
           className="sr-only rounded-full bg-deep px-5 py-3 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60]"
