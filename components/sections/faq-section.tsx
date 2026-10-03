@@ -25,7 +25,7 @@ export function FaqSection({
 }) {
   return (
     <section id="faqs" className="py-6 lg:py-8">
-      <div data-expand="full" className="relative isolate overflow-hidden bg-ink py-16 text-white md:py-20 lg:py-28">
+      <div data-expand="full" data-surface="dark" className="relative isolate overflow-hidden bg-ink py-16 text-white md:py-20 lg:py-28">
         <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12" data-no-reveal>
           <div className="flex flex-col lg:col-span-5">
             <SectionHeading tone="dark" eyebrow={eyebrow} title={title} />

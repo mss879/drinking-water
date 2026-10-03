@@ -101,7 +101,7 @@ export function RentalCalculator({ className }: { className?: string }) {
   const units = Number.isFinite(typed) ? clampUnits(typed) : inputs.units;
   const { province, customer, filtration } = inputs;
   const plan = purificationOptions.find((option) => option.filtration === filtration)?.plan ?? rentalPlans[0];
-  const quote = province ? buildRentalQuote({ filtration, province, customer, units }) : null;
+  const quote = province ? buildRentalQuote({ filtration, province, units }) : null;
 
   function report(next: Inputs) {
     const nextProvince = next.province;
@@ -109,7 +109,7 @@ export function RentalCalculator({ className }: { className?: string }) {
     const key = [nextProvince, next.customer, next.filtration, next.units].join("|");
     if (lastTracked.current === key) return;
     lastTracked.current = key;
-    const result = buildRentalQuote({ ...next, province: nextProvince });
+    const result = buildRentalQuote({ filtration: next.filtration, province: nextProvince, units: next.units });
     track("rental_quote_calculated", {
       province: nextProvince,
       region: isWestern(nextProvince) ? "western" : "non-western",
@@ -153,20 +153,20 @@ export function RentalCalculator({ className }: { className?: string }) {
   const customerHint =
     customer === "home" ? (
       <>
-        Home rentals include a refundable security deposit. For homes, buying is usually the better long-term value.{" "}
+        For homes, buying is usually the better long-term value.{" "}
         <Link href="/water-purifiers" className={inlineLink}>
           Explore purifiers
         </Link>
       </>
     ) : customer === "company" ? (
       <>
-        No security deposit. Several sites or many units?{" "}
+        Several sites or many units?{" "}
         <Link href="/hydration-solutions/corporate" className={inlineLink}>
           Get a corporate proposal
         </Link>
       </>
     ) : (
-      "No security deposit for office rentals."
+      "Installation, maintenance and support are included, according to your rental agreement."
     );
 
   return (

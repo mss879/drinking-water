@@ -32,6 +32,7 @@ export function CtaBand({
     <section className="pt-6 lg:pt-8">
       <div
         data-expand="full"
+        data-surface="dark"
         className="relative isolate overflow-hidden bg-linear-to-br from-brand from-35% to-deep to-75% py-16 text-white md:py-20 lg:py-28"
       >
         <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/25" />

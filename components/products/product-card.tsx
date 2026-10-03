@@ -2,24 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { WaveLines } from "@/components/ui/decor";
 import { Pill } from "@/components/ui/pill";
-import { productRentalFrom, productTypeLabel, type Product } from "@/content/products";
+import { productPriceFrom, productRentalFrom, productTypeLabel, type Product } from "@/content/products";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 
 /**
  * Catalogue card in the StomDent "doctor card" style: outlined, the product on a pale-blue panel, then Buy and
- * Rent side by side (brief §5). The whole card links to the product.
+ * Rent side by side (brief §5). The whole card links to the product. `showPrices={false}` keeps prices off the
+ * home page (client request); the catalogue and product pages show them.
  */
 export function ProductCard({
   product,
   className,
   sizes = "(min-width: 1024px) 340px, 80vw",
+  showPrices = true,
 }: {
   product: Product;
   className?: string;
   sizes?: string;
+  showPrices?: boolean;
 }) {
+  const price = productPriceFrom(product);
   const rent = productRentalFrom(product);
+  const several = product.variants.length > 1;
 
   return (
     <article
@@ -39,7 +44,7 @@ export function ProductCard({
         />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
           <Pill variant="white">{productTypeLabel(product.types[0])}</Pill>
-          {product.filtration.length > 0 && <Pill variant="white">{product.purification}</Pill>}
+          {product.purification && <Pill variant="white">{product.purification}</Pill>}
         </div>
       </div>
 
@@ -53,21 +58,23 @@ export function ProductCard({
 
         <div className="relative z-10 mt-auto grid grid-cols-2 gap-2 pt-6">
           <Link
-            href={`/contact?type=buy&model=${product.slug}`}
+            href={`/contact?type=buy&model=${product.slug}#quote`}
             className="rounded-card-sm bg-deep px-4 py-3 text-white transition-colors hover:bg-deep-hover"
           >
-            <span className="block text-xs text-white">Buy</span>
+            <span className="block text-xs text-white">{showPrices && price && several ? "Buy from" : "Buy"}</span>
             <span className="block text-sm font-semibold">
-              {product.purchasePrice ? `${formatLKR(product.purchasePrice)} + VAT` : "Get a price"}
+              {!showPrices ? "Own this system" : price ? `${formatLKR(price)} + VAT` : "Get a price"}
             </span>
           </Link>
           <Link
-            href={`/contact?type=rental&preferredMachine=${product.slug}`}
+            href={`/contact?type=rental&preferredMachine=${product.slug}#quote`}
             className="rounded-card-sm border border-line px-4 py-3 transition-colors hover:border-deep hover:bg-tint"
           >
-            <span className="block text-xs text-muted">{rent ? "Rent from" : "Rent"}</span>
+            <span className="block text-xs text-muted">{showPrices && rent ? "Rent from" : "Rent"}</span>
             <span className="block text-sm font-semibold text-deep">
-              {rent ? (
+              {!showPrices ? (
+                "Monthly plan"
+              ) : rent ? (
                 <>
                   {formatLKR(rent)}/mo <span className="text-xs font-normal whitespace-nowrap text-muted">+ VAT</span>
                 </>

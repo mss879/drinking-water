@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import { preload } from "react-dom";
+import { useHeroTone } from "@/components/layout/hero-tone";
 import { ButtonLink } from "@/components/ui/button";
 import { Tag } from "@/components/ui/pill";
 import { site } from "@/content/site";
@@ -22,8 +23,10 @@ const film = {
  * under a soft shade. Reduced-motion and data-saver visitors see its first frame instead of the moving film.
  */
 export function Hero() {
+  const section = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   preload(film.poster, { as: "image", fetchPriority: "high" });
+  useHeroTone(section);
 
   useEffect(() => {
     const el = video.current;
@@ -52,7 +55,9 @@ export function Hero() {
 
   return (
     <section
+      ref={section}
       data-hero
+      data-surface="dark"
       aria-labelledby="hero-title"
       className="relative isolate mx-[5px] mt-[calc(5px-var(--header-h))] mb-[5px] overflow-hidden rounded-2xl bg-ink text-white lg:rounded-[1.25rem]"
     >

@@ -5,21 +5,25 @@ import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { photos } from "@/content/images";
+import { getPhotos } from "@/lib/cms/content";
 import { rentalPlans } from "@/content/pricing";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 
 const cards = [
-  { id: "pureflow-uf", source: "City water", letters: "UF", dark: false },
-  { id: "pureflow-ro", source: "Well water / higher TDS", letters: "RO", dark: true },
+  { id: "pureflow-uf", source: "City water", letters: "UF", name: "Ultrafiltration", dark: false },
+  { id: "pureflow-ro", source: "Well water / higher TDS", letters: "RO", name: "Reverse osmosis", dark: true },
 ] as const;
 
 /**
  * "Which Purification System Is Right for You?" City water → UF, well water / higher TDS → RO, with CHECK MY
  * WATER leading into Find My Solution (brief Doc 1 §14). The two cards slide in towards each other on scroll.
+ * On the home page the cards leave out the stage count and the rental price (client request); the rental page
+ * shows both.
  */
-export function PurificationChooser({ context = "home" }: { context?: "home" | "rental" }) {
+export async function PurificationChooser({ context = "home" }: { context?: "home" | "rental" }) {
+  const rental = context === "rental";
+  const photos = await getPhotos();
   return (
     <section id="purification" className="overflow-x-clip py-16 md:py-20 lg:py-28">
       <Container>
@@ -62,23 +66,25 @@ export function PurificationChooser({ context = "home" }: { context?: "home" | "
                 </Pill>
                 <div className="relative mt-auto pt-24">
                   <h3 className="font-display text-[clamp(2rem,1.6rem+1.5vw,2.75rem)] leading-tight font-bold tracking-[-0.02em]">
-                    {plan.name}
+                    {rental ? plan.name : card.name}
                   </h3>
                   <p className={cn("mt-2 text-lg", card.dark ? "text-white" : "text-muted")}>
-                    {plan.stages} · {plan.bestFor}.
+                    {rental ? `${plan.stages} · ${plan.bestFor}.` : `${plan.bestFor}.`}
                   </p>
                   <div className="mt-8 flex flex-wrap items-end justify-between gap-5">
-                    <p>
-                      <span className={cn("block text-sm", card.dark ? "text-white" : "text-muted")}>Rental from</span>
-                      <span className="font-display text-3xl font-bold">{plan.fromMonthly ? formatLKR(plan.fromMonthly) : "On request"}</span>
-                      <span className={cn("text-sm", card.dark ? "text-white" : "text-muted")}> /month + VAT</span>
-                    </p>
+                    {rental && (
+                      <p>
+                        <span className={cn("block text-sm", card.dark ? "text-white" : "text-muted")}>Rental from</span>
+                        <span className="font-display text-3xl font-bold">{plan.fromMonthly ? formatLKR(plan.fromMonthly) : "On request"}</span>
+                        <span className={cn("text-sm", card.dark ? "text-white" : "text-muted")}> /month + VAT</span>
+                      </p>
+                    )}
                     <ButtonLink
-                      href={context === "rental" ? `/contact?type=rental&preferredSolution=${card.id}` : `/rental#${card.id}`}
+                      href={rental ? `/contact?type=rental&preferredSolution=${card.id}` : `/water-purifiers#uf-or-ro`}
                       variant={card.dark ? "white" : "primary"}
                       arrow
                     >
-                      {context === "rental" ? `Rent ${plan.name}` : `Explore ${card.letters}`}
+                      {rental ? `Rent ${plan.name}` : `Explore ${card.letters}`}
                     </ButtonLink>
                   </div>
                 </div>

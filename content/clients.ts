@@ -12,8 +12,11 @@ export const sectors = [
   "Commercial organisations",
 ];
 
-/** Approved client logos go here. Empty until LUSAKO supplies approved assets. */
-export const clientLogos: { name: string; src: string }[] = [];
+/** A client logo, shown only with the client's written approval. Managed in the admin's Client logos section. */
+export type ClientLogo = { id: string; name: string; src: string; url: string | null };
+
+/** Empty until LUSAKO adds approved logos in the admin. */
+export const clientLogos: ClientLogo[] = [];
 
 export type CaseStudy = {
   slug: string;
@@ -33,7 +36,7 @@ export const caseStudies: CaseStudy[] = [
     slug: "multi-branch-office",
     sample: true,
     industry: "Financial services · multi-branch",
-    location: "Western & Central Provinces",
+    location: "Western & Other Provinces",
     challenge: "Branches depended on bottled-water deliveries: heavy bottles, storage space and uneven supply.",
     requirement: "Reliable drinking water for staff and customers at every branch, with one point of contact.",
     solution: "Rental · PureFlow UF for city branches, PureFlow RO where sites use well water.",
@@ -45,10 +48,10 @@ export const caseStudies: CaseStudy[] = [
     slug: "manufacturing-facility",
     sample: true,
     industry: "Manufacturing",
-    location: "North Western Province",
+    location: "Uva Province",
     challenge: "Large shift teams and a well-water supply with high dissolved solids.",
     requirement: "Safe, great-tasting water on every floor without a maintenance burden for the facility team.",
-    solution: "Rental · freestanding units with PureFlow RO.",
+    solution: "Rental · AquaPrime Pro (RO).",
     implementation: "Units placed by expected consumption on each production floor.",
     support: "Scheduled preventive maintenance plus the Regional Hydration Service.",
     result: "Consistent purified water across the site, maintained entirely by LUSAKO.",

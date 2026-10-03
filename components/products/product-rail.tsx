@@ -10,7 +10,7 @@ import { ProductCard } from "./product-card";
  * motion it becomes the track of a `[data-hscroll]` section, sliding sideways as the page scrolls
  * (components/motion/motion-root.tsx), with a progress line underneath.
  */
-export function ProductRail({ products, label }: { products: Product[]; label: string }) {
+export function ProductRail({ products, label, showPrices = true }: { products: Product[]; label: string; showPrices?: boolean }) {
   const listRef = useRef<HTMLUListElement>(null);
 
   const scroll = (direction: 1 | -1) => {
@@ -31,7 +31,7 @@ export function ProductRail({ products, label }: { products: Product[]; label: s
       >
         {products.map((product) => (
           <li key={product.slug} className="w-[80vw] shrink-0 snap-start sm:w-[340px] xl:w-[360px]">
-            <ProductCard product={product} />
+            <ProductCard product={product} showPrices={showPrices} />
           </li>
         ))}
       </ul>

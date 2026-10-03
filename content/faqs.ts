@@ -1,21 +1,30 @@
+import { formatLKR } from "@/lib/format";
+import { rentalCharges } from "./pricing";
+
 /**
- * The 15 essential FAQ topics from the brief (§17).
+ * The essential FAQ topics from the brief (§17). The AMC questions are worked out from the current plans in
+ * content/amc.ts (`amcFaqs`), so their prices always match the AMC page.
  * TODO(client): answers are drafted from the brief — have LUSAKO approve them before launch.
  */
-export type FaqTopic = "purification" | "buying" | "rental" | "service";
+export type FaqTopic = "purification" | "buying" | "rental" | "service" | "amc";
 
-export type Faq = { q: string; a: string; topic: FaqTopic };
+/** `home` marks the questions the home page shows (no rental amounts there, at the client's request). */
+export type Faq = { q: string; a: string; topic: FaqTopic; home?: boolean };
 
 export const faqTopics: { id: FaqTopic; label: string }[] = [
   { id: "purification", label: "Choosing UF or RO" },
   { id: "buying", label: "Buying a purifier" },
   { id: "rental", label: "Rental" },
   { id: "service", label: "Installation & service" },
+  { id: "amc", label: "AMC & service plans" },
 ];
+
+const initial = formatLKR(rentalCharges.initialPaymentPerUnit);
 
 export const faqs: Faq[] = [
   {
     topic: "purification",
+    home: true,
     q: "What is the difference between UF and RO?",
     a: "UF (ultrafiltration) passes water through a fine membrane that removes particles, sediment and microorganisms while keeping naturally occurring minerals, which makes it ideal for treated city water. RO (reverse osmosis) uses a much finer membrane that also reduces dissolved salts and other dissolved solids (TDS), so it suits well water and water with higher TDS. You never have to work this out alone: we recommend the right one for your water.",
   },
@@ -31,31 +40,30 @@ export const faqs: Faq[] = [
   },
   {
     topic: "buying",
+    home: true,
     q: "Can I buy the machine instead of renting?",
     a: "Yes. Every LUSAKO water purifier is available to buy outright, and for homes buying is usually the best long-term value. You own the system, it is covered by warranty, and LUSAKO after-sales service and maintenance plans are available.",
   },
   {
     topic: "rental",
+    home: true,
     q: "What is included in the monthly rental?",
     a: "Your rental covers the LUSAKO purification system, professional installation, scheduled preventive maintenance, filter replacement and technical support, according to your rental agreement. The exact inclusions are set out in your agreement before you sign.",
   },
   {
     topic: "rental",
-    q: "What is the Rs. 6,000 initial payment?",
-    a: "It is a one-time payment of Rs. 6,000 per rented unit, payable only in the first month. From the second month onwards, you pay only the monthly rental.",
+    q: `What is the ${initial} initial payment?`,
+    a: `It is a one-time payment of ${initial} per rented unit, payable only in the first month together with the first month’s rental. From the second month onwards, you pay only the monthly rental.`,
   },
   {
     topic: "rental",
-    q: "Why is there a refundable Rs. 25,000 domestic rental deposit?",
-    a: "Home (domestic) rentals include a refundable security deposit of Rs. 25,000 because the equipment remains LUSAKO’s property while it is in your home. It is refunded according to your rental agreement.",
-  },
-  {
-    topic: "rental",
+    home: true,
     q: "Does the Regional Hydration Service apply in Western Province?",
     a: "No. Customers in the Western Province pay the monthly rental only. There is no Regional Hydration Service charge.",
   },
   {
     topic: "rental",
+    home: true,
     q: "What is the Regional Hydration Service for Non-Western Province?",
     a: "Outside the Western Province, a Regional Hydration Service charge covers the additional technical service, preventive maintenance and regional support needed to look after your system. It is always shown as a separate line item, never hidden inside the rental.",
   },
@@ -67,7 +75,7 @@ export const faqs: Faq[] = [
   {
     topic: "service",
     q: "What happens if the machine requires service?",
-    a: "Raise a service request online, by phone or on WhatsApp. Rental systems are maintained by LUSAKO throughout the rental period. Purchased systems are supported by their warranty and by LUSAKO Care service plans, including AMC.",
+    a: "Raise a service request online, by phone or on WhatsApp, or call the emergency breakdown hotline. Rental systems are maintained by LUSAKO throughout the rental period. Purchased systems are supported by their warranty and by an Annual Maintenance Contract or on-call service.",
   },
   {
     topic: "rental",
@@ -76,6 +84,7 @@ export const faqs: Faq[] = [
   },
   {
     topic: "rental",
+    home: true,
     q: "Can companies rent multiple machines?",
     a: "Yes. Companies can rent as many units as they need. For multiple units or sites we prepare a Corporate Hydration proposal, so you don’t have to pick machines one by one.",
   },
@@ -91,4 +100,4 @@ export const faqs: Faq[] = [
   },
 ];
 
-export const homeFaqs = [0, 4, 5, 7, 8, 12].map((i) => faqs[i]);
+export const homeFaqs = faqs.filter((faq) => faq.home);

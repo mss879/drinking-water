@@ -5,11 +5,12 @@ import { Container } from "@/components/ui/container";
 import { Highlight } from "@/components/ui/highlight";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { photos } from "@/content/images";
+import type { Photos } from "@/content/images";
+import { getPhotos } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 
 /** LUSAKO Hydration Solutions: For Homes (buy) · For Offices (rent) · For Companies (corporate). */
-export const solutions = [
+const solutionsWith = (photos: Photos) => [
   {
     label: "For homes",
     title: "Buy a LUSAKO purifier",
@@ -40,7 +41,8 @@ export const solutions = [
 ];
 
 /** Three outlined photo cards (the StomDent doctor cards): black & white photo, then title, text and a link. */
-export function SolutionsTrio({ showHeading = true }: { showHeading?: boolean }) {
+export async function SolutionsTrio({ showHeading = true }: { showHeading?: boolean }) {
+  const solutions = solutionsWith(await getPhotos());
   return (
     <section className="py-16 md:py-20 lg:py-28">
       <Container>

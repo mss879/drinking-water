@@ -3,13 +3,13 @@ import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Highlight } from "@/components/ui/highlight";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { products } from "@/content/products";
+import type { Product } from "@/content/products";
 
 /**
  * The purifier range as the StomDent carousel. On large screens the section holds still while the cards slide
- * past sideways with the scroll (`data-hscroll`, components/motion/motion-root.tsx).
+ * past sideways with the scroll (`data-hscroll`, components/motion/motion-root.tsx). No prices on the home page.
  */
-export function FeaturedProducts() {
+export function FeaturedProducts({ products }: { products: Product[] }) {
   return (
     <section data-hscroll className="relative overflow-x-clip">
       <div
@@ -33,7 +33,7 @@ export function FeaturedProducts() {
           />
         </Container>
         <div className="mt-12 lg:mt-10">
-          <ProductRail products={products} label="LUSAKO water purifiers" />
+          <ProductRail products={products} label="LUSAKO water purifiers" showPrices={false} />
         </div>
       </div>
     </section>

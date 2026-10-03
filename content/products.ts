@@ -1,25 +1,36 @@
-import type { StaticImageData } from "next/image";
-import aquaElite3x from "@/public/images/products/aquaelite-3x.webp";
-import aquaSparkElite from "@/public/images/products/aquaspark-elite.webp";
-import aquaEliteFloorPro from "@/public/images/products/aquaelite-floor-pro.webp";
-import aquaPrimePro from "@/public/images/products/aquaprime-pro.webp";
-import aquaSignaturePro from "@/public/images/products/aquasignature-pro.webp";
-import aquaServePro from "@/public/images/products/aquaserve-pro.webp";
-import { rentalFrom } from "./pricing";
+import type { Filtration } from "./pricing";
 
 /**
  * Product catalogue (brief: Doc 1 §2 + Doc 2 §9). Names are LUSAKO's working names.
+ * These are the defaults: once the admin's Products section is set up, the catalogue comes from there.
  * TODO(client): confirm names, purchase prices, warranty terms and full specifications.
  * Product images are AI-generated stand-ins. Replace them with approved product photography before launch.
  */
-export type ProductType = "countertop" | "freestanding" | "sparkling" | "dispenser";
+export type ProductType = "countertop" | "freestanding" | "under-sink" | "wall-mount" | "sparkling";
 
 export const productTypes: { id: ProductType; label: string; plural: string }[] = [
   { id: "countertop", label: "Countertop", plural: "Countertop purifiers" },
   { id: "freestanding", label: "Freestanding", plural: "Freestanding purifiers" },
+  { id: "under-sink", label: "Under-sink", plural: "Under-sink purifiers" },
+  { id: "wall-mount", label: "Wall-mount", plural: "Wall-mount purifiers" },
   { id: "sparkling", label: "Sparkling", plural: "Sparkling purifiers" },
-  { id: "dispenser", label: "Bottle dispenser", plural: "Bottle water dispensers" },
 ];
+
+export function isProductType(value: unknown): value is ProductType {
+  return productTypes.some((type) => type.id === value);
+}
+
+/** One purification option of a product, with its own model number and prices (client: "4-Stage UF" / "4-Stage RO"). */
+export type ProductVariant = {
+  filtration: Filtration;
+  /** How the option is named on the site, e.g. "4-Stage UF". */
+  label: string;
+  code: string | null;
+  /** Purchase price in LKR excluding VAT. null shows "Price on request". */
+  price: number | null;
+  /** Monthly rental from, in LKR excluding VAT. null shows "Rental on request". */
+  rent: number | null;
+};
 
 export type Product = {
   slug: string;
@@ -28,23 +39,24 @@ export type Product = {
   tagline: string;
   /** First entry is the primary category. */
   types: ProductType[];
-  models: { code: string; variant: string }[];
+  variants: ProductVariant[];
+  /** The purification line shown on cards, e.g. "UF / RO". */
   purification: string;
-  filtration: ("UF" | "RO")[];
   temperatures: string[];
   installation: string;
   warranty: string;
-  /** LKR excluding VAT. null shows "Price on request". */
-  purchasePrice: number | null;
-  image: StaticImageData;
+  /** A path under /public or an uploaded image's address. */
+  image: string;
   summary: string;
   highlights: string[];
   features: { title: string; body: string }[];
   whoFor: { title: string; body: string }[];
   filtrationNote: string;
   installationNote: string;
-  /** Overrides the shared maintenance note (bottle dispensers have no filters to replace). */
+  /** Overrides the shared maintenance note. */
   maintenanceNote?: string;
+  /** When the admin last saved it (CMS products only), for the sitemap. */
+  updatedAt?: string;
 };
 
 const WARRANTY = "2 years"; // TODO(client): confirm final warranty terms per product.
@@ -60,6 +72,14 @@ const matched = {
   body: "UF for treated city water, RO for well water and higher TDS. We recommend the right one for you.",
 };
 
+/** The usual pair: a 4-stage UF model and a 4-stage RO model. Prices are filled in once LUSAKO confirms them. */
+function ufAndRo(uf: string, ro: string, prices: { uf?: number; ro?: number; rentUf?: number; rentRo?: number } = {}): ProductVariant[] {
+  return [
+    { filtration: "UF", label: "4-Stage UF", code: uf, price: prices.uf ?? null, rent: prices.rentUf ?? null },
+    { filtration: "RO", label: "4-Stage RO", code: ro, price: prices.ro ?? null, rent: prices.rentRo ?? null },
+  ];
+}
+
 export const products: Product[] = [
   {
     slug: "aquaelite-3x",
@@ -67,17 +87,12 @@ export const products: Product[] = [
     family: "AquaElite",
     tagline: "Premium Countertop Water Purifier",
     types: ["countertop"],
-    models: [
-      { code: "W2905-3CF", variant: "UF" },
-      { code: "W2905-3CR", variant: "RO" },
-    ],
+    variants: ufAndRo("W2905-3CF", "W2905-3CR", { rentUf: 4990, rentRo: 5990 }),
     purification: "UF / RO",
-    filtration: ["UF", "RO"],
     temperatures: ["Hot", "Normal", "Cold"],
     installation: "Professional installation",
     warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaElite3x,
+    image: "/images/products/aquaelite-3x.webp",
     summary:
       "Hot, normal and cold purified water from one compact countertop system, with UF or RO purification matched to your water source.",
     highlights: ["Hot · Normal · Cold", "UF or RO", "Countertop"],
@@ -102,14 +117,12 @@ export const products: Product[] = [
     family: "AquaSpark",
     tagline: "Premium Sparkling Water Purifier",
     types: ["sparkling", "countertop"],
-    models: [{ code: "W29Q1", variant: "UF + Sparkling" }],
+    variants: [{ filtration: "UF", label: "UF + Sparkling", code: "W29Q1", price: null, rent: null }],
     purification: "UF + Sparkling",
-    filtration: ["UF"],
     temperatures: ["Sparkling", "Still"], // TODO(client): confirm dispensing options
     installation: "Professional installation",
     warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaSparkElite,
+    image: "/images/products/aquaspark-elite.webp",
     summary: "Purified sparkling water at the touch of a button, from a premium countertop system. Hydration without a single bottle or can.",
     highlights: ["Sparkling on tap", "UF purification", "Countertop"],
     features: [
@@ -133,17 +146,12 @@ export const products: Product[] = [
     family: "AquaElite",
     tagline: "Freestanding Water Purifier",
     types: ["freestanding"],
-    models: [
-      { code: "W2905-3F", variant: "UF" },
-      { code: "W2905-3R", variant: "RO" },
-    ],
+    variants: ufAndRo("W2905-3F", "W2905-3R"),
     purification: "UF / RO",
-    filtration: ["UF", "RO"],
     temperatures: ["Hot", "Normal", "Cold"], // TODO(client)
     installation: "Professional installation",
     warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaEliteFloorPro,
+    image: "/images/products/aquaelite-floor-pro.webp",
     summary: "The AquaElite experience in a freestanding tower: purified hot, normal and cold water for busy homes and workplaces.",
     highlights: ["Freestanding", "UF or RO", "Hot · Normal · Cold"],
     features: [
@@ -167,17 +175,12 @@ export const products: Product[] = [
     family: "AquaPrime",
     tagline: "Freestanding Office Water Purifier",
     types: ["freestanding"],
-    models: [
-      { code: "W2904-3F", variant: "UF" },
-      { code: "W2904-3R", variant: "RO" },
-    ],
+    variants: ufAndRo("W2904-3F", "W2904-3R"),
     purification: "UF / RO",
-    filtration: ["UF", "RO"],
     temperatures: ["Hot", "Normal", "Cold"], // TODO(client)
     installation: "Professional installation",
     warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaPrimePro,
+    image: "/images/products/aquaprime-pro.webp",
     summary: "A robust freestanding purifier built for everyday shared use, with pure water for whole teams and UF or RO purification.",
     highlights: ["Built for daily use", "UF or RO", "Freestanding"],
     features: [
@@ -201,17 +204,12 @@ export const products: Product[] = [
     family: "AquaSignature",
     tagline: "Signature Freestanding Water Purifier",
     types: ["freestanding"],
-    models: [
-      { code: "W2908-3UF", variant: "UF" },
-      { code: "W2908-3RO", variant: "RO" },
-    ],
+    variants: ufAndRo("W2908-3UF", "W2908-3RO"),
     purification: "UF / RO",
-    filtration: ["UF", "RO"],
     temperatures: ["Hot", "Normal", "Cold"], // TODO(client)
     installation: "Professional installation",
     warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaSignaturePro,
+    image: "/images/products/aquasignature-pro.webp",
     summary: "Our signature freestanding purifier. A refined design with UF or RO purification, for spaces that make an impression.",
     highlights: ["Signature design", "UF or RO", "Freestanding"],
     features: [
@@ -229,53 +227,41 @@ export const products: Product[] = [
       "Choose the UF model (W2908-3UF) for treated city water, or the RO model (W2908-3RO) for well water and water with higher dissolved solids.",
     installationNote: INSTALLATION_NOTE,
   },
-  {
-    slug: "aquaserve-pro",
-    name: "AquaServe Pro",
-    family: "AquaServe",
-    tagline: "Bottle Water Dispenser",
-    types: ["dispenser"],
-    models: [], // TODO(client): model number
-    purification: "Bottled supply",
-    filtration: [],
-    temperatures: ["Hot", "Cold"], // TODO(client)
-    installation: "No plumbing required",
-    warranty: WARRANTY,
-    purchasePrice: null,
-    image: aquaServePro,
-    summary: "A clean, modern dispenser for places that use bottled water, with hot and cold water on tap.",
-    highlights: ["No plumbing needed", "Hot & cold", "Bottle dispenser"],
-    features: [
-      { title: "Works anywhere", body: "No plumbing connection needed. Place it wherever people need water." },
-      { title: "Hot and cold on tap", body: "Hot water for tea and cold water for everyone else." },
-      { title: "Clean, modern design", body: "A dispenser that looks at home in offices and receptions." },
-      { title: "LUSAKO after-sales care", body: "Warranty cover and LUSAKO service support." },
-    ],
-    whoFor: [
-      { title: "Sites without plumbing", body: "Warehouses, sites and temporary spaces." },
-      { title: "Events & pop-ups", body: "Easy hydration wherever you set up." },
-      { title: "Small offices", body: "A simple option where bottled supply is preferred." },
-    ],
-    filtrationNote:
-      "AquaServe Pro dispenses from standard water bottles, so it needs no water connection. For bottleless purified water, choose a UF or RO purifier.",
-    installationNote: "Place it, load a bottle and plug it in. Our team can deliver and set it up for you.",
-    maintenanceNote:
-      "Keep your dispenser performing with LUSAKO Care: scheduled servicing and technical support through a service plan or Annual Maintenance Contract (AMC).",
-  },
 ];
 
-export function getProduct(slug: string) {
-  return products.find((product) => product.slug === slug);
+export function findProduct(list: Product[], slug: string) {
+  return list.find((product) => product.slug === slug);
 }
 
-export function productRentalFrom(product: Product) {
-  return rentalFrom(product.slug);
+export function productTypeLabel(type: ProductType) {
+  return productTypes.find((t) => t.id === type)?.label ?? type;
 }
 
 export function productMaintenanceNote(product: Product) {
   return product.maintenanceNote ?? maintenanceNote;
 }
 
-export function productTypeLabel(type: ProductType) {
-  return productTypes.find((t) => t.id === type)?.label ?? type;
+/** The purifications a product comes in, e.g. ["UF", "RO"]. */
+export function productFiltrations(product: Product): Filtration[] {
+  return Array.from(new Set(product.variants.map((variant) => variant.filtration)));
+}
+
+const lowest = (values: (number | null)[]) => {
+  const known = values.filter((value): value is number => value !== null && value > 0);
+  return known.length ? Math.min(...known) : null;
+};
+
+/** Lowest purchase price across the product's options, or null while it is on request. */
+export function productPriceFrom(product: Product) {
+  return lowest(product.variants.map((variant) => variant.price));
+}
+
+/** Lowest monthly rental across the product's options, or null while it is on request. */
+export function productRentalFrom(product: Product) {
+  return lowest(product.variants.map((variant) => variant.rent));
+}
+
+/** Model numbers, in order. */
+export function productCodes(product: Product) {
+  return product.variants.map((variant) => variant.code).filter((code): code is string => Boolean(code));
 }

@@ -1,15 +1,16 @@
 "use client";
 
-import { SearchX } from "lucide-react";
-import { useId, useRef, useState, type ReactNode, type Ref } from "react";
+import { MessageCircle, SearchX } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { ProductCard } from "@/components/products/product-card";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { products, productTypes, type Product, type ProductType } from "@/content/products";
+import type { Filtration } from "@/content/pricing";
+import { isProductType, productFiltrations, productTypes, type Product, type ProductType } from "@/content/products";
 import { cn } from "@/lib/cn";
 
 type TypeFilter = ProductType | "all";
-type PurificationFilter = Product["filtration"][number] | "all";
+type PurificationFilter = Filtration | "all";
 type Option<T extends string> = { value: T; label: string };
 
 const typeOptions: Option<TypeFilter>[] = [
@@ -29,16 +30,16 @@ const chip =
 function matches(product: Product, type: TypeFilter, purification: PurificationFilter) {
   return (
     (type === "all" || product.types.includes(type)) &&
-    (purification === "all" || product.filtration.includes(purification))
+    (purification === "all" || productFiltrations(product).includes(purification))
   );
 }
 
 /** Explains an empty combination using the catalogue itself, e.g. "Sparkling purifiers are available with UF purification." */
-function emptyReason(type: TypeFilter) {
+function emptyReason(products: Product[], type: TypeFilter) {
   const group = productTypes.find((t) => t.id === type);
   if (!group) return "Try another type or purification.";
   const available = Array.from(
-    new Set(products.filter((product) => product.types.includes(group.id)).flatMap((product) => product.filtration)),
+    new Set(products.filter((product) => product.types.includes(group.id)).flatMap((product) => productFiltrations(product))),
   );
   return available.length
     ? `${group.plural} are available with ${available.join(" or ")} purification.`
@@ -65,7 +66,7 @@ function FilterGroup<T extends string>({
     <div role="group" aria-labelledby={labelId} className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
       <span
         id={labelId}
-        className="shrink-0 text-xs font-medium tracking-[0.16em] text-muted uppercase sm:flex sm:h-11 sm:w-32 sm:items-center xl:w-auto"
+        className="shrink-0 text-xs font-medium tracking-[0.16em] text-muted uppercase sm:flex sm:h-11 sm:w-32 sm:items-center 2xl:w-auto"
       >
         {label}
       </span>
@@ -91,8 +92,20 @@ function FilterGroup<T extends string>({
   );
 }
 
-/** The Direct Sales catalogue: filter by type and UF / RO (brief Doc 2 §15), every product with Buy and Rent side by side. */
-export function ProductCatalog({ className, purificationHelpHref }: { className?: string; purificationHelpHref?: string }) {
+/**
+ * The Direct Sales catalogue: filter by type and UF / RO (brief Doc 2 §15), every product with Buy and Rent side by
+ * side. `?type=under-sink` (the navigation's category links) opens on that category. A category with nothing listed
+ * yet offers a conversation instead of an empty grid.
+ */
+export function ProductCatalog({
+  products,
+  className,
+  purificationHelpHref,
+}: {
+  products: Product[];
+  className?: string;
+  purificationHelpHref?: string;
+}) {
   const [type, setType] = useState<TypeFilter>("all");
   const [purification, setPurification] = useState<PurificationFilter>("all");
   // Cards only animate after a filter change, never on first paint.
@@ -100,12 +113,25 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
   const typeAll = useRef<HTMLButtonElement>(null);
   const purificationAll = useRef<HTMLButtonElement>(null);
 
+  // Open on the category in the address (the page itself is static, so this is read once it has loaded).
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("type");
+    if (isProductType(wanted)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- a one-off read of the address after hydration
+      setType(wanted);
+    }
+  }, []);
+
   const visible = products.filter((product) => matches(product, type, purification));
   const total = products.length;
   const group = productTypes.find((t) => t.id === type);
+  // A category LUSAKO offers but hasn't listed any products in yet.
+  const onRequest = group && !products.some((product) => product.types.includes(group.id));
 
   const status =
-    visible.length === 0
+    onRequest
+      ? `${group.plural} are available on request`
+      : visible.length === 0
       ? "No products match these filters"
       : visible.length === total
         ? `Showing all ${total} products`
@@ -114,6 +140,11 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
   const chooseType = (value: TypeFilter) => {
     setType(value);
     setChanged(true);
+    // Keep the address in step, so a filtered view can be shared.
+    const url = new URL(window.location.href);
+    if (value === "all") url.searchParams.delete("type");
+    else url.searchParams.set("type", value);
+    window.history.replaceState(window.history.state, "", url);
   };
   const choosePurification = (value: PurificationFilter) => {
     setPurification(value);
@@ -134,9 +165,9 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
 
   return (
     <div className={className}>
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:gap-10">
+      <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:gap-10">
         <FilterGroup label="Type" options={typeOptions} value={type} onChange={chooseType} firstRef={typeAll} />
-        <span aria-hidden className="mt-1.5 hidden h-8 w-px bg-line xl:block" />
+        <span aria-hidden className="mt-1.5 hidden h-8 w-px bg-line 2xl:block" />
         <FilterGroup
           label="Purification"
           options={purificationOptions}
@@ -159,7 +190,29 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
         {status}
       </p>
 
-      {visible.length > 0 ? (
+      {onRequest ? (
+        <div className="mt-6 flex flex-col items-center rounded-card-xl bg-tint px-5 py-14 text-center sm:px-10 sm:py-20">
+          <IconBadge variant="white" size="lg" framed>
+            <MessageCircle />
+          </IconBadge>
+          <h3 className="mt-6 font-display text-h3 font-bold text-ink">{group.plural}, on request</h3>
+          <p className="mt-2 max-w-md text-muted">
+            Tell us about your space and your water, and our team will recommend the right {group.label.toLowerCase()} model and price.
+          </p>
+          <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+            <ButtonLink
+              href={`/contact?${new URLSearchParams({ type: "buy", message: `I’m interested in ${group.plural.toLowerCase()}.` })}#quote`}
+              variant="primary"
+              arrow
+            >
+              Ask about {group.plural.toLowerCase()}
+            </ButtonLink>
+            <Button type="button" variant="outline" onClick={clearFilters}>
+              See all purifiers
+            </Button>
+          </div>
+        </div>
+      ) : visible.length > 0 ? (
         <ul key={changed ? `${type}-${purification}` : "initial"} className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((product, i) => (
             <li
@@ -177,7 +230,7 @@ export function ProductCatalog({ className, purificationHelpHref }: { className?
             <SearchX />
           </IconBadge>
           <h3 className="mt-6 font-display text-h3 font-bold text-ink">No matches for that combination</h3>
-          <p className="mt-2 max-w-md text-muted">{emptyReason(type)}</p>
+          <p className="mt-2 max-w-md text-muted">{emptyReason(products, type)}</p>
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
             <Button type="button" variant="primary" onClick={clearFilters}>
               Clear filters

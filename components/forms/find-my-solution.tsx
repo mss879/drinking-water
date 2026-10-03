@@ -24,7 +24,7 @@ import { IconBadge } from "@/components/ui/icon-badge";
 import { Pill } from "@/components/ui/pill";
 import type { BrandIconName } from "@/content/brand-icons";
 import { planFor } from "@/content/pricing";
-import { getProduct } from "@/content/products";
+import type { Product } from "@/content/products";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
@@ -196,8 +196,12 @@ function AnswerChips({ answers, label }: { answers: Answers; label: string }) {
   );
 }
 
+/** What the result card needs from a product. */
+export type FinderProduct = Pick<Product, "slug" | "name" | "tagline" | "image">;
+
 function Result({
   rec,
+  products,
   region,
   source,
   answers,
@@ -207,6 +211,7 @@ function Result({
   onRestart,
 }: {
   rec: Recommendation;
+  products: FinderProduct[];
   region: Region;
   source: WaterSource;
   answers: Answers;
@@ -215,7 +220,7 @@ function Result({
   onBack: () => void;
   onRestart: () => void;
 }) {
-  const product = getProduct(rec.productSlug);
+  const product = products.find((item) => item.slug === rec.productSlug);
   const from = planFor(rec.filtration).fromMonthly;
   const action = quoteAction(rec, region, source);
 
@@ -309,7 +314,7 @@ function Result({
 }
 
 /** The brief's lead-generation engine: three questions, one per screen, then a UF / RO recommendation (Doc 1 §14). */
-export function FindMySolution({ className }: { className?: string }) {
+export function FindMySolution({ products, className }: { products: FinderProduct[]; className?: string }) {
   const [step, setStep] = useState<Step>(0);
   const [answers, setAnswers] = useState<Answers>({});
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -375,6 +380,7 @@ export function FindMySolution({ className }: { className?: string }) {
         {rec && region && source ? (
           <Result
             rec={rec}
+            products={products}
             region={region}
             source={source}
             answers={answers}

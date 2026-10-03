@@ -1,12 +1,14 @@
 "use client";
 
 import { Check, ChevronDown, CircleAlert } from "lucide-react";
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { Fragment, useActionState, useEffect, useId, useRef, useState } from "react";
 import { submitLead, type LeadState } from "@/app/actions/leads";
+import { useCatalogOptions } from "@/components/forms/catalog-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { leadForms, type FormField, type LeadFormType } from "@/content/forms";
+import { leadForms, resolveFields, type FormField, type LeadFormType } from "@/content/forms";
 import { track } from "@/lib/analytics";
+import { readAttribution } from "@/lib/analytics/client";
 import { cn } from "@/lib/cn";
 
 const initialState: LeadState = { status: "idle" };
@@ -66,7 +68,7 @@ function Field({
           inputMode={field.inputMode}
           autoComplete={field.autoComplete}
           placeholder={field.placeholder}
-          min={field.type === "number" ? 1 : undefined}
+          min={field.type === "number" ? (field.min ?? 1) : undefined}
           className={cn(control, "h-12")}
         />
       )}
@@ -85,6 +87,29 @@ function Field({
   );
 }
 
+/** Consecutive fields that share a section (and a sub-section within it), in the order the form asks for them. */
+type FieldGroup = { section?: string; parts: { subsection?: string; fields: FormField[] }[] };
+
+function groupFields(fields: FormField[]) {
+  const groups: FieldGroup[] = [];
+  for (const field of fields) {
+    let group = groups.at(-1);
+    if (!group || group.section !== field.section) {
+      group = { section: field.section, parts: [] };
+      groups.push(group);
+    }
+    let part = group.parts.at(-1);
+    if (!part || part.subsection !== field.subsection) {
+      part = { subsection: field.subsection, fields: [] };
+      group.parts.push(part);
+    }
+    part.fields.push(field);
+  }
+  return groups;
+}
+
+const fieldGrid = "grid gap-x-8 gap-y-7 sm:grid-cols-2";
+
 type LeadFormProps = { type: LeadFormType; prefill?: Record<string, string>; className?: string };
 
 /** One purpose-specific lead form (buy, rental, corporate or service), validated on the server. */
@@ -96,11 +121,27 @@ export function LeadForm(props: LeadFormProps) {
 
 function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { onReset: () => void }) {
   const config = leadForms[type];
+  const catalogue = useCatalogOptions();
+  const groups = groupFields(resolveFields(type, catalogue));
   const [state, formAction, pending] = useActionState(submitLead, initialState);
   const uid = useId();
   const tracked = useRef<string | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const confirmation = useRef<HTMLDivElement>(null);
+  const attribution = useRef<HTMLInputElement>(null);
+  const elapsed = useRef<HTMLInputElement>(null);
+  const shownAt = useRef(0);
+
+  // Where this visit came from goes along with the request (the admin shows it with the inquiry), and the time
+  // since the form appeared lets the server ignore bots that fill it in instantly.
+  useEffect(() => {
+    shownAt.current = Date.now();
+    if (attribution.current) attribution.current.value = JSON.stringify(readAttribution() ?? {});
+  }, []);
+  function stamp() {
+    if (elapsed.current) elapsed.current.value = String(Date.now() - shownAt.current);
+    if (attribution.current) attribution.current.value = JSON.stringify(readAttribution() ?? {});
+  }
 
   // Once the server replies, bring the result to the visitor: the first field to fix, or the confirmation.
   // On a phone the submit button sits a long way below both, so without this nothing seems to happen.
@@ -151,8 +192,16 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
   }
 
   return (
-    <form ref={form} action={formAction} noValidate className={cn("relative grid gap-x-8 gap-y-7 sm:grid-cols-2", className)}>
+    <form
+      ref={form}
+      action={formAction}
+      onSubmit={stamp}
+      noValidate
+      className={cn("relative grid gap-x-8 gap-y-7 sm:grid-cols-2", className)}
+    >
       <input type="hidden" name="formType" value={type} />
+      <input ref={attribution} type="hidden" name="attribution" defaultValue="" />
+      <input ref={elapsed} type="hidden" name="elapsed_ms" defaultValue="" />
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label>
           Leave this field empty
@@ -171,15 +220,41 @@ function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { 
         </p>
       )}
 
-      {config.fields.map((field) => (
-        <Field
-          key={field.name}
-          field={field}
-          idPrefix={uid}
-          error={state.errors?.[field.name]}
-          defaultValue={state.values?.[field.name] ?? prefill?.[field.name] ?? ""}
-        />
-      ))}
+      {groups.map((group, i) => {
+        const fields = (list: FormField[]) =>
+          list.map((field) => (
+            <Field
+              key={field.name}
+              field={field}
+              idPrefix={uid}
+              error={state.errors?.[field.name]}
+              defaultValue={state.values?.[field.name] ?? prefill?.[field.name] ?? ""}
+            />
+          ));
+        if (!group.section) return <Fragment key={`fields-${i}`}>{group.parts.flatMap((part) => fields(part.fields))}</Fragment>;
+        // A titled section (the corporate form): its own fieldset, with any sub-sections nested inside.
+        return (
+          <fieldset key={group.section} className={cn("min-w-0 sm:col-span-2", i > 0 && "border-t border-line pt-7")}>
+            <legend className="float-left w-full font-display text-lg font-bold text-ink">{group.section}</legend>
+            <div className="clear-both grid gap-7 pt-5">
+              {group.parts.map((part) =>
+                part.subsection ? (
+                  <fieldset key={part.subsection} className="min-w-0 rounded-card bg-tint p-5 sm:p-6">
+                    <legend className="float-left mb-5 inline-flex w-fit rounded-full bg-white px-3.5 py-1 text-[13px] font-semibold text-deep">
+                      {part.subsection}
+                    </legend>
+                    <div className={cn("clear-both", fieldGrid)}>{fields(part.fields)}</div>
+                  </fieldset>
+                ) : (
+                  <div key={part.fields[0]?.name} className={fieldGrid}>
+                    {fields(part.fields)}
+                  </div>
+                ),
+              )}
+            </div>
+          </fieldset>
+        );
+      })}
 
       <div className="flex flex-col gap-4 pt-2 sm:col-span-2">
         <Button type="submit" size="lg" loading={pending} arrow className="w-full">

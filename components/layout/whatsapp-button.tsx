@@ -1,10 +1,11 @@
-import { site } from "@/content/site";
+import { whatsappHref } from "@/lib/contact";
 
-/** WhatsApp / chat CTA for high-intent visitors (brief §15): a small round button with the WhatsApp mark. */
-export function WhatsAppButton() {
+/** WhatsApp / chat CTA for high-intent visitors (brief §15): a small round button with the WhatsApp mark, to sales. */
+export function WhatsAppButton({ number }: { number: string }) {
+  if (!number) return null;
   return (
     <a
-      href={site.contact.whatsappHref}
+      href={whatsappHref(number)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with LUSAKO on WhatsApp"

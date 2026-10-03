@@ -3,7 +3,6 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Check } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
 import { createVideoScrub } from "@/components/motion/video-scrub";
@@ -11,8 +10,6 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { planFor } from "@/content/pricing";
-import { products } from "@/content/products";
 import { site } from "@/content/site";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -24,30 +21,22 @@ const film = {
   poster: "/video/water-poster.jpg",
 };
 
-const numbers = new Intl.NumberFormat("en-US");
-
-/** The promise behind the numbers: what every LUSAKO system comes with. */
-const checks = ["UF & RO purification", "Professional installation", "Preventive maintenance"];
+/**
+ * What every LUSAKO system comes with, set large on the band. The client asked for the rental price, the number of
+ * filtration stages and the product count to stay off the home page (they live on the product pages instead).
+ */
+const promises = [
+  { title: "UF or RO", caption: "Purification matched to your water source." },
+  { title: "Installed", caption: "Professionally, by trained LUSAKO technicians." },
+  { title: "Cared for", caption: "Preventive maintenance and technical support." },
+];
 
 /**
- * "More than a purifier" (the GrowSphere stats band): the promise as a heading with its check chips, then a
- * rounded band over the brand-blue water film, which plays as the band scrolls past. Every figure and caption
- * comes from the site's own content — no invented stats.
+ * "More than a purifier" (the GrowSphere stats band): the promise as a heading, then a rounded band over the
+ * brand-blue water film, which plays as the band scrolls past, with the three parts of that promise.
  */
 export function StatsBand() {
   const root = useRef<HTMLElement>(null);
-  const rental = planFor("UF");
-  const stats = [
-    rental.fromMonthly && {
-      count: rental.fromMonthly,
-      prefix: "Rs.",
-      value: numbers.format(rental.fromMonthly),
-      suffix: "/month",
-      caption: "Complete hydration for one predictable monthly payment.",
-    },
-    { count: 4, value: "4", suffix: "-Stage", caption: "UF & RO purification" },
-    { count: products.length, value: String(products.length), caption: "Water purifiers" },
-  ].filter(Boolean) as { count: number; prefix?: string; value: string; suffix?: string; caption: string }[];
 
   useGSAP(
     () => {
@@ -94,18 +83,7 @@ export function StatsBand() {
             </span>
           }
           layout="split"
-          action={
-            <ul className="flex flex-wrap gap-x-5 gap-y-3 lg:flex-col lg:gap-3.5">
-              {checks.map((check) => (
-                <li key={check} className="flex items-center gap-2 text-[13px] font-medium text-ink">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-deep text-white">
-                    <Check aria-hidden className="size-3" strokeWidth={3} />
-                  </span>
-                  {check}
-                </li>
-              ))}
-            </ul>
-          }
+          description="Every LUSAKO system comes with the right purification for your water, a professional installation and care for as long as you have it."
         />
 
         <div data-expand className="relative isolate mt-10 overflow-hidden rounded-card-xl bg-deep text-white lg:mt-14">
@@ -130,18 +108,16 @@ export function StatsBand() {
                 </p>
               </div>
             </div>
-            <dl className="grid content-center gap-8 px-4 py-6 sm:grid-cols-[1.6fr_1fr_1fr] sm:gap-6 lg:col-span-8 lg:px-8">
-              {stats.map((stat) => (
-                <div key={stat.caption} className="flex flex-col gap-4 border-t border-white/30 pt-5">
-                  <dt className="order-2 max-w-[16rem] text-[15px] leading-snug text-white">{stat.caption}</dt>
-                  <dd className="order-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 font-sans text-[length:clamp(2.75rem,2rem+2.1vw,3.75rem)] leading-none font-light tracking-[-0.04em] tabular-nums">
-                    {stat.prefix && <span className="text-xl font-medium tracking-normal">{stat.prefix}</span>}{" "}
-                    <span data-count={stat.count}>{stat.value}</span>
-                    {stat.suffix && <span className="text-xl font-medium tracking-normal">{stat.suffix}</span>}
-                  </dd>
-                </div>
+            <ul className="grid content-center gap-8 px-4 py-6 sm:grid-cols-3 sm:gap-6 lg:col-span-8 lg:px-8">
+              {promises.map((promise) => (
+                <li key={promise.title} className="flex flex-col gap-4 border-t border-white/30 pt-5">
+                  <p className="font-sans text-[length:clamp(2.25rem,1.6rem+1.9vw,3.25rem)] leading-none font-light tracking-[-0.04em] whitespace-nowrap">
+                    {promise.title}
+                  </p>
+                  <p className="max-w-[16rem] text-[15px] leading-snug text-white">{promise.caption}</p>
+                </li>
               ))}
-            </dl>
+            </ul>
           </div>
         </div>
       </Container>

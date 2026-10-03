@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 /** LUSAKO Care — service & after-sales (brief §13 and the LUSAKO Care pillar). */
-export type Service = { id: string; title: string; body: string; icon: LucideIcon };
+export type Service = { id: string; title: string; body: string; icon: LucideIcon; href?: string };
 
 export const services: Service[] = [
   { id: "installation", title: "Installation", body: "Professional connection to your existing water supply by trained LUSAKO technicians.", icon: Wrench },
@@ -20,8 +20,8 @@ export const services: Service[] = [
   { id: "filters", title: "Filter replacement", body: "Filters replaced on schedule, according to your service plan or rental agreement.", icon: Filter },
   { id: "technical", title: "Technical service", body: "Diagnosis and repair by technicians who know LUSAKO systems inside out.", icon: Settings2 },
   { id: "testing", title: "Water testing & site assessment", body: "We check your water source and site so we can recommend UF or RO, where offered.", icon: FlaskConical },
-  { id: "amc", title: "AMC", body: "An Annual Maintenance Contract for worry-free care of purchased systems.", icon: FilePenLine },
-  { id: "parts", title: "Spare parts", body: "Genuine LUSAKO spare parts and consumables.", icon: Package },
+  { id: "amc", title: "AMC plans", body: "Essential, Complete or Maximum annual care for purchased systems, or on-call service when you need it.", icon: FilePenLine, href: "/service-support/amc" },
+  { id: "parts", title: "Filters, parts & accessories", body: "Genuine filter cartridges, spare parts and accessories.", icon: Package, href: "/service-support/parts" },
   { id: "relocation", title: "Relocation", body: "Moving home or office? We disconnect, move and reconnect your system.", icon: Truck },
   { id: "rental-support", title: "Rental customer support", body: "Dedicated support for rental customers throughout the agreement.", icon: Headset },
 ];

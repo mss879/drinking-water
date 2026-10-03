@@ -6,9 +6,7 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { planFor } from "@/content/pricing";
-import { getProduct } from "@/content/products";
-import { formatLKR } from "@/lib/format";
+import type { Product } from "@/content/products";
 
 /** "Find my solution" set round a ring (StomDent's round "find out prices" cell); the ring turns slowly. */
 function SolutionCircle() {
@@ -35,10 +33,11 @@ function SolutionCircle() {
   );
 }
 
-/** BUY | RENT | CARE (+ CORPORATE) as the StomDent service grid: outlined cards, one solid feature, one circle. */
-export function ChooseYourWay() {
-  const featured = getProduct("aquaelite-3x")!;
-  const from = planFor("UF").fromMonthly;
+/**
+ * BUY | RENT | CARE (+ CORPORATE) as the StomDent service grid: outlined cards, one solid feature, one circle. No
+ * prices here: the client keeps rental prices to the product and rental pages.
+ */
+export function ChooseYourWay({ featured }: { featured?: Product }) {
 
   return (
     <section className="py-16 md:py-20 lg:py-28">
@@ -71,13 +70,15 @@ export function ChooseYourWay() {
               </div>
               <div className="relative min-h-60 overflow-hidden rounded-card bg-tint-2">
                 <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-3/5 w-full text-brand/50" />
-                <Image
-                  src={featured.image}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 90vw"
-                  className="object-contain p-8 transition-transform duration-700 ease-emph group-hover/card:scale-105"
-                />
+                {featured && (
+                  <Image
+                    src={featured.image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 90vw"
+                    className="object-contain p-8 transition-transform duration-700 ease-emph group-hover/card:scale-105"
+                  />
+                )}
               </div>
             </Link>
           </li>
@@ -91,7 +92,7 @@ export function ChooseYourWay() {
               <h3 className="relative font-display text-[2rem] leading-none font-bold">Rent</h3>
               <p className="relative mt-4 font-display text-xl leading-snug font-bold">Complete hydration for one predictable monthly payment.</p>
               <p className="relative mt-5 w-fit rounded-full bg-white px-3.5 py-1.5 text-[13px] font-semibold text-deep">
-                {from ? `From ${formatLKR(from)}/month + VAT` : "Monthly plans"}
+                Equipment and service included
               </p>
               <span className="relative mt-auto flex w-fit items-center gap-3 rounded-full bg-white py-1.5 pr-1.5 pl-5 text-sm font-semibold text-deep">
                 Explore rental

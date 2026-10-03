@@ -1,45 +1,36 @@
-import { Clock, Mail, MapPin, MessageCircle, Phone, type LucideIcon } from "lucide-react";
+import { ContactLink, contactRows, type ContactRow } from "@/components/layout/contact-list";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { site } from "@/content/site";
+import type { SiteContact } from "@/content/site";
 
-export type Channel = { icon: LucideIcon; label: string; value: string; href?: string; external?: boolean };
-
-/** LUSAKO's contact channels from content/site.ts; the WhatsApp and address labels can be tuned per page. */
-export function contactChannels({
-  whatsapp = "Chat with our team",
-  address = "Visit",
-}: { whatsapp?: string; address?: string } = {}): Channel[] {
-  return [
-    { icon: Phone, label: "Call us", value: site.contact.phoneDisplay, href: site.contact.phoneHref },
-    { icon: MessageCircle, label: "WhatsApp", value: whatsapp, href: site.contact.whatsappHref, external: true },
-    { icon: Mail, label: "Email", value: site.contact.email, href: `mailto:${site.contact.email}` },
-    { icon: Clock, label: "Hours", value: site.contact.hours },
-    { icon: MapPin, label: address, value: site.contact.address },
-  ];
+/**
+ * LUSAKO's contact channels, in the order a page wants them (ids from contactRows: phone, hotline, whatsapp,
+ * whatsapp-emergency, sales-email, operations-email, hours, address). Anything not listed follows in the usual order.
+ */
+export function contactChannels(contact: SiteContact, first: string[] = []): ContactRow[] {
+  const rows = contactRows(contact);
+  const rank = (id: string) => (first.includes(id) ? first.indexOf(id) : first.length + rows.findIndex((row) => row.id === id));
+  return [...rows].sort((a, b) => rank(a.id) - rank(b.id));
 }
 
-export function ChannelRow({ channel }: { channel: Channel }) {
-  const { icon: Icon, label, value, href, external } = channel;
-  const content = (
-    <>
-      <IconBadge variant="tint" size="sm" brand={false}>
+export function ChannelRow({ channel }: { channel: ContactRow }) {
+  const { icon: Icon, label, values } = channel;
+  return (
+    <div className="flex min-h-14 items-center gap-4 py-2">
+      <IconBadge variant={channel.id === "hotline" ? "deep" : "tint"} size="sm" brand={false}>
         <Icon />
       </IconBadge>
       <span className="min-w-0">
         <span className="block text-xs text-muted">{label}</span>
-        <span className="block text-[15px] font-medium break-words text-ink">{value}</span>
+        <span className="flex flex-wrap gap-x-3 text-[15px] font-medium text-ink">
+          {values.map((value) => (
+            <ContactLink
+              key={value.text}
+              value={value}
+              className={value.href ? "min-w-0 transition-colors hover:text-deep hover:underline hover:decoration-brand hover:underline-offset-4" : "min-w-0"}
+            />
+          ))}
+        </span>
       </span>
-    </>
-  );
-  if (!href) return <div className="flex min-h-14 items-center gap-4 py-2">{content}</div>;
-  return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      className="-mx-3 flex min-h-14 items-center gap-4 rounded-card-sm px-3 py-2 transition-colors hover:bg-tint"
-    >
-      {content}
-    </a>
+    </div>
   );
 }

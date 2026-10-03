@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { ContactSheet } from "@/components/layout/contact-sheet";
+import type { SiteContact, SocialLink } from "@/content/site";
 import { cn } from "@/lib/cn";
 
 const actions = [
   { href: "/water-purifiers", label: "Buy", hint: "Own your system", tone: "bg-tint text-ink", hintTone: "text-muted" },
   { href: "/rental", label: "Rent", hint: "Monthly plan", tone: "bg-tint-2 text-deep", hintTone: "text-deep" },
-  { href: "/contact", label: "Get a quote", hint: "Talk to us", tone: "bg-deep text-white", hintTone: "text-white" },
 ];
 
-/** Persistent BUY / RENT / GET A QUOTE on mobile (brief: UX requirements §15). */
-export function MobileCtaBar() {
+/** Persistent BUY / RENT / CONTACT on mobile (brief: UX requirements §15); Contact opens the contact sheet. */
+export function MobileCtaBar({ contact, social }: { contact: SiteContact; social: SocialLink[] }) {
   return (
     <nav
       aria-label="Quick actions"
@@ -29,6 +30,9 @@ export function MobileCtaBar() {
             </Link>
           </li>
         ))}
+        <li>
+          <ContactSheet contact={contact} social={social} />
+        </li>
       </ul>
     </nav>
   );
