@@ -4,13 +4,13 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { amcPlanIds, amcPlanName, type AmcPlanId } from "@/content/amc";
 import { photoKeys, type PhotoKey } from "@/content/images";
-import { isProductType } from "@/content/products";
+import { isProductType, type Picks } from "@/content/products";
 import { socialNetworks, type SiteContact, type SocialLink, type SocialNetwork } from "@/content/site";
 import { friendlyError, requireAdmin, type ActionResult } from "@/lib/admin/auth";
-import { amcLimits, cleanAmount, cleanList, cleanText, cleanWhole, parseCards, parseVariants } from "@/lib/cms/map";
+import { amcLimits, cleanAmount, cleanList, cleanText, cleanWhole, parseCards, parseQuestions, parseSpecs, parseVariants, picksFrom } from "@/lib/cms/map";
 import { isSiteImage, siteMediaPath, SITE_MEDIA_BUCKET } from "@/lib/cms/media";
 import { CMS_TAG } from "@/lib/supabase/public";
-import type { Json, PartCategoryId } from "@/lib/supabase/types";
+import type { Database, Json, PartCategoryId } from "@/lib/supabase/types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -61,7 +61,7 @@ export type ProductInput = {
   family: string;
   tagline: string;
   types: string[];
-  variants: { filtration: string; label: string; code: string; price: string; rent: string }[];
+  variants: { filtration: string; label: string; code: string }[];
   purification: string;
   temperatures: string[];
   installation: string;
@@ -75,7 +75,65 @@ export type ProductInput = {
   installation_note: string;
   maintenance_note: string;
   published: boolean;
+  /**
+   * Extra specification rows and questions after the standard ones, and the product page's own search title and
+   * description (empty: worked out from the name, tagline and summary). Left out until the database has them
+   * (supabase/migrations/20261009120000_editable_website.sql), so the rest still saves.
+   */
+  specs?: { label: string; value: string }[];
+  faqs?: { q: string; a: string }[];
+  seo_title?: string;
+  seo_description?: string;
 };
+
+type ProductExtras = Pick<Database["public"]["Tables"]["cms_products"]["Update"], "specs" | "faqs" | "seo_title" | "seo_description">;
+
+const typed = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+
+/** Checks the product's extra rows and search text; an error message, or what to save. */
+function productExtras(input: ProductInput): { error: string } | { extras: ProductExtras } {
+  const extras: ProductExtras = {};
+  if (Array.isArray(input.specs)) {
+    const rows = input.specs.map((row) => ({ label: typed(row?.label), value: typed(row?.value) })).filter((row) => row.label || row.value);
+    if (rows.length > 10) return { error: "Add up to 10 extra specifications." };
+    if (rows.some((row) => !row.label || !row.value)) return { error: "Extra specifications: fill in both the name and the value, or remove the row." };
+    if (rows.some((row) => row.label.length > 40 || row.value.length > 200)) return { error: "Extra specifications: names can be up to 40 characters and values up to 200." };
+    extras.specs = parseSpecs(rows) as unknown as Json;
+  }
+  if (Array.isArray(input.faqs)) {
+    const rows = input.faqs.map((row) => ({ q: typed(row?.q), a: typed(row?.a) })).filter((row) => row.q || row.a);
+    if (rows.length > 6) return { error: "Add up to 6 extra questions." };
+    if (rows.some((row) => !row.q || !row.a)) return { error: "Extra questions: write both the question and the answer, or remove it." };
+    if (rows.some((row) => row.q.length > 200 || row.a.length > 1200)) return { error: "Extra questions: questions can be up to 200 characters and answers up to 1,200." };
+    extras.faqs = parseQuestions(rows) as unknown as Json;
+  }
+  if (input.seo_title !== undefined) {
+    const title = typed(input.seo_title);
+    if (title.length > 70) return { error: "Keep the search title to 70 characters." };
+    extras.seo_title = title || null;
+  }
+  if (input.seo_description !== undefined) {
+    const description = typed(input.seo_description);
+    if (description.length > 170) return { error: "Keep the search description to 170 characters." };
+    extras.seo_description = description || null;
+  }
+  return { extras };
+}
+
+/** Keeps the recommended products (the "picks" setting) on a product whose web address changed. */
+async function followRename(supabase: Admin, from: string, to: string) {
+  const { data, error } = await supabase.from("cms_settings").select("value").eq("key", "picks").maybeSingle();
+  if (error) return;
+  const picks = picksFrom(data?.value);
+  const rename = (slug: string) => (slug === from ? to : slug);
+  const next: Picks = {
+    finder: { home: rename(picks.finder.home), office: rename(picks.finder.office), commercial: rename(picks.finder.commercial) },
+    homeBuyCard: picks.homeBuyCard && rename(picks.homeBuyCard),
+  };
+  if (JSON.stringify(next) === JSON.stringify(picks)) return;
+  // Before the October 9 migration this setting can't be saved yet; the website then keeps its own picks.
+  await supabase.from("cms_settings").upsert({ key: "picks", value: next as unknown as Json });
+}
 
 /** "New product": a draft with the usual UF and RO options, opened straight away in the editor. */
 export async function createProduct() {
@@ -90,8 +148,8 @@ export async function createProduct() {
       position: (last?.position ?? 0) + 10,
       installation: "Professional installation",
       variants: [
-        { filtration: "UF", label: "4-Stage UF", code: null, price: null, rent: null },
-        { filtration: "RO", label: "4-Stage RO", code: null, price: null, rent: null },
+        { filtration: "UF", label: "4-Stage UF", code: null },
+        { filtration: "RO", label: "4-Stage RO", code: null },
       ],
     })
     .select("id")
@@ -115,6 +173,8 @@ export async function saveProduct(id: string, input: ProductInput): Promise<Acti
   if (input.image_url && !isSiteImage(input.image_url)) return { ok: false, error: "Upload the product photo here in the admin." };
   if (published && types.length === 0) return { ok: false, error: "Choose at least one category before publishing." };
   if (published && variants.length === 0) return { ok: false, error: "Add at least one purification option (UF or RO) before publishing." };
+  const checked = productExtras(input);
+  if ("error" in checked) return { ok: false, error: checked.error };
 
   const { data: before } = await supabase.from("cms_products").select("slug").eq("id", id).maybeSingle();
   if (!before) return { ok: false, error: "This product was deleted." };
@@ -140,6 +200,7 @@ export async function saveProduct(id: string, input: ProductInput): Promise<Acti
       filtration_note: cleanText(input.filtration_note, 600),
       installation_note: cleanText(input.installation_note, 600),
       maintenance_note: cleanText(input.maintenance_note, 600) || null,
+      ...checked.extras,
       published,
     })
     .eq("id", id);
@@ -147,6 +208,7 @@ export async function saveProduct(id: string, input: ProductInput): Promise<Acti
     if (error.code === "23505") return { ok: false, error: "Another product already uses that web address. Change it." };
     return { ok: false, error: friendlyError(error) };
   }
+  if (before.slug !== slug) await followRename(supabase, before.slug, slug);
   refreshSite("/admin/products", `/admin/products/${id}`);
   return { ok: true, message: published ? "Saved. The website shows the changes now." : "Saved as a draft." };
 }
@@ -323,7 +385,7 @@ export async function deleteLogo(id: string): Promise<ActionResult> {
 
 // -------------------------------------------------------------------- photos --
 
-/** Replaces one of the site's photos, or (with null) puts the original back. */
+/** Replaces one of the site's images (a page header or a lifestyle photo), or (with null) puts the original back. */
 export async function savePhoto(key: PhotoKey, photo: { src: string; alt: string } | null): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
   if (!photoKeys.includes(key)) return { ok: false, error: "Unknown photo." };
@@ -340,7 +402,7 @@ export async function savePhoto(key: PhotoKey, photo: { src: string; alt: string
   if (error) return { ok: false, error: friendlyError(error) };
   if (previous && previous !== photo?.src) await removeMedia(supabase, previous);
   refreshSite("/admin/photos");
-  return { ok: true, message: photo ? "Photo updated on the website." : "The original photo is back." };
+  return { ok: true, message: photo ? "Image updated on the website." : "The original image is back." };
 }
 
 // ------------------------------------------------------------------ settings --
@@ -355,6 +417,9 @@ export async function saveContact(input: SiteContact): Promise<ActionResult> {
     return { ok: false, error: "Phone numbers can only use digits, spaces, + and dashes, e.g. 011 433 4885." };
   }
   if (Object.values(emails).some((email) => email && !EMAIL.test(email))) return { ok: false, error: "Check the email addresses." };
+  if (typeof input.whatsappGreeting === "string" && input.whatsappGreeting.trim().length > 300) {
+    return { ok: false, error: "Keep the WhatsApp greeting to 300 characters." };
+  }
   const value: SiteContact = {
     phones,
     ...numbers,
@@ -365,6 +430,8 @@ export async function saveContact(input: SiteContact): Promise<ActionResult> {
       .map((line) => line.trim())
       .filter(Boolean)
       .join("\n"),
+    whatsappGreeting: cleanText(input.whatsappGreeting ?? "", 300),
+    showWhatsappButton: input.showWhatsappButton !== false,
   };
   const { error } = await supabase.from("cms_settings").upsert({ key: "contact", value: value as unknown as Json });
   if (error) return { ok: false, error: friendlyError(error) };

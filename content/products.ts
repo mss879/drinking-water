@@ -3,7 +3,10 @@ import type { Filtration } from "./pricing";
 /**
  * Product catalogue (brief: Doc 1 §2 + Doc 2 §9). Names are LUSAKO's working names.
  * These are the defaults: once the admin's Products section is set up, the catalogue comes from there.
- * TODO(client): confirm names, purchase prices, warranty terms and full specifications.
+ * Prices live in the admin's Prices & quotes section (cms_prices), each with its own show switch. They start hidden
+ * (client, October 2026: "Remove prices & add Get a quote for buy and rent both"), so cards and product pages ask for a
+ * quote until a price is switched on.
+ * TODO(client): confirm names, warranty terms and full specifications.
  * Product images are AI-generated stand-ins. Replace them with approved product photography before launch.
  */
 export type ProductType = "countertop" | "freestanding" | "under-sink" | "wall-mount" | "sparkling";
@@ -20,19 +23,21 @@ export function isProductType(value: unknown): value is ProductType {
   return productTypes.some((type) => type.id === value);
 }
 
-/** One purification option of a product, with its own model number and prices (client: "4-Stage UF" / "4-Stage RO"). */
+/** One purification option of a product, with its own model number (client: "4-Stage UF" / "4-Stage RO"). */
 export type ProductVariant = {
   filtration: Filtration;
   /** How the option is named on the site, e.g. "4-Stage UF". */
   label: string;
   code: string | null;
-  /** Purchase price in LKR excluding VAT. null shows "Price on request". */
-  price: number | null;
-  /** Monthly rental from, in LKR excluding VAT. null shows "Rental on request". */
-  rent: number | null;
+  /** Purchase price in LKR excluding VAT, only when the admin shows it. Otherwise the website asks for a quote. */
+  price?: number | null;
+  /** Monthly rental from, in LKR excluding VAT, only when the admin shows it. */
+  rent?: number | null;
 };
 
 export type Product = {
+  /** The admin's row id (CMS products only): prices are stored against it. */
+  id?: string;
   slug: string;
   name: string;
   family: string;
@@ -57,12 +62,20 @@ export type Product = {
   maintenanceNote?: string;
   /** When the admin last saved it (CMS products only), for the sitemap. */
   updatedAt?: string;
+  /** Extra specification rows after the standard ones. */
+  specs?: { label: string; value: string }[];
+  /** Extra questions after the standard ones on the product page. */
+  faqs?: { q: string; a: string }[];
+  /** The admin's own search title and description; empty means worked out from the name and summary. */
+  seoTitle?: string | null;
+  seoDescription?: string | null;
 };
 
 const WARRANTY = "2 years"; // TODO(client): confirm final warranty terms per product.
 const INSTALLATION_NOTE =
   "A trained LUSAKO technician connects the system to your existing water supply, sets it up and checks everything is working before handing over.";
 
+/** The shared maintenance note as designed. The admin edits it in Page text (Product pages › Installation, warranty and maintenance). */
 export const maintenanceNote =
   "Keep your purifier performing with LUSAKO Care: scheduled preventive maintenance, filter replacement and technical support through a service plan or Annual Maintenance Contract (AMC). Rental systems are maintained by LUSAKO according to your rental agreement.";
 
@@ -72,11 +85,11 @@ const matched = {
   body: "UF for treated city water, RO for well water and higher TDS. We recommend the right one for you.",
 };
 
-/** The usual pair: a 4-stage UF model and a 4-stage RO model. Prices are filled in once LUSAKO confirms them. */
-function ufAndRo(uf: string, ro: string, prices: { uf?: number; ro?: number; rentUf?: number; rentRo?: number } = {}): ProductVariant[] {
+/** The usual pair: a 4-stage UF model and a 4-stage RO model. */
+function ufAndRo(uf: string, ro: string): ProductVariant[] {
   return [
-    { filtration: "UF", label: "4-Stage UF", code: uf, price: prices.uf ?? null, rent: prices.rentUf ?? null },
-    { filtration: "RO", label: "4-Stage RO", code: ro, price: prices.ro ?? null, rent: prices.rentRo ?? null },
+    { filtration: "UF", label: "4-Stage UF", code: uf },
+    { filtration: "RO", label: "4-Stage RO", code: ro },
   ];
 }
 
@@ -87,7 +100,7 @@ export const products: Product[] = [
     family: "AquaElite",
     tagline: "Premium Countertop Water Purifier",
     types: ["countertop"],
-    variants: ufAndRo("W2905-3CF", "W2905-3CR", { rentUf: 4990, rentRo: 5990 }),
+    variants: ufAndRo("W2905-3CF", "W2905-3CR"),
     purification: "UF / RO",
     temperatures: ["Hot", "Normal", "Cold"],
     installation: "Professional installation",
@@ -117,7 +130,7 @@ export const products: Product[] = [
     family: "AquaSpark",
     tagline: "Premium Sparkling Water Purifier",
     types: ["sparkling", "countertop"],
-    variants: [{ filtration: "UF", label: "UF + Sparkling", code: "W29Q1", price: null, rent: null }],
+    variants: [{ filtration: "UF", label: "UF + Sparkling", code: "W29Q1" }],
     purification: "UF + Sparkling",
     temperatures: ["Sparkling", "Still"], // TODO(client): confirm dispensing options
     installation: "Professional installation",
@@ -229,6 +242,19 @@ export const products: Product[] = [
   },
 ];
 
+/** Which products the website recommends and features (cms_settings "picks"); slugs of published products. */
+export type Picks = {
+  /** Find my solution's recommendation for each kind of space. */
+  finder: { home: string; office: string; commercial: string };
+  /** The product on the home page's Buy card; null keeps the first countertop purifier. */
+  homeBuyCard: string | null;
+};
+
+export const defaultPicks: Picks = {
+  finder: { home: "aquaelite-3x", office: "aquaelite-3x", commercial: "aquaprime-pro" },
+  homeBuyCard: null,
+};
+
 export function findProduct(list: Product[], slug: string) {
   return list.find((product) => product.slug === slug);
 }
@@ -237,8 +263,9 @@ export function productTypeLabel(type: ProductType) {
   return productTypes.find((t) => t.id === type)?.label ?? type;
 }
 
-export function productMaintenanceNote(product: Product) {
-  return product.maintenanceNote ?? maintenanceNote;
+/** The product's own maintenance note, else the shared one (pass the admin's, from the product.care block). */
+export function productMaintenanceNote(product: Product, shared: string = maintenanceNote) {
+  return product.maintenanceNote ?? shared;
 }
 
 /** The purifications a product comes in, e.g. ["UF", "RO"]. */
@@ -246,17 +273,17 @@ export function productFiltrations(product: Product): Filtration[] {
   return Array.from(new Set(product.variants.map((variant) => variant.filtration)));
 }
 
-const lowest = (values: (number | null)[]) => {
-  const known = values.filter((value): value is number => value !== null && value > 0);
+const lowest = (values: (number | null | undefined)[]) => {
+  const known = values.filter((value): value is number => typeof value === "number" && value > 0);
   return known.length ? Math.min(...known) : null;
 };
 
-/** Lowest purchase price across the product's options, or null while it is on request. */
+/** Lowest shown purchase price across the product's options, or null while it is on a quote. */
 export function productPriceFrom(product: Product) {
   return lowest(product.variants.map((variant) => variant.price));
 }
 
-/** Lowest monthly rental across the product's options, or null while it is on request. */
+/** Lowest shown monthly rental across the product's options, or null while it is on a quote. */
 export function productRentalFrom(product: Product) {
   return lowest(product.variants.map((variant) => variant.rent));
 }

@@ -2,17 +2,31 @@
 
 import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { ContactList } from "@/components/layout/contact-list";
+import { ContactList, type ContactLabels } from "@/components/layout/contact-list";
 import { ButtonLink } from "@/components/ui/button";
 import { SocialIcons } from "@/components/ui/social-icons";
+import type { chromeActionBar } from "@/content/copy/chrome";
 import type { SiteContact, SocialLink } from "@/content/site";
 import { cn } from "@/lib/cn";
 
 /**
  * The phone action bar's "Contact" button: a sheet slides up with every number, the emergency hotline, WhatsApp and
- * email, each one tap away, and the quote form a tap further (client: make the contact details easy to reach).
+ * email, each one tap away, and the quote form a tap further (client: make the contact details easy to reach). Its
+ * wording is the action bar's block (content/copy/chrome.ts): the third button and the sheet's heading and button.
  */
-export function ContactSheet({ contact, social, className }: { contact: SiteContact; social: SocialLink[]; className?: string }) {
+export function ContactSheet({
+  contact,
+  social,
+  copy,
+  labels,
+  className,
+}: {
+  contact: SiteContact;
+  social: SocialLink[];
+  copy: typeof chromeActionBar.defaults;
+  labels?: ContactLabels;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -49,8 +63,8 @@ export function ContactSheet({ contact, social, className }: { contact: SiteCont
           className,
         )}
       >
-        <span className="text-[15px] font-semibold">Contact</span>
-        <span className="text-xs">Call or get a quote</span>
+        <span className="text-[15px] font-semibold">{copy.actions[2].label}</span>
+        <span className="text-xs">{copy.actions[2].hint}</span>
       </button>
 
       {open && (
@@ -65,7 +79,7 @@ export function ContactSheet({ contact, social, className }: { contact: SiteCont
           >
             <div className="flex items-center justify-between gap-4 px-3 pt-2">
               <h2 id={titleId} className="font-display text-xl font-bold text-ink">
-                Talk to LUSAKO
+                {copy.sheetTitle}
               </h2>
               <button
                 ref={closeRef}
@@ -77,11 +91,11 @@ export function ContactSheet({ contact, social, className }: { contact: SiteCont
                 <X aria-hidden className="size-5" />
               </button>
             </div>
-            <ContactList contact={contact} className="mt-2" />
+            <ContactList contact={contact} labels={labels} className="mt-2" />
             <SocialIcons links={social} className="px-3 pt-1" />
             <div className="mt-4 px-3">
               <ButtonLink href="/contact" size="lg" arrow className="w-full" onClick={() => setOpen(false)}>
-                Get a quote
+                {copy.sheetButton}
               </ButtonLink>
             </div>
           </div>

@@ -1,7 +1,8 @@
-import { amcEnquiryHref } from "@/components/sections/amc-plans";
+import { amcEnquiryHref, withValues } from "@/components/sections/amc-plans";
 import { CompareCell, type CompareValue } from "@/components/sections/compare-cell";
 import { ButtonLink } from "@/components/ui/button";
 import { annualFee, dailyCost, recommendedPlan, visitsLabel, type AmcPlan } from "@/content/amc";
+import type { amcPlanCards } from "@/content/copy/amc";
 import { cn } from "@/lib/cn";
 import { formatLKR, formatLKRCents } from "@/lib/format";
 
@@ -25,9 +26,20 @@ const rows: Row[] = [
 
 /**
  * Essential | Complete | Maximum, side by side. Tablets and up get the table; phones get one row per line with the
- * three plans under it, and the plan names held under the header while the rows scroll by.
+ * three plans under it, and the plan names held under the header while the rows scroll by. Each column's button
+ * uses the plan cards' wording (`copy`).
  */
-export function AmcComparison({ plans, footnote, className }: { plans: AmcPlan[]; footnote: string; className?: string }) {
+export function AmcComparison({
+  plans,
+  copy,
+  footnote,
+  className,
+}: {
+  plans: AmcPlan[];
+  copy: typeof amcPlanCards.defaults;
+  footnote: string;
+  className?: string;
+}) {
   return (
     <div className={className}>
       <div className="card-line hidden overflow-hidden rounded-card-xl md:block">
@@ -81,7 +93,7 @@ export function AmcComparison({ plans, footnote, className }: { plans: AmcPlan[]
                 return (
                   <td key={plan.id} className={cn("p-5", featured && "border-t border-white/15 bg-deep")}>
                     <ButtonLink href={amcEnquiryHref(plan)} variant={featured ? "white" : "outline"} size="sm" arrow>
-                      Choose {plan.short}
+                      {withValues(copy.button, { plan: plan.short })}
                     </ButtonLink>
                   </td>
                 );

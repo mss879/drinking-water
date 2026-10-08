@@ -1,14 +1,19 @@
+import type { SiteContact } from "@/content/site";
 import { whatsappHref } from "@/lib/contact";
 
-/** WhatsApp / chat CTA for high-intent visitors (brief §15): a small round button with the WhatsApp mark, to sales. */
-export function WhatsAppButton({ number }: { number: string }) {
-  if (!number) return null;
+/**
+ * WhatsApp / chat CTA for high-intent visitors (brief §15): a small round button with the WhatsApp mark, to sales,
+ * opening with the admin's greeting when there is one. It shows while the admin has it switched on and a sales
+ * number is set; `label` is its screen-reader name (Page text › Floating WhatsApp button).
+ */
+export function WhatsAppButton({ contact, label }: { contact: SiteContact; label: string }) {
+  if (!contact.showWhatsappButton || !contact.whatsappSales) return null;
   return (
     <a
-      href={whatsappHref(number)}
+      href={whatsappHref(contact.whatsappSales, contact.whatsappGreeting)}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with LUSAKO on WhatsApp"
+      aria-label={label}
       className="appear-on-scroll fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(var(--cta-bar-h)+0.75rem)] z-40 grid size-12 place-items-center rounded-full bg-deep text-white shadow-float transition-transform duration-200 ease-emph hover:-translate-y-0.5 lg:right-5 lg:bottom-5"
     >
       <svg viewBox="0 0 24 24" aria-hidden fill="currentColor" className="size-6">

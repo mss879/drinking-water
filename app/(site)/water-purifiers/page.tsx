@@ -13,68 +13,46 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { BrandIcon } from "@/components/ui/brand-icon";
-import { faqs } from "@/content/faqs";
+import {
+  purifiersCare,
+  purifiersCard,
+  purifiersCatalogue,
+  purifiersCatalogueMessages,
+  purifiersDecision,
+  purifiersFaqs,
+  purifiersHero,
+  purifiersNext,
+  purifiersSeo,
+  purifiersUfOrRo,
+  purifiersWhyBuy,
+} from "@/content/copy/purifiers";
 import type { Photos } from "@/content/images";
 import type { Product } from "@/content/products";
 import { site } from "@/content/site";
-import { getPhotos, getProducts } from "@/lib/cms/content";
+import { getCopy, getFaqs, getPhotos, getProducts } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { JsonLd } from "@/lib/jsonld";
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Water Purifiers in Sri Lanka – UF & RO",
-  description:
-    "Buy a LUSAKO water purifier in Sri Lanka: countertop, freestanding, under-sink, wall-mount and sparkling systems with UF or RO, installation and warranty.",
-  path: "/water-purifiers",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(purifiersSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/water-purifiers" });
+}
 
-/** The brief's BUY message (Doc 1 §12, Doc 2 §5): ownership, long-term value, quality, technology, warranty. */
-const reasons: { icon: LucideIcon; title: string; body: string }[] = [
-  { icon: KeyRound, title: "Yours to keep", body: "Buy once and the system is yours, with no monthly rental to pay." },
-  {
-    icon: PiggyBank,
-    title: "Long-term value",
-    body: "Invest once and enjoy reliable purified water for years, with no more bottled-water deliveries.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Product quality",
-    body: "Premium countertop, freestanding, under-sink, wall-mount and sparkling systems, designed for everyday use at home and at work.",
-  },
-  {
-    icon: Droplets,
-    title: "The right technology",
-    body: "UF or RO purification, matched to your water source. We recommend the right one, so you don’t have to be a water expert.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Warranty cover",
-    body: "Every purchased system comes with a product warranty, shown on each product page.",
-  },
-];
+/**
+ * The icons of the brief's BUY message (Doc 1 §12, Doc 2 §5): ownership, long-term value, quality, technology,
+ * warranty. Their wording is the purifiers.whyBuy block; each icon stays with its place.
+ */
+const reasonIcons: LucideIcon[] = [KeyRound, PiggyBank, BadgeCheck, Droplets, ShieldCheck];
 
-/** The three questions behind Find My Solution (brief Doc 1 §14). */
-const questions = ["Where do you live?", "What is your water source?", "What do you need?"];
-
+/** The UF and RO badges beside the two water sources, in the order of the purifiers.ufOrRo cards. */
 const waterMatches = [
-  {
-    source: "City water",
-    tech: "UF",
-    name: "Ultrafiltration",
-    body: "A fine membrane removes particles, sediment and microorganisms while keeping naturally occurring minerals.",
-    dark: false,
-  },
-  {
-    source: "Well water / higher TDS",
-    tech: "RO",
-    name: "Reverse osmosis",
-    body: "A much finer membrane also reduces dissolved salts and other dissolved solids (TDS).",
-    dark: true,
-  },
+  { tech: "UF", dark: false },
+  { tech: "RO", dark: true },
 ];
 
 function itemList(products: Product[]) {
@@ -91,24 +69,17 @@ function itemList(products: Product[]) {
   };
 }
 
-/** Where to go next from the catalogue: functional water, and the filters and parts that keep a purifier going. */
+/**
+ * Where to go next from the catalogue: functional water, and the filters and parts that keep a purifier going. Their
+ * wording is the purifiers.next block, in this order.
+ */
 const nextLinks = [
-  {
-    href: "/functional-water",
-    icon: "sparkling",
-    title: "Functional water",
-    body: "Sparkling, hydrogen and alkaline water on tap.",
-  },
-  {
-    href: "/service-support/parts",
-    icon: "filter",
-    title: "Filters, parts & accessories",
-    body: "Genuine cartridges, spare parts and accessories.",
-  },
+  { href: "/functional-water", icon: "sparkling" },
+  { href: "/service-support/parts", icon: "filter" },
 ] as const;
 
 /** "Which purifier is right for me?" — the brief's decision tool, closing the catalogue (Doc 2 §5). */
-function DecisionCard({ photos }: { photos: Photos }) {
+function DecisionCard({ photos, copy }: { photos: Photos; copy: typeof purifiersDecision.defaults }) {
   return (
     <div data-reveal="up" className="card-line relative mt-6 overflow-hidden rounded-card-xl p-6 sm:p-8 lg:p-10">
       <WaveLines lines={3} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-brand/30" />
@@ -118,13 +89,11 @@ function DecisionCard({ photos }: { photos: Photos }) {
             <Image src={photos.waterTest.src} alt="" fill sizes="80px" className="object-cover" />
           </div>
           <div>
-            <h3 className="font-display text-h3 font-bold text-ink">Which purifier is right for me?</h3>
-            <p className="mt-2 max-w-xl text-muted">
-              Answer three quick questions and we’ll recommend the right system and purification for your water.
-            </p>
+            <h3 className="font-display text-h3 font-bold text-ink">{copy.title}</h3>
+            <p className="mt-2 max-w-xl text-muted">{copy.body}</p>
             <ol className="mt-5 flex flex-wrap gap-2">
-              {questions.map((question, i) => (
-                <li key={question}>
+              {copy.questions.map((question, i) => (
+                <li key={i}>
                   <Pill variant="tint">
                     <span aria-hidden className="font-bold text-deep">
                       {i + 1}
@@ -137,31 +106,28 @@ function DecisionCard({ photos }: { photos: Photos }) {
           </div>
         </div>
         <ButtonLink href="/find-my-solution" variant="primary" size="lg" arrow className="w-full sm:w-fit">
-          Find my solution
+          {copy.button}
         </ButtonLink>
       </div>
     </div>
   );
 }
 
-function WhyOwn() {
+function WhyOwn({ copy, care }: { copy: typeof purifiersWhyBuy.defaults; care: typeof purifiersCare.defaults }) {
+  const reasons = copy.reasons.map((reason, i) => ({ ...reason, icon: reasonIcons[i] }));
   return (
     <section className="py-16 md:py-20 lg:py-28">
       <Container>
         <SectionHeading
           layout="split"
-          eyebrow="Why buy"
-          title={
-            <>
-              Why own a <Highlight className="inline-block">LUSAKO system</Highlight>
-            </>
-          }
-          description="For most homes, buying is the best long-term value. The system is yours, it’s covered by warranty, and LUSAKO Care is there whenever you need us."
+          eyebrow={copy.eyebrow}
+          title={marked(copy.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}
+          description={copy.description}
         />
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
-          {reasons.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="card-line flex flex-col p-6 sm:min-h-60 sm:p-7">
+          {reasons.map(({ icon: Icon, title, body }, i) => (
+            <li key={i} className="card-line flex flex-col p-6 sm:min-h-60 sm:p-7">
               <span className="grid size-16 place-items-center rounded-card-sm bg-tint">
                 <IconBadge size="sm">
                   <Icon />
@@ -183,11 +149,8 @@ function WhyOwn() {
                 </IconBadge>
                 <ArrowCircle />
               </span>
-              <h3 className="relative mt-auto pt-6 font-display text-h3 font-bold sm:pt-10">LUSAKO Care</h3>
-              <span className="relative mt-2 block text-[15px] leading-relaxed text-white">
-                After-sales support whenever you need it: installation, preventive maintenance, filter replacement and technical support
-                through a service plan or AMC.
-              </span>
+              <h3 className="relative mt-auto pt-6 font-display text-h3 font-bold sm:pt-10">{care.title}</h3>
+              <span className="relative mt-2 block text-[15px] leading-relaxed text-white">{care.body}</span>
             </Link>
           </li>
         </ul>
@@ -197,7 +160,8 @@ function WhyOwn() {
 }
 
 /** A compact UF / RO explainer: city water → UF, well water / higher TDS → RO (brief Doc 1 §14). */
-function UfOrRo() {
+function UfOrRo({ copy }: { copy: typeof purifiersUfOrRo.defaults }) {
+  const matches = waterMatches.map((match, i) => ({ ...match, ...copy.matches[i] }));
   return (
     <section id="uf-or-ro" className="py-16 md:py-20 lg:py-28">
       <Container>
@@ -205,25 +169,21 @@ function UfOrRo() {
           <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-brand/35" />
           <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16" data-no-reveal>
             <div data-reveal="up">
-              <Pill variant="white">UF or RO?</Pill>
-              <h2 className="mt-5 text-h2 font-semibold text-ink">
-                Matched to <Highlight>your water</Highlight>
-              </h2>
-              <p className="mt-5 max-w-md text-lead text-muted">
-                You don’t need to be a water expert. Tell us where your water comes from and we’ll recommend the right purification.
-              </p>
+              <Pill variant="white">{copy.pill}</Pill>
+              <h2 className="mt-5 text-h2 font-semibold text-ink">{marked(copy.title)}</h2>
+              <p className="mt-5 max-w-md text-lead text-muted">{copy.description}</p>
               <ButtonLink href="/find-my-solution" variant="primary" arrow className="mt-8 w-full sm:w-auto">
-                Check my water
+                {copy.button}
               </ButtonLink>
             </div>
 
             <div>
               <ul data-stagger className="grid gap-3">
-                {waterMatches.map((match) => (
+                {matches.map((match) => (
                   <li key={match.tech} className="rounded-card bg-white p-5 shadow-soft sm:p-6">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <p className="min-w-0 flex-1">
-                        <span className="block text-sm text-muted">If you have</span>
+                        <span className="block text-sm text-muted">{copy.cardLead}</span>
                         <span className="block font-display text-lg leading-snug font-bold text-ink">{match.source}</span>
                       </p>
                       <ArrowRight aria-hidden className="size-5 shrink-0 text-deep" />
@@ -238,12 +198,12 @@ function UfOrRo() {
                       </p>
                     </div>
                     <p className="mt-4 border-t border-line pt-4 text-sm leading-relaxed text-muted">
-                      <strong className="font-semibold text-deep">{match.name}.</strong> {match.body}
+                      {marked(match.body, { mark: (phrase) => <strong className="font-semibold text-deep">{phrase}</strong> })}
                     </p>
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-sm text-muted">RO also suits city water. The final recommendation depends on your water condition.</p>
+              <p className="mt-4 text-sm text-muted">{copy.footnote}</p>
             </div>
           </div>
         </div>
@@ -253,18 +213,33 @@ function UfOrRo() {
 }
 
 export default async function WaterPurifiersPage() {
-  const [products, photos] = await Promise.all([getProducts(), getPhotos()]);
+  const [products, photos, faqs, hero, catalogue, messages, card, decision, next, whyBuy, care, ufOrRo, faqHeading] = await Promise.all([
+    getProducts(),
+    getPhotos(),
+    getFaqs(),
+    getCopy(purifiersHero),
+    getCopy(purifiersCatalogue),
+    getCopy(purifiersCatalogueMessages),
+    getCopy(purifiersCard),
+    getCopy(purifiersDecision),
+    getCopy(purifiersNext),
+    getCopy(purifiersWhyBuy),
+    getCopy(purifiersCare),
+    getCopy(purifiersUfOrRo),
+    getCopy(purifiersFaqs),
+  ]);
+  const nextCards = nextLinks.map((link, i) => ({ ...link, ...next.cards[i] }));
   return (
     <>
       <JsonLd data={itemList(products)} />
       <PageHero
         crumbs={[{ label: "Water purifiers", href: "/water-purifiers" }]}
-        eyebrow="LUSAKO Water Purifiers"
-        title={["Own", <Highlight key="better">better water</Highlight>]}
-        description="Invest once in a LUSAKO purification system and enjoy reliable purified water for years. Find the right system for your water and lifestyle."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Get a quote", href: "/contact?type=buy" },
-          { label: "Find my solution", href: "/find-my-solution" },
+          { label: hero.quoteButton, href: "/contact?type=buy" },
+          { label: hero.finderButton, href: "/find-my-solution" },
         ]}
         image={{ src: photos.waterPour.src, position: "object-[50%_50%]" }}
       />
@@ -273,18 +248,20 @@ export default async function WaterPurifiersPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Catalogue"
-            title={
-              <>
-                Choose your <Highlight>purifier</Highlight>
-              </>
-            }
-            description="Countertop, freestanding, under-sink, wall-mount and sparkling purifiers. Filter by type or purification, or let us recommend one."
+            eyebrow={catalogue.eyebrow}
+            title={marked(catalogue.title)}
+            description={catalogue.description}
           />
-          <ProductCatalog products={products} className="mt-10 lg:mt-12" purificationHelpHref="#uf-or-ro" />
-          <DecisionCard photos={photos} />
+          <ProductCatalog
+            products={products}
+            className="mt-10 lg:mt-12"
+            purificationHelpHref="#uf-or-ro"
+            copy={messages}
+            cardCopy={card}
+          />
+          <DecisionCard photos={photos} copy={decision} />
           <ul className="mt-4 grid gap-4 md:grid-cols-2">
-            {nextLinks.map((link) => (
+            {nextCards.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -305,10 +282,10 @@ export default async function WaterPurifiersPage() {
         </Container>
       </section>
 
-      <WhyOwn />
-      <UfOrRo />
+      <WhyOwn copy={whyBuy} care={care} />
+      <UfOrRo copy={ufOrRo} />
       <BuyVsRent />
-      <FaqSection faqs={faqs.filter((faq) => faq.topic === "buying" || faq.topic === "purification")} />
+      <FaqSection faqs={faqs.filter((faq) => faq.topic === "buying" || faq.topic === "purification")} title={faqHeading.title} />
       <CtaBand />
     </>
   );

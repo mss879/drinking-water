@@ -28,67 +28,40 @@ import { HeroStrip, PageHero } from "@/components/sections/page-hero";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Rule, WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { sectors } from "@/content/clients";
-import { faqs } from "@/content/faqs";
-import { leadForms } from "@/content/forms";
-import { getPhotos, getSiteSettings } from "@/lib/cms/content";
+import {
+  corporateCapabilities,
+  corporateCta,
+  corporateFaq,
+  corporateHero,
+  corporateProposal,
+  corporateScale,
+  corporateSectors,
+  corporateSeo,
+  corporateStatement,
+  corporateSteps,
+  corporateStrip,
+} from "@/content/copy/corporate";
+import { getCopy, getFaqs, getPhotos, getSiteSettings } from "@/lib/cms/content";
 import { telHref } from "@/lib/contact";
 import { site } from "@/content/site";
 import { cn } from "@/lib/cn";
 import { JsonLd } from "@/lib/jsonld";
 import { organizationRef, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Corporate Hydration Solutions",
-  description:
-    "One partner for workplace hydration: consultation, UF or RO recommendation, installation, preventive maintenance and account management, for one site or many.",
-  path: "/hydration-solutions/corporate",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(corporateSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/hydration-solutions/corporate" });
+}
 
-const scale = [
-  {
-    title: "One location",
-    body: "A complete hydration setup for a single office, factory, hotel or school.",
-    points: ["Consultation based on your number of users", "UF or RO, matched to your water source", "Maintenance and support according to contract"],
-    pins: 1,
-  },
-  {
-    title: "Multiple locations",
-    body: "Consistent hydration across every branch and site, planned as one programme.",
-    points: [
-      "Machines selected site by site, by expected consumption",
-      "Installation and service planning across locations",
-      "Centralised account management",
-    ],
-    pins: 3,
-  },
-];
+/** Map pins on the two scale cards, by position: one location, then many (their wording is corporate.scale). */
+const scalePins = [1, 3];
 
-/** The eight Corporate Hydration Solutions capabilities (brief Doc 2 §12). */
-const capabilities: { icon: LucideIcon; title: string; body: string }[] = [
-  { icon: MapPinned, title: "Single-office and multi-location solutions", body: "One site or many, planned and supported as a whole." },
-  { icon: Users, title: "Employee and user-based consultation", body: "We size your solution around the people who use it." },
-  { icon: Droplets, title: "UF or RO, matched to your water", body: "Recommended by water source and site conditions." },
-  { icon: Gauge, title: "Machines matched to demand", body: "Selected for expected consumption and the environment." },
-  { icon: ClipboardList, title: "Installation and service planning", body: "A clear plan for installation and ongoing service at every site." },
-  { icon: Wrench, title: "Preventive maintenance and technical support", body: "Delivered according to your contract." },
-  { icon: UserCog, title: "Centralised account management", body: "One point of contact for your corporate account." },
-  { icon: ReceiptText, title: "Custom quotation", body: "A tailored quote for organisations that need multiple units." },
-];
-
-const steps = [
-  { title: "Consultation", body: "We learn about your sites, your teams and the number of users at each location." },
-  { title: "UF or RO recommendation", body: "Based on each site’s water source and conditions." },
-  { title: "Machine selection", body: "Matched to expected consumption and the environment." },
-  { title: "Installation & service planning", body: "Professional installation, with a service plan for every site." },
-  {
-    title: "Preventive maintenance & account management",
-    body: "Maintenance and technical support according to contract, with centralised account management.",
-  },
-];
+/** The eight capabilities' icons, by position (brief Doc 2 §12; their wording is corporate.capabilities). */
+const capabilityIcons: LucideIcon[] = [MapPinned, Users, Droplets, Gauge, ClipboardList, Wrench, UserCog, ReceiptText];
 
 const sectorIcons: Record<string, LucideIcon> = {
   "Corporate offices": Building2,
@@ -100,9 +73,32 @@ const sectorIcons: Record<string, LucideIcon> = {
 };
 
 export default async function CorporateHydrationPage() {
-  const [photos, settings] = await Promise.all([getPhotos(), getSiteSettings()]);
+  const [photos, settings, faqs, hero, strip, scaleCopy, statement, capabilitiesCopy, stepsCopy, sectorsCopy, proposal, faqCopy, cta] =
+    await Promise.all([
+      getPhotos(),
+      getSiteSettings(),
+      getFaqs(),
+      getCopy(corporateHero),
+      getCopy(corporateStrip),
+      getCopy(corporateScale),
+      getCopy(corporateStatement),
+      getCopy(corporateCapabilities),
+      getCopy(corporateSteps),
+      getCopy(corporateSectors),
+      getCopy(corporateProposal),
+      getCopy(corporateFaq),
+      getCopy(corporateCta),
+    ]);
   const phone = settings.contact.phones[0];
-  const corporateFaqs = faqs.filter((faq) => /companies|locations/i.test(faq.q));
+  const corporateFaqs = faqs.filter((faq) => faq.corporate);
+  const scale = scaleCopy.cards.map((card, i) => ({
+    title: card.title,
+    body: card.body,
+    points: [card.point1, card.point2, card.point3],
+    pins: scalePins[i] ?? 1,
+  }));
+  const capabilities = capabilitiesCopy.cards.map((card, i) => ({ icon: capabilityIcons[i] ?? Building2, title: card.title, body: card.body }));
+  const steps = stepsCopy.steps;
   const contact = [
     ...settings.contact.phones.map((number) => ({ icon: Phone, label: number, href: telHref(number) as string | undefined })),
     ...(settings.contact.salesEmail ? [{ icon: Mail, label: settings.contact.salesEmail, href: `mailto:${settings.contact.salesEmail}` }] : []),
@@ -131,38 +127,30 @@ export default async function CorporateHydrationPage() {
           { label: "Hydration solutions", href: "/hydration-solutions" },
           { label: "Corporate", href: "/hydration-solutions/corporate" },
         ]}
-        eyebrow="Corporate Hydration Solutions"
-        title={["One partner for your", <Highlight key="workplace">workplace hydration</Highlight>]}
-        description="One solution for your entire workplace. For offices, factories, hotels, schools, hospitals and commercial organisations."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Request a business quote", href: "#proposal" },
-          ...(phone ? [{ label: "Call our team", href: telHref(phone), icon: Phone }] : []),
+          { label: hero.quoteButton, href: "#proposal" },
+          ...(phone ? [{ label: hero.callButton, href: telHref(phone), icon: Phone }] : []),
         ]}
         image={{ src: photos.corporateTeam.src, position: "object-[50%_40%]" }}
       />
-      <HeroStrip
-        title="Your hydration infrastructure, managed"
-        description="From consultation and installation to maintenance and account management."
-        pills={["Single office", "Multi-location"]}
-      />
+      <HeroStrip title={strip.title} description={strip.description} pills={strip.pills} />
 
       <section className="py-16 md:py-20 lg:py-28">
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Single-office and multi-location"
-            title={
-              <>
-                One location or <Highlight>many</Highlight>
-              </>
-            }
-            description="Whether you run one office or many branches, LUSAKO plans and looks after the drinking water at every site."
+            eyebrow={scaleCopy.eyebrow}
+            title={marked(scaleCopy.title)}
+            description={scaleCopy.description}
           />
 
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:mt-14 lg:gap-5">
             {scale.map((item, i) => (
               <article
-                key={item.title}
+                key={i}
                 className={cn(
                   "relative flex min-h-[23rem] flex-col overflow-hidden p-6 sm:p-8",
                   i === 0 ? "card-line" : "rounded-card bg-tint-2",
@@ -180,8 +168,8 @@ export default async function CorporateHydrationPage() {
                   <h3 className="font-display text-h3 font-bold text-ink">{item.title}</h3>
                   <p className="mt-2 max-w-md text-[15px] text-muted">{item.body}</p>
                   <ul className="mt-6 grid gap-2.5">
-                    {item.points.map((point) => (
-                      <li key={point} className="flex gap-3 text-[15px] text-ink">
+                    {item.points.map((point, p) => (
+                      <li key={p} className="flex gap-3 text-[15px] text-ink">
                         <Check aria-hidden className="mt-1 size-4 shrink-0 text-deep" strokeWidth={2.5} />
                         {point}
                       </li>
@@ -196,11 +184,10 @@ export default async function CorporateHydrationPage() {
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
               <p className="max-w-3xl font-display text-[clamp(1.75rem,1.2rem+2.2vw,3rem)] leading-[1.12] font-semibold tracking-[-0.025em]">
-                <span className="block text-mist">Need 15 machines across 5 branches?</span> LUSAKO can manage your complete hydration
-                infrastructure.
+                <span className="block text-mist">{statement.question}</span> {statement.statement}
               </p>
               <ButtonLink href="#proposal" variant="white" size="lg" arrow className="w-full sm:w-auto">
-                Request a business quote
+                {statement.button}
               </ButtonLink>
             </div>
           </div>
@@ -211,17 +198,13 @@ export default async function CorporateHydrationPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="What we manage"
-            title={
-              <>
-                Everything your workplace needs, <Highlight>from one partner</Highlight>
-              </>
-            }
-            description="More than equipment: LUSAKO plans, installs and looks after drinking water for your whole organisation."
+            eyebrow={capabilitiesCopy.eyebrow}
+            title={marked(capabilitiesCopy.title)}
+            description={capabilitiesCopy.description}
           />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4">
-            {capabilities.map(({ icon: Icon, title, body }) => (
-              <li key={title} className="card-line flex flex-col p-6 sm:min-h-60">
+            {capabilities.map(({ icon: Icon, title, body }, i) => (
+              <li key={i} className="card-line flex flex-col p-6 sm:min-h-60">
                 <span className="grid size-16 place-items-center rounded-card-sm bg-tint">
                   <IconBadge size="sm">
                     <Icon />
@@ -237,19 +220,12 @@ export default async function CorporateHydrationPage() {
 
       <section className="py-16 md:py-20 lg:py-28">
         <Container>
-          <SectionHeading
-            eyebrow="How it works"
-            title={
-              <>
-                From consultation to <Highlight>ongoing care</Highlight>
-              </>
-            }
-          />
+          <SectionHeading eyebrow={stepsCopy.eyebrow} title={marked(stepsCopy.title)} />
           <Rule className="mt-12 lg:mt-14" />
           <ol className="grid sm:grid-cols-2 lg:grid-cols-5">
             {steps.map((step, i) => (
               <li
-                key={step.title}
+                key={i}
                 className={cn(
                   "flex gap-5 py-7 sm:min-h-64 sm:flex-col sm:gap-0 sm:px-6 sm:py-8 lg:px-5 lg:py-10 lg:first:pl-0 lg:last:pr-0",
                   i > 0 && "border-t border-line sm:border-t-0 lg:border-l",
@@ -280,9 +256,9 @@ export default async function CorporateHydrationPage() {
           <div data-expand className="relative isolate overflow-hidden rounded-card-xl bg-tint-2 px-6 py-14 text-center sm:px-10 lg:py-20">
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-brand/35" />
             <h2 id="sectors-title" className="relative mx-auto max-w-2xl text-h2 font-semibold text-ink">
-              Built for every kind of workplace
+              {sectorsCopy.title}
             </h2>
-            <p className="relative mx-auto mt-4 max-w-xl text-lead text-muted">From a single office to organisations with many sites.</p>
+            <p className="relative mx-auto mt-4 max-w-xl text-lead text-muted">{sectorsCopy.description}</p>
             <ul className="relative mt-9 flex flex-wrap justify-center gap-2">
               {sectors.map((sector) => {
                 const Icon = sectorIcons[sector] ?? Building2;
@@ -302,18 +278,10 @@ export default async function CorporateHydrationPage() {
         <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12" data-no-reveal>
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+3rem)]">
-              <SectionHeading
-                eyebrow="Business quote"
-                title={
-                  <>
-                    Request a <Highlight>business quote</Highlight>
-                  </>
-                }
-                description={leadForms.corporate.description}
-              />
-              <p data-reveal="up" className="mt-6 max-w-md text-[15px] leading-relaxed text-muted">{leadForms.corporate.successNote}</p>
+              <SectionHeading eyebrow={proposal.eyebrow} title={marked(proposal.title)} description={proposal.description} />
+              <p data-reveal="up" className="mt-6 max-w-md text-[15px] leading-relaxed text-muted">{proposal.note}</p>
               <div data-reveal="up" className="card-line mt-10 p-6">
-                <h3 className="font-display text-lg font-bold text-ink">Prefer to talk?</h3>
+                <h3 className="font-display text-lg font-bold text-ink">{proposal.talkTitle}</h3>
                 <ul className="mt-3 grid gap-1 text-[15px]">
                   {contact.map(({ icon: Icon, label, href }) => (
                     <li key={label}>
@@ -336,26 +304,15 @@ export default async function CorporateHydrationPage() {
           </div>
 
           <div data-reveal="up" className="card-line rounded-card-xl p-6 sm:p-8 lg:col-span-7 lg:p-10">
-            <h3 className="font-display text-h3 font-bold text-ink">Tell us about your organisation</h3>
-            <p className="mt-2 mb-8 text-[15px] text-muted">Your sites, your teams and what you need. We’ll plan the rest with you.</p>
+            <h3 className="font-display text-h3 font-bold text-ink">{proposal.formTitle}</h3>
+            <p className="mt-2 mb-8 text-[15px] text-muted">{proposal.formIntro}</p>
             <LeadForm type="corporate" />
           </div>
         </Container>
       </section>
 
-      <FaqSection faqs={corporateFaqs} title="Corporate questions, answered" />
-      <CtaBand
-        eyebrow="Corporate Hydration Solutions"
-        title={
-          <>
-            Let’s plan your
-            <br className="hidden sm:block" /> workplace hydration
-          </>
-        }
-        description="Tell us about your sites and your teams. A LUSAKO business consultant will prepare a proposal for your organisation."
-        href="#proposal"
-        buttonLabel="Get a proposal"
-      />
+      <FaqSection faqs={corporateFaqs} title={faqCopy.title} />
+      <CtaBand copy={cta} href="#proposal" />
     </>
   );
 }

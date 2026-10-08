@@ -1,13 +1,14 @@
-import { ContactLink, contactRows, type ContactRow } from "@/components/layout/contact-list";
+import { ContactLink, contactRows, type ContactLabels, type ContactRow } from "@/components/layout/contact-list";
 import { IconBadge } from "@/components/ui/icon-badge";
 import type { SiteContact } from "@/content/site";
 
 /**
  * LUSAKO's contact channels, in the order a page wants them (ids from contactRows: phone, hotline, whatsapp,
  * whatsapp-emergency, sales-email, operations-email, hours, address). Anything not listed follows in the usual order.
+ * `labels` are the row names from Page text (chrome.contactLabels); without them the defaults apply.
  */
-export function contactChannels(contact: SiteContact, first: string[] = []): ContactRow[] {
-  const rows = contactRows(contact);
+export function contactChannels(contact: SiteContact, first: string[] = [], labels?: ContactLabels): ContactRow[] {
+  const rows = contactRows(contact, labels);
   const rank = (id: string) => (first.includes(id) ? first.indexOf(id) : first.length + rows.findIndex((row) => row.id === id));
   return [...rows].sort((a, b) => rank(a.id) - rank(b.id));
 }

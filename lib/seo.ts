@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { chromeSite } from "@/content/copy/chrome";
 import { site } from "@/content/site";
+import { getCopy } from "@/lib/cms/content";
 
-export const ogImage = { url: "/og", width: 1200, height: 630, alt: "LUSAKO: Better Water. Better Way." };
+/** The shared social card (app/og/route.tsx). Its alt text defaults to the Search & sharing block's (content/copy/chrome.ts). */
+export const ogImage = { url: "/og", width: 1200, height: 630, alt: chromeSite.defaults.imageAlt };
 
 export type OgImage = { url: string; width: number; height: number; alt: string };
 
@@ -34,14 +37,15 @@ const TITLE_LIMIT = 60;
 
 /**
  * Per-page metadata with canonical URL and social cards. Next merges metadata shallowly,
- * so every page passes its own complete openGraph object through here.
+ * so every page passes its own complete openGraph object through here. Without an image of its own, a page gets the
+ * shared card with the alt text from the admin's Search & sharing block.
  */
-export function pageMetadata({
+export async function pageMetadata({
   title,
   description,
   path,
   absolute = false,
-  image = ogImage,
+  image,
   type = "website",
 }: {
   title: string;
@@ -50,7 +54,8 @@ export function pageMetadata({
   absolute?: boolean;
   image?: OgImage;
   type?: "website" | "article";
-}): Metadata {
+}): Promise<Metadata> {
+  const card = image ?? { ...ogImage, alt: (await getCopy(chromeSite)).imageAlt };
   const suffixed = `${title} | ${site.name}`;
   const standalone = absolute || suffixed.length > TITLE_LIMIT;
   const fullTitle = standalone ? title : suffixed;
@@ -65,8 +70,8 @@ export function pageMetadata({
       url: path,
       title: fullTitle,
       description,
-      images: [image],
+      images: [card],
     },
-    twitter: { card: "summary_large_image", title: fullTitle, description, images: [image.url] },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [card.url] },
   };
 }

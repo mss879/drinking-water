@@ -20,144 +20,82 @@ import { Container } from "@/components/ui/container";
 import { Rule, WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { fill } from "@/content/copy/schema";
+import { whyHero, whyNextSteps, whyPillars, whyProposition, whySeo, whyTrust } from "@/content/copy/why";
 import type { Photos } from "@/content/images";
-import { getPhotos } from "@/lib/cms/content";
-import { rentalCharges } from "@/content/pricing";
+import { getCopy, getPhotos, getRentalPrices } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Why LUSAKO – Your Professional Hydration Partner",
-  absolute: true,
-  description:
-    "A professional hydration partner, not a catalogue of imported appliances: the right purification technology, installation, maintenance and long-term care.",
-  path: "/why-lusako",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(whySeo);
+  return pageMetadata({ title: seo.title, absolute: true, description: seo.description, path: "/why-lusako" });
+}
 
-/** The complete proposition (brief Doc 2 §4, "Why LUSAKO"). */
-const proposition = [
-  {
-    title: "Suitable purification technology",
-    body: "UF for treated city water, RO for well water and higher TDS. We recommend the right one, so you never have to work it out alone.",
-  },
-  {
-    title: "Professional installation",
-    body: "Trained LUSAKO technicians connect your system to your existing water supply and check everything before handing over.",
-  },
-  { title: "Preventive maintenance", body: "Scheduled service visits keep your system performing at its best, year after year." },
-  { title: "Technical support", body: "Diagnosis and repair by technicians who know LUSAKO systems inside out." },
-  {
-    title: "Long-term customer care",
-    body: "Service plans and Annual Maintenance Contracts for purchased systems, and dedicated support for rental customers.",
-  },
+/** Where each Buy / Rent / Hydrate / Care card leads, by position (their wording is the why.pillars block). */
+const pillarLinks = ["/water-purifiers", "/rental", "/hydration-solutions", "/service-support"];
+
+/**
+ * Trust elements from brief Doc 2 §16 that are true today: each card's icon and link, by position (their wording is
+ * the why.trust block). Client proof is added once approved.
+ */
+const trustPlaces: { icon: LucideIcon; href?: string }[] = [
+  { icon: ShieldCheck, href: "/water-purifiers" },
+  { icon: Wrench },
+  { icon: CalendarCheck },
+  { icon: Headset, href: "/service-support" },
+  { icon: Receipt, href: "/rental" },
+  { icon: FlaskConical, href: "/find-my-solution" },
+  { icon: MessagesSquare, href: "/faq" },
+  { icon: MapPin, href: "/contact" },
 ];
 
-const pillars = [
-  { name: "Buy", line: "Own your water purification system.", href: "/water-purifiers", cta: "Explore purifiers" },
-  { name: "Rent", line: "Complete hydration for one predictable monthly payment.", href: "/rental", cta: "Explore rental" },
-  {
-    name: "Hydrate",
-    line: "Hydration solutions for offices and organisations, across one site or many.",
-    href: "/hydration-solutions",
-    cta: "Hydration solutions",
-  },
-  { name: "Care", line: "Professional installation, maintenance and technical support.", href: "/service-support", cta: "LUSAKO Care" },
-];
+/** The card whose text names the initial payment while it's shown ("Transparent rental terms"). */
+const RENTAL_TERMS = 4;
 
-/** Trust elements from brief Doc 2 §16 that are true today. Client proof is added once approved. */
-const trust: { icon: LucideIcon; title: string; body: string; href?: string }[] = [
-  {
-    icon: ShieldCheck,
-    title: "Warranty information",
-    body: "Every purchased system comes with a product warranty, shown on its product page.",
-    href: "/water-purifiers",
-  },
-  { icon: Wrench, title: "Professional installation", body: "Connected to your existing water supply by trained LUSAKO technicians." },
-  { icon: CalendarCheck, title: "Preventive maintenance", body: "Scheduled visits keep every system performing as it should." },
-  {
-    icon: Headset,
-    title: "Technical support",
-    body: "Help when you need it, by phone, WhatsApp or an online service request.",
-    href: "/service-support",
-  },
-  {
-    icon: Receipt,
-    title: "Transparent rental terms",
-    body: `Monthly rental + VAT, a one-time ${formatLKR(rentalCharges.initialPaymentPerUnit)} initial payment per unit, and any regional charge on its own line.`,
-    href: "/rental",
-  },
-  {
-    icon: FlaskConical,
-    title: "Clear UF/RO recommendation",
-    body: "Answer three quick questions and we recommend UF or RO for your water.",
-    href: "/find-my-solution",
-  },
-  {
-    icon: MessagesSquare,
-    title: "Frequently asked questions",
-    body: "Straight answers on UF and RO, buying, rental and service.",
-    href: "/faq",
-  },
-  { icon: MapPin, title: "Contactable local support", body: "A local team you can call, message on WhatsApp or email.", href: "/contact" },
-];
-
-const nextActions = (photos: Photos) => [
-  {
-    audience: "For homes",
-    title: "Buy",
-    body: "Own your water purification system.",
-    cta: "Explore purifiers",
-    href: "/water-purifiers",
-    photo: photos.heroHome,
-    position: "object-[50%_65%]",
-  },
-  {
-    audience: "For offices",
-    title: "Rent",
-    body: "Complete hydration for one predictable monthly payment.",
-    cta: "Explore rental",
-    href: "/rental",
-    photo: photos.officePantry,
-    position: "object-center",
-  },
-  {
-    audience: "For organisations",
-    title: "Corporate solution",
-    body: "One partner for your workplace hydration, across one site or many.",
-    cta: "Request a corporate solution",
-    href: "/hydration-solutions/corporate",
-    photo: photos.corporateTeam,
-    position: "object-center",
-  },
-  {
-    audience: "Existing customers",
-    title: "Contact service",
-    body: "Keep your LUSAKO system performing at its best.",
-    cta: "Contact service",
-    href: "/service-support",
-    photo: photos.careTechnician,
-    position: "object-center",
-  },
+/** Each next-step card's link and photo, by position (their wording is the why.nextSteps block). */
+const nextActionPlaces = (photos: Photos) => [
+  { href: "/water-purifiers", photo: photos.heroHome, position: "object-[50%_65%]" },
+  { href: "/rental", photo: photos.officePantry, position: "object-center" },
+  { href: "/hydration-solutions/corporate", photo: photos.corporateTeam, position: "object-center" },
+  { href: "/service-support", photo: photos.careTechnician, position: "object-center" },
 ];
 
 export default async function WhyLusakoPage() {
-  const photos = await getPhotos();
+  const [photos, rentalPrices, hero, proposition, pillars, trust, nextSteps] = await Promise.all([
+    getPhotos(),
+    getRentalPrices(),
+    getCopy(whyHero),
+    getCopy(whyProposition),
+    getCopy(whyPillars),
+    getCopy(whyTrust),
+    getCopy(whyNextSteps),
+  ]);
+  const trustCards = trustPlaces.map((place, i) => {
+    const { title, body } = trust.cards[i];
+    // While the initial payment is shown, the rental terms card names it.
+    const text =
+      i === RENTAL_TERMS && rentalPrices.initial !== null ? fill(trust.rentalTermsWithPrice, { price: formatLKR(rentalPrices.initial) }) : body;
+    return { ...place, title, body: text };
+  });
+  const places = nextActionPlaces(photos);
+  const nextActions = nextSteps.cards.map((card, i) => ({ ...card, ...places[i] }));
   return (
     <>
       <PageHero
         crumbs={[{ label: "Why LUSAKO", href: "/why-lusako" }]}
-        eyebrow="Why LUSAKO"
-        title={["A hydration partner,", <Highlight key="catalogue">not a catalogue</Highlight>]}
-        description="LUSAKO is a water purification and hydration solutions company. We match the right technology to your water, install it properly and look after it for years."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Find my solution", href: "/find-my-solution" },
-          { label: "Get a quote", href: "/contact" },
+          { label: hero.findButton, href: "/find-my-solution" },
+          { label: hero.quoteButton, href: "/contact" },
         ]}
-        image={{ src: heroImages.why, position: "object-right" }}
+        image={{ src: photos.pageWhy.src, position: "object-right" }}
       />
 
       <section className="py-16 md:py-20 lg:py-28">
@@ -165,21 +103,17 @@ export default async function WhyLusakoPage() {
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+3rem)]">
               <SectionHeading
-                eyebrow="The complete proposition"
-                title={
-                  <>
-                    Not just a machine. <Highlight className="inline-block">The whole result.</Highlight>
-                  </>
-                }
-                description="A purifier is only as good as the advice, installation and care behind it. LUSAKO takes responsibility for all of it."
+                eyebrow={proposition.eyebrow}
+                title={marked(proposition.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}
+                description={proposition.description}
               />
             </div>
           </div>
           <div className="lg:col-span-7">
             <Rule />
             <ol data-stagger>
-              {proposition.map((item, i) => (
-                <li key={item.title}>
+              {proposition.items.map((item, i) => (
+                <li key={i}>
                   <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 py-8 sm:gap-x-10 sm:py-10">
                     <span
                       aria-hidden
@@ -204,20 +138,20 @@ export default async function WhyLusakoPage() {
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <Pill variant="glass">BUY • RENT • HYDRATE • CARE</Pill>
+                <Pill variant="glass">{pillars.tag}</Pill>
                 <h2 data-split className="split mt-5 max-w-2xl text-h2 font-bold">
-                  {splitWords("Better water. Better way.")}
+                  {splitWords(pillars.title)}
                 </h2>
               </div>
               <p data-reveal="up" className="max-w-sm text-white lg:pb-2">
-                Four ways LUSAKO brings better water to homes, offices and organisations, all backed by LUSAKO Care.
+                {pillars.description}
               </p>
             </div>
             <ul className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {pillars.map((pillar, i) => (
-                <li key={pillar.name}>
+              {pillars.cards.map((pillar, i) => (
+                <li key={i}>
                   <Link
-                    href={pillar.href}
+                    href={pillarLinks[i]}
                     className="group/card flex h-full flex-col rounded-card bg-white/10 p-6 sm:min-h-64 ring-1 ring-white/20 backdrop-blur-sm transition-colors duration-300 hover:bg-white/15"
                   >
                     <span aria-hidden className="font-sans text-4xl leading-none font-extralight tracking-[-0.04em] text-white">
@@ -226,7 +160,7 @@ export default async function WhyLusakoPage() {
                     <h3 className="mt-5 font-display text-[2rem] leading-none font-bold">{pillar.name}</h3>
                     <p className="mt-3 text-[15px] leading-relaxed text-white">{pillar.line}</p>
                     <span className="mt-auto flex items-center justify-between gap-4 pt-8 text-sm font-semibold">
-                      {pillar.cta}
+                      {pillar.link}
                       <ArrowCircle />
                     </span>
                   </Link>
@@ -241,16 +175,12 @@ export default async function WhyLusakoPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Trust"
-            title={
-              <>
-                What you can <Highlight>count on</Highlight>
-              </>
-            }
-            description="The essentials every LUSAKO customer can rely on, from the first question to years of service."
+            eyebrow={trust.eyebrow}
+            title={marked(trust.title)}
+            description={trust.description}
           />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4">
-            {trust.map(({ icon: Icon, title, body, href }) => {
+            {trustCards.map(({ icon: Icon, title, body, href }, i) => {
               const inner = (
                 <>
                   <span className="flex items-start justify-between gap-4">
@@ -266,7 +196,7 @@ export default async function WhyLusakoPage() {
                 </>
               );
               return (
-                <li key={title}>
+                <li key={i}>
                   {href ? (
                     <Link
                       href={href}
@@ -298,17 +228,13 @@ export default async function WhyLusakoPage() {
         <Container>
           <SectionHeading
             align="center"
-            eyebrow="Your next step"
-            title={
-              <>
-                One clear next action <Highlight className="inline-block">for every visitor</Highlight>
-              </>
-            }
-            description="Buying for a home, renting for an office, planning for an organisation or looking after a system you already have: start here."
+            eyebrow={nextSteps.eyebrow}
+            title={marked(nextSteps.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}
+            description={nextSteps.description}
           />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4">
-            {nextActions(photos).map((action) => (
-              <li key={action.title}>
+            {nextActions.map((action, i) => (
+              <li key={i}>
                 <Link
                   href={action.href}
                   className="group/card card-line flex h-full flex-col p-2.5 transition-colors duration-300 hover:border-brand"
@@ -331,7 +257,7 @@ export default async function WhyLusakoPage() {
                     <span className="mt-1.5 block text-sm leading-relaxed text-muted">{action.body}</span>
                     <span className="mt-auto flex items-center gap-3 pt-6 text-sm font-semibold text-deep">
                       <ArrowCircle variant="deep" className="size-10" />
-                      {action.cta}
+                      {action.link}
                     </span>
                   </span>
                 </Link>

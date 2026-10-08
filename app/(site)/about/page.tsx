@@ -7,24 +7,21 @@ import { PageHero } from "@/components/sections/page-hero";
 import { SolutionsTrio } from "@/components/sections/solutions-trio";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { Logo } from "@/components/ui/logo";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getPhotos, getProducts } from "@/lib/cms/content";
-import { rentalPlans } from "@/content/pricing";
+import { aboutArchitecture, aboutHero, aboutIntro, aboutSeo } from "@/content/copy/about";
+import type { RentalPlan } from "@/content/pricing";
 import { site } from "@/content/site";
+import { getCopy, getPhotos, getProducts, getRentalPlans } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "About LUSAKO – Water Purification in Sri Lanka",
-  absolute: true,
-  description:
-    "LUSAKO is a Sri Lankan water purification and hydration company: water purifiers to buy, hydration solutions to rent, and LUSAKO Care for service.",
-  path: "/about",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(aboutSeo);
+  return pageMetadata({ title: seo.title, absolute: true, description: seo.description, path: "/about" });
+}
 
 // Family order as written in the brand architecture (brief Doc 1); families added in the admin follow.
 const familyOrder = ["AquaElite", "AquaPrime", "AquaSignature", "AquaSpark"];
@@ -41,38 +38,46 @@ type Division = {
   tone: "outline" | "tint" | "deep";
 };
 
-/** LUSAKO brand architecture: DIRECT SALES · RENTAL · SERVICE (brief Doc 1). */
-const divisionsFor = (families: string[]): Division[] => [
-  {
-    division: "Direct sales",
-    brand: "LUSAKO Water Purifiers",
-    summary: "Purification systems you own, backed by warranty and LUSAKO after-sales service.",
-    items: families,
-    journey: ["Buy", "Own", "Service"],
-    href: "/water-purifiers",
-    cta: "Explore purifiers",
-    tone: "outline",
-  },
-  {
-    division: "Rental",
-    brand: "LUSAKO Hydration Solutions",
-    summary: "Complete hydration for one predictable monthly payment, maintained by LUSAKO.",
-    items: rentalPlans.map((plan) => `${plan.name} · ${plan.filtration === "UF + Sparkling" ? plan.bestFor : plan.stages}`),
-    journey: ["Rent", "Use", "We maintain"],
-    href: "/rental",
-    cta: "Explore rental",
-    tone: "tint",
-  },
-  {
-    division: "Service",
-    brand: "LUSAKO Care",
-    summary: "Professional installation, maintenance and technical support for purchased and rented systems.",
-    items: ["Installation", "Preventive maintenance", "Filter replacement", "Technical service", "Water testing", "AMC plans", "Parts & accessories"],
-    href: "/service-support",
-    cta: "Service & support",
-    tone: "deep",
-  },
-];
+type ArchitectureCopy = typeof aboutArchitecture.defaults;
+
+/**
+ * LUSAKO brand architecture: DIRECT SALES · RENTAL · SERVICE (brief Doc 1). The cards' wording is the
+ * about.architecture block; each card's tags, link and colours stay with its place.
+ */
+const divisionsFor = (families: string[], plans: RentalPlan[], copy: ArchitectureCopy): Division[] => {
+  const [sales, rental, service] = copy.divisions;
+  return [
+    {
+      division: sales.label,
+      brand: sales.brand,
+      summary: sales.summary,
+      items: families,
+      journey: copy.salesJourney,
+      href: "/water-purifiers",
+      cta: sales.link,
+      tone: "outline",
+    },
+    {
+      division: rental.label,
+      brand: rental.brand,
+      summary: rental.summary,
+      items: plans.map((plan) => `${plan.name} · ${plan.filtration === "UF + Sparkling" ? plan.bestFor : plan.stages}`),
+      journey: copy.rentalJourney,
+      href: "/rental",
+      cta: rental.link,
+      tone: "tint",
+    },
+    {
+      division: service.label,
+      brand: service.brand,
+      summary: service.summary,
+      items: copy.serviceTags,
+      href: "/service-support",
+      cta: service.link,
+      tone: "deep",
+    },
+  ];
+};
 
 const tones = {
   outline: { card: "card-line text-ink", sub: "text-muted", micro: "text-deep", pill: "tint" },
@@ -80,24 +85,25 @@ const tones = {
   deep: { card: "rounded-card bg-deep text-white", sub: "text-white", micro: "text-white", pill: "glass" },
 } as const;
 
-const promise = [
-  { title: "Buy", body: "Own your water purification system." },
-  { title: "Rent", body: "Get complete hydration for one predictable monthly payment." },
-  { title: "Care", body: "Professional installation, maintenance and technical support." },
-];
-
 export default async function AboutPage() {
-  const [photos, products] = await Promise.all([getPhotos(), getProducts()]);
+  const [photos, products, plans, hero, intro, architecture] = await Promise.all([
+    getPhotos(),
+    getProducts(),
+    getRentalPlans(),
+    getCopy(aboutHero),
+    getCopy(aboutIntro),
+    getCopy(aboutArchitecture),
+  ]);
   const families = Array.from(new Set(products.map((product) => product.family).filter(Boolean))).sort((a, b) => rank(a) - rank(b));
-  const divisions = divisionsFor(families);
+  const divisions = divisionsFor(families, plans, architecture);
   return (
     <>
       <PageHero
         crumbs={[{ label: "About LUSAKO", href: "/about" }]}
-        eyebrow="About LUSAKO"
-        title={["Better water.", <Highlight key="way">Better way.</Highlight>]}
-        description="From homes to offices and large organisations, LUSAKO provides the right purification technology, the right equipment and the right service for your water needs."
-        image={{ src: heroImages.about, position: "object-right" }}
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
+        image={{ src: photos.pageAbout.src, position: "object-right" }}
       />
 
       <section className="py-16 md:py-20 lg:py-28">
@@ -114,16 +120,15 @@ export default async function AboutPage() {
           </div>
           <div className="lg:col-span-8">
             <h2 data-reveal="up" className="font-display text-[clamp(1.75rem,1.2rem+2.2vw,3rem)] leading-[1.12] font-semibold tracking-[-0.025em] text-ink">
-              LUSAKO is a water purification and hydration solutions company.{" "}
-              <span className="block text-brand">Not simply a seller of purifiers.</span>
+              {intro.statement[0]}{" "}
+              <span className="block text-brand">{intro.statement[1]}</span>
             </h2>
             <p data-reveal="up" className="mt-6 max-w-2xl text-lead text-muted">
-              We help homes, offices and organisations move beyond bottled-water deliveries to purified water on tap, and we look after it
-              long after installation.
+              {intro.description}
             </p>
             <dl data-stagger className="mt-10 grid gap-3 sm:grid-cols-3">
-              {promise.map((item) => (
-                <div key={item.title} className="card-line p-6">
+              {intro.promises.map((item, i) => (
+                <div key={i} className="card-line p-6">
                   <dt className="font-display text-2xl font-bold text-brand">{item.title}</dt>
                   <dd className="mt-3 text-[15px] leading-snug text-ink">{item.body}</dd>
                 </div>
@@ -137,13 +142,9 @@ export default async function AboutPage() {
         <Container>
           <SectionHeading
             align="center"
-            eyebrow="Brand architecture"
-            title={
-              <>
-                Three business pillars, <Highlight>one brand</Highlight>
-              </>
-            }
-            description="Direct sales, rental and service, each with a clear journey. Together they make BUY | RENT | CARE."
+            eyebrow={architecture.eyebrow}
+            title={marked(architecture.title)}
+            description={architecture.description}
           />
 
           <div className="mt-14 flex flex-col items-center">
@@ -164,7 +165,7 @@ export default async function AboutPage() {
               {divisions.map((division) => {
                 const tone = tones[division.tone];
                 return (
-                  <li key={division.division} className="relative">
+                  <li key={division.tone} className="relative">
                     <span aria-hidden className="absolute -top-10 left-1/2 hidden h-10 w-px bg-brand/40 lg:block" />
                     <article className={cn("relative flex h-full flex-col overflow-hidden p-7 sm:p-8", tone.card)}>
                       {division.tone === "deep" && <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />}
@@ -172,18 +173,18 @@ export default async function AboutPage() {
                       <h3 className="relative mt-3 font-display text-h3 font-bold">{division.brand}</h3>
                       <p className={cn("relative mt-2 text-[15px] leading-relaxed", tone.sub)}>{division.summary}</p>
                       <ul className="relative mt-6 flex flex-wrap gap-2">
-                        {division.items.map((item) => (
-                          <li key={item}>
+                        {division.items.map((item, i) => (
+                          <li key={i}>
                             <Pill variant={tone.pill}>{item}</Pill>
                           </li>
                         ))}
                       </ul>
                       {division.journey && (
                         <>
-                          <p className={cn("relative mt-7 font-display text-xs font-bold tracking-[0.18em] uppercase", tone.micro)}>Journey</p>
+                          <p className={cn("relative mt-7 font-display text-xs font-bold tracking-[0.18em] uppercase", tone.micro)}>{architecture.journeyLabel}</p>
                           <ol className="relative mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                             {division.journey.map((stage, i) => (
-                              <li key={stage} className="flex items-center gap-2">
+                              <li key={i} className="flex items-center gap-2">
                                 {i > 0 && <ArrowRight aria-hidden className="size-4 text-brand" />}
                                 {stage}
                               </li>

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { post } = await getPostBySlug(slug);
   if (!post) return { title: "Article not found" };
   const description = post.seo_description ?? post.excerpt ?? autoExcerpt(post.content as JSONContent, 160);
-  const base = pageMetadata({ title: post.seo_title ?? post.title, description, path: `/blog/${post.slug}` });
+  const base = await pageMetadata({ title: post.seo_title ?? post.title, description, path: `/blog/${post.slug}` });
   const image = post.cover_url
     ? [{ url: post.cover_url, width: post.cover_width ?? undefined, height: post.cover_height ?? undefined, alt: post.cover_alt ?? post.title }]
     : base.openGraph?.images;

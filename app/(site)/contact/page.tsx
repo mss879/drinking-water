@@ -7,26 +7,25 @@ import { PageHero } from "@/components/sections/page-hero";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { SocialIcons } from "@/components/ui/social-icons";
+import { contactCards, contactHero, contactPromos, contactSeo } from "@/content/copy/contact";
+import { plain } from "@/content/copy/schema";
 import { isLeadFormType, leadForms, type LeadFormType } from "@/content/forms";
 import { site } from "@/content/site";
-import { getSiteSettings } from "@/lib/cms/content";
+import { getCopy, getPhotos, getSiteSettings } from "@/lib/cms/content";
 import { addressLines, telHref, whatsappHref } from "@/lib/contact";
 import { cn } from "@/lib/cn";
 import { pageMetadata } from "@/lib/seo";
 import { SriLankaMap } from "./sri-lanka-map";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Contact / Get a Quote",
-  description:
-    "Call, WhatsApp or email LUSAKO, reach the breakdown hotline, or get a quote to buy or rent a water purifier, plan corporate hydration or book a service.",
-  path: "/contact",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(contactSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/contact" });
+}
 
-type Card = { icon: LucideIcon; title: string; lines: { label?: string; value: ContactValue }[]; dark?: boolean };
+type Card = { id: string; icon: LucideIcon; title: string; lines: { label?: string; value: ContactValue }[]; dark?: boolean };
 
 const valueLink = "font-display font-bold transition-colors hover:underline hover:decoration-2 hover:underline-offset-4";
 
@@ -35,7 +34,13 @@ export default async function ContactPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { contact, social } = await getSiteSettings();
+  const [{ contact, social }, photos, hero, words, promos] = await Promise.all([
+    getSiteSettings(),
+    getPhotos(),
+    getCopy(contactHero),
+    getCopy(contactCards),
+    getCopy(contactPromos),
+  ]);
   const params = await searchParams;
   const type: LeadFormType = isLeadFormType(params.type) ? params.type : "buy";
 
@@ -51,33 +56,42 @@ export default async function ContactPage({
   // The contact details come first (client: visitors shouldn't have to scroll to the bottom to find them).
   const cards: Card[] = [
     {
+      id: "call",
       icon: Phone,
-      title: "Call us",
+      title: words.callTitle,
       lines: contact.phones.map((number) => ({ value: { text: number, href: telHref(number) } })),
     },
     {
+      id: "emergency",
       icon: Siren,
-      title: "Emergency breakdown",
+      title: words.emergencyTitle,
       dark: true,
       lines: [
-        ...(contact.hotline ? [{ label: "Hotline", value: { text: contact.hotline, href: telHref(contact.hotline) } }] : []),
+        ...(contact.hotline ? [{ label: words.hotlineLabel, value: { text: contact.hotline, href: telHref(contact.hotline) } }] : []),
         ...(contact.whatsappEmergency
-          ? [{ label: "WhatsApp", value: { text: contact.whatsappEmergency, href: whatsappHref(contact.whatsappEmergency), external: true } }]
+          ? [
+              {
+                label: words.emergencyWhatsappLabel,
+                value: { text: contact.whatsappEmergency, href: whatsappHref(contact.whatsappEmergency), external: true },
+              },
+            ]
           : []),
       ],
     },
     {
+      id: "whatsapp",
       icon: MessageCircle,
-      title: "WhatsApp sales",
-      lines: contact.whatsappSales ? [{ value: { text: contact.whatsappSales, href: whatsappHref(contact.whatsappSales), external: true } }] : [],
+      title: words.whatsappTitle,
+      lines: contact.whatsappSales ? [{ value: { text: contact.whatsappSales, href: whatsappHref(contact.whatsappSales, contact.whatsappGreeting), external: true } }] : [],
     },
     {
+      id: "email",
       icon: Mail,
-      title: "Email",
+      title: words.emailTitle,
       lines: [
-        ...(contact.salesEmail ? [{ label: "Sales", value: { text: contact.salesEmail, href: `mailto:${contact.salesEmail}` } }] : []),
+        ...(contact.salesEmail ? [{ label: words.salesEmailLabel, value: { text: contact.salesEmail, href: `mailto:${contact.salesEmail}` } }] : []),
         ...(contact.operationsEmail
-          ? [{ label: "Technical & operations", value: { text: contact.operationsEmail, href: `mailto:${contact.operationsEmail}` } }]
+          ? [{ label: words.operationsEmailLabel, value: { text: contact.operationsEmail, href: `mailto:${contact.operationsEmail}` } }]
           : []),
       ],
     },
@@ -88,14 +102,14 @@ export default async function ContactPage({
     <>
       <PageHero
         crumbs={[{ label: "Contact", href: "/contact" }]}
-        eyebrow="Contact / Get a quote"
-        title={["Tell us what", <>you <Highlight>need</Highlight></>]}
-        description="Call, message or email the LUSAKO team, or choose the enquiry that fits below. Your request goes straight to the right team: direct sales, rental, business or service."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Get a quote", href: "#quote" },
-          ...(contact.phones[0] ? [{ label: `Call ${contact.phones[0]}`, href: telHref(contact.phones[0]), icon: Phone }] : []),
+          { label: hero.quoteButton, href: "#quote" },
+          ...(contact.phones[0] ? [{ label: plain(hero.callButton, { phone: contact.phones[0] }), href: telHref(contact.phones[0]), icon: Phone }] : []),
         ]}
-        image={{ src: heroImages.contact, position: "object-right" }}
+        image={{ src: photos.pageContact.src, position: "object-right" }}
       />
 
       <section aria-labelledby="contact-details-title" className="pt-10 md:pt-14 lg:pt-16">
@@ -106,9 +120,9 @@ export default async function ContactPage({
           <ul data-stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
             {cards
               .filter((card) => card.lines.length > 0)
-              .map(({ icon: Icon, title, lines, dark }) => (
+              .map(({ id, icon: Icon, title, lines, dark }) => (
                 <li
-                  key={title}
+                  key={id}
                   className={cn("relative flex flex-col overflow-hidden p-6 sm:p-7", dark ? "rounded-card bg-deep text-white" : "card-line")}
                 >
                   {dark && <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />}
@@ -183,11 +197,9 @@ export default async function ContactPage({
               className="group/card relative flex min-h-60 flex-col overflow-hidden rounded-card-xl bg-deep p-6 text-white transition-colors duration-300 hover:bg-deep-hover sm:p-7"
             >
               <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />
-              <span className="relative text-sm text-white">Not sure what you need?</span>
-              <span className="relative mt-1 font-display text-h3 font-bold">Find my solution</span>
-              <span className="relative mt-2 max-w-64 text-sm leading-relaxed text-white">
-                Three quick questions and we’ll recommend UF or RO and the right system.
-              </span>
+              <span className="relative text-sm text-white">{promos.finderLabel}</span>
+              <span className="relative mt-1 font-display text-h3 font-bold">{promos.finderTitle}</span>
+              <span className="relative mt-2 max-w-64 text-sm leading-relaxed text-white">{promos.finderText}</span>
               <span className="relative mt-auto flex justify-end pt-6">
                 <ArrowCircle />
               </span>
@@ -201,8 +213,8 @@ export default async function ContactPage({
                 <Wrench />
               </IconBadge>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm text-muted">Existing customer?</span>
-                <span className="block font-display font-bold text-ink">Request a service</span>
+                <span className="block text-sm text-muted">{promos.serviceLabel}</span>
+                <span className="block font-display font-bold text-ink">{promos.serviceTitle}</span>
               </span>
               <ArrowCircle variant="deep" />
             </Link>

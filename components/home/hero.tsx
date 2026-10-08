@@ -4,14 +4,21 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { preload } from "react-dom";
 import { useHeroTone } from "@/components/layout/hero-tone";
 import { ButtonLink } from "@/components/ui/button";
+import { marked } from "@/components/ui/marked";
 import { Tag } from "@/components/ui/pill";
+import type { homeHero } from "@/content/copy/home";
 import { site } from "@/content/site";
 
 const delay = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
-/** The hero film: the client's clip in /public, used as it is (the "…" in its file name is URL-encoded). */
+/**
+ * The hero film: the client's clip, frame for frame (only its silent audio track was dropped, and its index moved to
+ * the front so it starts while it downloads). Phones get the part of it they actually show, a 576×720 crop at the
+ * same 30% framing, which is a quarter of the size.
+ */
 const film = {
-  src: "/Water_flowing_through_membrane_f%E2%80%A6_20260930142633.mp4",
+  src: "/video/hero-membrane.mp4",
+  phone: "/video/hero-membrane-phone.mp4",
   poster: "/video/hero-poster.jpg", // its first frame, shown until the film plays
 };
 
@@ -22,7 +29,7 @@ const film = {
  * the right and melts into the dark on the left, so the text stays on its calm side; on phones it fills the card
  * under a soft shade. Reduced-motion and data-saver visitors see its first frame instead of the moving film.
  */
-export function Hero() {
+export function Hero({ copy }: { copy: typeof homeHero.defaults }) {
   const section = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   preload(film.poster, { as: "image", fetchPriority: "high" });
@@ -75,6 +82,7 @@ export function Hero() {
           tabIndex={-1}
           className="size-full object-cover object-[30%_50%] lg:object-left"
         >
+          <source src={film.phone} type="video/mp4" media="(max-width: 767px)" />
           <source src={film.src} type="video/mp4" />
         </video>
       </div>
@@ -97,25 +105,24 @@ export function Hero() {
                 className="line bg-linear-to-r from-brand to-mist bg-clip-text whitespace-nowrap text-transparent"
                 style={delay(120)}
               >
-                Pure water
+                {copy.title[0]}
               </span>
             </span>{" "}
             <span className="line-mask line-in">
               <span className="line whitespace-nowrap" style={delay(200)}>
-                without the hassle
+                {copy.title[1]}
               </span>
             </span>
           </h1>
           <p className="rise mt-6 max-w-md text-lead text-white/85" style={delay(300)}>
-            <span className="font-semibold text-white">Bottleless</span> water purification and hydration solutions for homes, offices
-            and businesses.
+            {marked(copy.intro, { mark: (word) => <span className="font-semibold text-white">{word}</span> })}
           </p>
           <div className="rise mt-8 flex flex-wrap gap-3" style={delay(380)}>
             <ButtonLink href="/water-purifiers" variant="white" arrow className="w-full sm:w-auto">
-              Buy a water purifier
+              {copy.buyButton}
             </ButtonLink>
             <ButtonLink href="/rental" variant="glass" arrow className="w-full sm:w-auto">
-              Rent for your office
+              {copy.rentButton}
             </ButtonLink>
           </div>
         </div>

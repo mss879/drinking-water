@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { CSSProperties, ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -33,7 +33,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { PriceSelector } from "@/components/products/price-selector";
+import { PurchaseOptions } from "@/components/products/purchase-options";
 import { ProductCard } from "@/components/products/product-card";
 import { TrackView } from "@/components/products/track-view";
 import { CtaBand } from "@/components/sections/cta-band";
@@ -45,11 +45,25 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { SnapRow } from "@/components/ui/snap-row";
-import { faqs, type Faq } from "@/content/faqs";
-import { rentalCharges } from "@/content/pricing";
+import {
+  productCare,
+  productFacts,
+  productFaqs,
+  productFeatures,
+  productFiltration,
+  productHero,
+  productOptions,
+  productOthers,
+  productSpecs,
+  productWhoFor,
+} from "@/content/copy/product";
+import { purifiersCard } from "@/content/copy/purifiers";
+import { fill, pieces, plain, runs } from "@/content/copy/schema";
+import type { Faq } from "@/content/faqs";
 import {
   productCodes,
   productFiltrations,
@@ -60,7 +74,7 @@ import {
   type Product,
 } from "@/content/products";
 import { site } from "@/content/site";
-import { getProduct, getProducts } from "@/lib/cms/content";
+import { getCopy, getFaqs, getPricing, getProduct, getProducts, getRentalPrices } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 import { JsonLd } from "@/lib/jsonld";
@@ -82,21 +96,40 @@ const sections = [
   { id: "faqs", label: "FAQs" },
 ];
 
-/** Plain-language UF / RO explanation, worded from content/faqs. */
-const purificationGuide = [
-  {
-    code: "UF",
-    name: "Ultrafiltration",
-    fit: "For treated city water",
-    body: "A fine membrane removes particles, sediment and microorganisms while keeping naturally occurring minerals.",
-  },
-  {
-    code: "RO",
-    name: "Reverse osmosis",
-    fit: "For well water and higher TDS",
-    body: "A much finer membrane also reduces dissolved salts and other dissolved solids (TDS).",
-  },
-] as const;
+/** The plain-language UF / RO cards, in this order. Their wording (from content/faqs) is the product.filtration block. */
+const guideCodes = ["UF", "RO"] as const;
+
+/** A monthly rental as the brief writes it, with its terms: "LKR 4,990/month + VAT". */
+const monthly = (amount: number) => `${formatLKR(amount)}/month + VAT`;
+
+/**
+ * A heading from Page text: the *marked* phrase through `mark`, each {token} filled in as a piece of its own, and the
+ * product's name (with any punctuation right after it) kept on one line in an inline-block span, as designed.
+ */
+function heading(
+  text: string,
+  values: Record<string, string>,
+  mark: (phrase: ReactNode) => ReactNode = (phrase) => <Highlight>{phrase}</Highlight>,
+): ReactNode {
+  return runs(text).map((run, i) =>
+    run.marked ? (
+      <Fragment key={i}>{mark(pieces(run.text, values))}</Fragment>
+    ) : (
+      <Fragment key={i}>
+        {run.text.split(/(\{name\}[^\s*{]*)/).map((part, j) =>
+          part.startsWith("{name}") && values.name !== undefined ? (
+            <span key={j} className="inline-block">
+              {values.name}
+              {part.slice("{name}".length)}
+            </span>
+          ) : (
+            <Fragment key={j}>{pieces(part, values)}</Fragment>
+          ),
+        )}
+      </Fragment>
+    ),
+  );
+}
 
 /** Icons are matched to the product copy by keyword, so products added in the admin get fitting icons too. */
 const featureRules: [RegExp, LucideIcon][] = [
@@ -129,64 +162,60 @@ function matchIcon(title: string, rules: [RegExp, LucideIcon][], fallback: Lucid
   return rules.find(([pattern]) => pattern.test(title))?.[1] ?? fallback;
 }
 
-function filtrationTitle(product: Product): ReactNode {
+function filtrationTitle(product: Product, copy: typeof productFiltration.defaults): ReactNode {
   const filtrations = productFiltrations(product);
-  if (filtrations.length > 1) {
-    return (
-      <>
-        UF or RO, <Highlight className="text-mist">matched to your water</Highlight>
-      </>
-    );
-  }
-  if (filtrations.length === 1) {
-    return (
-      <>
-        {filtrations[0]} purification, <Highlight className="text-mist">built in</Highlight>
-      </>
-    );
-  }
-  return (
-    <>
-      Water from a <Highlight className="text-mist">bottled supply</Highlight>
-    </>
-  );
+  const mark = (phrase: ReactNode) => <Highlight className="text-mist">{phrase}</Highlight>;
+  if (filtrations.length > 1) return marked(copy.titleSeveral, { mark });
+  if (filtrations.length === 1) return heading(copy.titleOne, { filtration: filtrations[0] }, mark);
+  return marked(copy.titleNone, { mark });
 }
 
-/** Product FAQs, derived only from the product and pricing data, plus the general warranty answer. */
-function productFaqs(product: Product, rent: number | null): Faq[] {
+/**
+ * Product FAQs, worked out from the product data and its shown rent price, then the general warranty answer and the
+ * product's own questions from the admin.
+ */
+function questionsFor(
+  product: Product,
+  {
+    copy,
+    maintenance,
+    initialPayment,
+    more,
+  }: { copy: typeof productFaqs.defaults; maintenance: string; initialPayment: number | null; more: Faq[] },
+): Faq[] {
   const { name } = product;
-  const initial = formatLKR(rentalCharges.initialPaymentPerUnit);
+  const note = product.filtrationNote;
 
   const filtrations = productFiltrations(product);
   const filtration: Faq =
     filtrations.length > 1
-      ? {
-          topic: "purification",
-          q: "Should I choose the UF or RO version?",
-          a: `${product.filtrationNote} Not sure about your water? Find My Solution recommends the right version, or our team can check your water for you.`,
-        }
+      ? { topic: "purification", q: copy.filtrationSeveralQuestion, a: fill(copy.filtrationSeveralAnswer, { note }) }
       : filtrations.length === 1
-        ? {
-            topic: "purification",
-            q: `Which water is the ${name} suited to?`,
-            a: `${product.filtrationNote} If your home or workplace uses well water, talk to our team before you choose.`,
-          }
-        : { topic: "purification", q: `Does the ${name} purify water?`, a: product.filtrationNote };
+        ? { topic: "purification", q: fill(copy.filtrationOneQuestion, { name }), a: fill(copy.filtrationOneAnswer, { note }) }
+        : { topic: "purification", q: fill(copy.filtrationNoneQuestion, { name }), a: note };
 
+  // While the rent price is hidden the answer explains how rental is charged; once shown it leads with the price. The
+  // initial payment is shown separately, so each case has its own wording.
+  const rent = productRentalFrom(product);
+  const initial = initialPayment ? formatLKR(initialPayment) : null;
   const rental: Faq = {
     topic: "rental",
-    q: `Can I rent the ${name} instead of buying?`,
+    q: fill(copy.rentalQuestion, { name }),
     a: rent
-      ? `Yes. The ${name} is available to rent from ${formatLKR(rent)}/month + VAT, plus a one-time initial payment of ${initial} per unit in the first month. Outside the Western Province the Regional Hydration Service is added as a separate line. For most homes, buying is the better long-term value.`
-      : `Rental of the ${name} is available on request: ask our team and we’ll recommend a monthly plan. Every rental starts with a one-time initial payment of ${initial} per unit, payable only in the first month.`,
+      ? initial
+        ? fill(copy.rentalAnswerWithPrices, { name, price: monthly(rent), initial })
+        : fill(copy.rentalAnswerWithPrice, { name, price: monthly(rent) })
+      : initial
+        ? fill(copy.rentalAnswerWithInitial, { name, initial })
+        : fill(copy.rentalAnswer, { name }),
   };
 
   return [
     filtration,
     rental,
-    { topic: "service", q: "What does installation involve?", a: product.installationNote },
-    { topic: "service", q: "What maintenance does it need?", a: productMaintenanceNote(product) },
-    ...faqs.filter((faq) => faq.topic === "buying" && /warranty/i.test(faq.q)),
+    { topic: "service", q: copy.installationQuestion, a: product.installationNote },
+    { topic: "service", q: copy.maintenanceQuestion, a: maintenance },
+    ...more,
   ];
 }
 
@@ -200,9 +229,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
+  // The admin's own search title and description win; otherwise they're worked out from the product.
   return pageMetadata({
-    title: `${product.name} – ${product.tagline}`,
-    description: product.summary,
+    title: product.seoTitle || `${product.name} – ${product.tagline}`,
+    description: product.seoDescription || product.summary,
     path: `/water-purifiers/${product.slug}`,
     image: { url: `/og/products/${product.slug}`, width: 1200, height: 630, alt: `${product.name}: ${product.tagline}` },
   });
@@ -210,28 +240,66 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const [product, products] = await Promise.all([getProduct(slug), getProducts()]);
+  const [
+    product,
+    products,
+    pricing,
+    rentalPrices,
+    faqs,
+    heroCopy,
+    factsCopy,
+    optionsCopy,
+    featuresCopy,
+    specsCopy,
+    filtrationCopy,
+    whoForCopy,
+    careCopy,
+    faqsCopy,
+    othersCopy,
+    cardCopy,
+  ] = await Promise.all([
+    getProduct(slug),
+    getProducts(),
+    getPricing(),
+    getRentalPrices(),
+    getFaqs(),
+    getCopy(productHero),
+    getCopy(productFacts),
+    getCopy(productOptions),
+    getCopy(productFeatures),
+    getCopy(productSpecs),
+    getCopy(productFiltration),
+    getCopy(productWhoFor),
+    getCopy(productCare),
+    getCopy(productFaqs),
+    getCopy(productOthers),
+    getCopy(purifiersCard),
+  ]);
   if (!product) notFound();
 
   const path = `/water-purifiers/${product.slug}`;
   const url = new URL(path, site.url).toString();
+  // Shown prices only: each is null while the admin keeps it hidden.
   const rent = productRentalFrom(product);
   const price = productPriceFrom(product);
   const filtrations = productFiltrations(product);
   const category = productTypeLabel(product.types[0]);
   const codes = productCodes(product);
   const others = products.filter((item) => item.slug !== product.slug);
+  const name = { name: product.name };
+  const maintenance = productMaintenanceNote(product, careCopy.maintenanceNote);
 
   const facts: { label: string; value: string; icon: LucideIcon }[] = [
-    { label: "Purification", value: product.purification, icon: Droplets },
-    { label: "Water", value: product.temperatures.join(" · "), icon: Thermometer },
-    { label: "Installation", value: product.installation, icon: Wrench },
-    { label: "Warranty", value: product.warranty, icon: ShieldCheck },
+    { label: factsCopy.facts[0], value: product.purification, icon: Droplets },
+    { label: factsCopy.facts[1], value: product.temperatures.join(" · "), icon: Thermometer },
+    { label: factsCopy.facts[2], value: product.installation, icon: Wrench },
+    { label: factsCopy.facts[3], value: product.warranty, icon: ShieldCheck },
   ];
 
+  // The standard rows, then any the admin added to this product.
   const specs: { label: string; value: ReactNode }[] = [
     {
-      label: codes.length > 1 ? "Model numbers" : "Model number",
+      label: codes.length > 1 ? specsCopy.modelNumbers : specsCopy.modelNumber,
       value: codes.length ? (
         <ul className="grid gap-1">
           {product.variants
@@ -243,14 +311,15 @@ export default async function ProductPage({ params }: Props) {
             ))}
         </ul>
       ) : (
-        "Available on request"
+        specsCopy.noModel
       ),
     },
-    { label: "Category", value: product.types.map(productTypeLabel).join(" · ") },
-    { label: "Purification", value: product.purification },
-    { label: "Water", value: product.temperatures.join(" · ") },
-    { label: "Installation", value: product.installation },
-    { label: "Warranty", value: product.warranty },
+    { label: specsCopy.category, value: product.types.map(productTypeLabel).join(" · ") },
+    { label: specsCopy.purification, value: product.purification },
+    { label: specsCopy.water, value: product.temperatures.join(" · ") },
+    { label: specsCopy.installation, value: product.installation },
+    { label: specsCopy.warranty, value: product.warranty },
+    ...(product.specs ?? []),
   ];
 
   // Product data only once there's a purchase price: search engines treat a Product without offers as an error, and a
@@ -272,7 +341,7 @@ export default async function ProductPage({ params }: Props) {
             "@type": "Offer",
             name: `${product.name} ${variant.label}`,
             ...(variant.code ? { sku: variant.code } : {}),
-            url: `${url}#prices`,
+            url: `${url}#options`,
             price: variant.price,
             priceCurrency: "LKR",
             itemCondition: "https://schema.org/NewCondition",
@@ -294,7 +363,7 @@ export default async function ProductPage({ params }: Props) {
       <TrackView slug={product.slug} name={product.name} />
 
       {/* Hero: the compact dark card every page opens with, the purifier standing on a soft blue glow. On phones the
-          name comes first, then the product, then the prices and the two CTAs. */}
+          name comes first, then the product, then the facts and the two CTAs. */}
       <HeroCard labelledBy="page-title">
         <WaveLines lines={4} className="absolute inset-x-0 bottom-0 -z-10 h-1/2 w-full text-brand/25" />
         <div className="grid items-center gap-y-8 px-5 pt-[calc(var(--header-h)+2rem)] pb-10 sm:px-8 sm:pb-12 lg:min-h-[min(38rem,70svh)] lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-x-12 lg:px-[calc(var(--edge)-5px)] lg:pb-14">
@@ -340,16 +409,36 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           <div className="max-w-[36rem] lg:col-start-1 lg:row-start-2 lg:self-start">
-            {/* The rental promotion leads (client: "promote rental from LKR …"); the buy price follows. */}
+            {/* While its prices are hidden (client, October 2026) buying and renting are both quoted. Once one is
+                shown, the rental promotion leads (client: "promote rental from LKR …") and the buy price follows. */}
             <ul className="rise flex flex-wrap gap-2" style={delay(260)}>
-              <li>
-                <Pill variant="white">{rent ? `Rent from ${formatLKR(rent)}/month + VAT` : "Rental on request"}</Pill>
-              </li>
-              <li>
-                <Pill variant="glass">
-                  {price ? `Buy ${product.variants.length > 1 ? "from " : ""}${formatLKR(price)} + VAT` : "Buy · price on request"}
-                </Pill>
-              </li>
+              {rent || price ? (
+                <>
+                  <li>
+                    <Pill variant="white">{rent ? fill(heroCopy.rentPillWithPrice, { price: monthly(rent) }) : heroCopy.rentPillOnRequest}</Pill>
+                  </li>
+                  <li>
+                    <Pill variant="glass">
+                      {price
+                        ? fill(product.variants.length > 1 ? heroCopy.buyPillWithPrice : heroCopy.buyPillWithPriceOne, {
+                            price: `${formatLKR(price)} + VAT`,
+                          })
+                        : heroCopy.buyPillOnRequest}
+                    </Pill>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    <Pill variant="white">{heroCopy.pill}</Pill>
+                  </li>
+                  {product.warranty && (
+                    <li>
+                      <Pill variant="glass">{pieces(heroCopy.warrantyPill, { warranty: product.warranty })}</Pill>
+                    </li>
+                  )}
+                </>
+              )}
               {filtrations.length > 1 && (
                 <li>
                   <Pill variant="glass">{product.variants.map((variant) => variant.label).join(" · ")}</Pill>
@@ -357,8 +446,8 @@ export default async function ProductPage({ params }: Props) {
               )}
             </ul>
             <div className="rise mt-8 flex flex-wrap gap-3" style={delay(320)}>
-              <ButtonLink href="#prices" variant="white" size="lg" arrow className="w-full sm:w-auto">
-                {filtrations.length > 1 ? "Prices & options" : "See prices"}
+              <ButtonLink href="#options" variant="white" size="lg" arrow className="w-full sm:w-auto">
+                {heroCopy.quoteButton}
               </ButtonLink>
               <ButtonLink
                 href={`/contact?type=rental&preferredMachine=${product.slug}#quote`}
@@ -367,7 +456,7 @@ export default async function ProductPage({ params }: Props) {
                 arrow
                 className="w-full sm:w-auto"
               >
-                {rent ? "Rent this model" : "Ask about rental"}
+                {heroCopy.rentButton}
               </ButtonLink>
             </div>
           </div>
@@ -384,12 +473,12 @@ export default async function ProductPage({ params }: Props) {
             <p className="mt-5 max-w-xl text-lead text-muted">{product.summary}</p>
             {codes.length > 0 && (
               <p className="mt-4 text-sm text-muted">
-                {codes.length > 1 ? "Models" : "Model"} {codes.join(" / ")}
+                {codes.length > 1 ? factsCopy.modelSeveral : factsCopy.modelOne} {codes.join(" / ")}
               </p>
             )}
             <dl className="mt-8 grid grid-cols-2 gap-2 sm:gap-3">
-              {facts.map(({ label, value, icon: Icon }) => (
-                <div key={label} className="card-line rounded-card-sm p-3.5 sm:p-5">
+              {facts.map(({ label, value, icon: Icon }, i) => (
+                <div key={i} className="card-line rounded-card-sm p-3.5 sm:p-5">
                   <dt className="flex items-center gap-1.5 font-display text-xs font-bold tracking-[0.1em] text-deep uppercase sm:gap-2 sm:tracking-[0.14em]">
                     <Icon aria-hidden className="size-3.5 shrink-0 text-brand max-[349px]:hidden" strokeWidth={2} />
                     {label}
@@ -400,19 +489,21 @@ export default async function ProductPage({ params }: Props) {
             </dl>
           </div>
 
-          <div id="prices" data-reveal="up" className="scroll-mt-28 lg:col-span-7">
-            {/* Buy UF, buy RO or rent (client request): every option's prices side by side, the buttons follow the choice. */}
-            <PriceSelector
+          <div id="options" data-reveal="up" className="scroll-mt-28 lg:col-span-7">
+            {/* Buy UF, buy RO or rent (client request): the options side by side, the quote buttons follow the choice. */}
+            <PurchaseOptions
               slug={product.slug}
               name={product.name}
               variants={product.variants}
-              initialPayment={rentalCharges.initialPaymentPerUnit}
+              copy={optionsCopy}
+              koko={pricing.koko}
+              initialPayment={rentalPrices.initial}
             />
 
             <p className="mt-5 text-[15px] text-muted">
-              Not sure which is right for you?{" "}
+              {factsCopy.notSure}{" "}
               <Link href="/find-my-solution" className="group -my-2.5 inline-flex items-center gap-1 py-2.5 font-semibold text-deep">
-                Find my solution
+                {factsCopy.finderLink}
                 <ArrowRight aria-hidden className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
             </p>
@@ -448,12 +539,8 @@ export default async function ProductPage({ params }: Props) {
           <Container>
             <SectionHeading
               layout="split"
-              eyebrow="Features"
-              title={
-                <>
-                  Why choose the <Highlight className="inline-block">{product.name}</Highlight>
-                </>
-              }
+              eyebrow={featuresCopy.eyebrow}
+              title={heading(featuresCopy.title, name, (phrase) => <Highlight className="inline-block">{phrase}</Highlight>)}
               action={
                 <ul aria-label="Highlights" className="flex flex-wrap gap-2 lg:justify-end">
                   {product.highlights.map((highlight) => (
@@ -487,17 +574,13 @@ export default async function ProductPage({ params }: Props) {
           <Container className="grid gap-10 lg:grid-cols-12 lg:gap-12" data-no-reveal>
             <div className="lg:col-span-4">
               <SectionHeading
-                eyebrow="Specifications"
-                title={
-                  <>
-                    The <span className="inline-block">{product.name},</span> <Highlight>in detail</Highlight>
-                  </>
-                }
+                eyebrow={specsCopy.eyebrow}
+                title={heading(specsCopy.title, name)}
               />
-              <p data-reveal="up" className="mt-5 max-w-sm text-muted">Full technical specifications are available on request.</p>
+              <p data-reveal="up" className="mt-5 max-w-sm text-muted">{specsCopy.text}</p>
               <div data-reveal="up" className="mt-6">
                 <ButtonLink href={`/contact?type=buy&model=${product.slug}`} variant="outline" arrow>
-                  Request full specifications
+                  {specsCopy.button}
                 </ButtonLink>
               </div>
             </div>
@@ -507,7 +590,7 @@ export default async function ProductPage({ params }: Props) {
                   <caption className="sr-only">{product.name} specifications</caption>
                   <tbody data-stagger>
                     {specs.map((row, i) => (
-                      <tr key={row.label} className={cn(i > 0 && "border-t border-line")}>
+                      <tr key={`${i}-${row.label}`} className={cn(i > 0 && "border-t border-line")}>
                         <th
                           scope="row"
                           className="w-2/5 px-5 py-4 align-top text-[15px] font-medium text-muted sm:w-1/3 sm:px-8 sm:py-5"
@@ -530,18 +613,19 @@ export default async function ProductPage({ params }: Props) {
               <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
               <div className="relative grid gap-10 lg:grid-cols-12 lg:gap-12" data-no-reveal>
                 <div data-reveal="up" className="lg:col-span-5">
-                  <Pill variant="glass">Filtration</Pill>
-                  <h2 className="mt-5 text-h2 font-bold">{filtrationTitle(product)}</h2>
+                  <Pill variant="glass">{filtrationCopy.pill}</Pill>
+                  <h2 className="mt-5 text-h2 font-bold">{filtrationTitle(product, filtrationCopy)}</h2>
                   <p className="mt-5 text-lead text-white">{product.filtrationNote}</p>
                   <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
                     <ButtonLink href="/find-my-solution" variant="white" arrow className="w-full sm:w-auto">
-                      Check my water
+                      {filtrationCopy.button}
                     </ButtonLink>
-                    <p className="text-sm text-white/85">Three quick questions. We’ll recommend UF or RO.</p>
+                    <p className="text-sm text-white/85">{filtrationCopy.buttonNote}</p>
                   </div>
                 </div>
                 <ul data-stagger className="grid gap-3 sm:grid-cols-2 lg:col-span-7 lg:self-end">
-                  {purificationGuide.map((guide) => {
+                  {guideCodes.map((code, i) => {
+                    const guide = { code, ...filtrationCopy.guide[i] };
                     const onModel = filtrations.includes(guide.code);
                     const model = product.variants.find((item) => item.filtration === guide.code && item.code);
                     return (
@@ -556,7 +640,11 @@ export default async function ProductPage({ params }: Props) {
                           {guide.code}
                         </span>
                         <Pill variant={onModel ? "white" : "glass"} className="relative">
-                          {onModel ? (model ? `Model ${model.code}` : "On this model") : "Other LUSAKO purifiers"}
+                          {onModel
+                            ? model?.code
+                              ? fill(filtrationCopy.onModelCode, { code: model.code })
+                              : filtrationCopy.onModel
+                            : filtrationCopy.otherModels}
                         </Pill>
                         <h3 className="relative mt-auto pt-10 font-display text-h3 font-bold sm:pt-14">
                           {guide.code} · {guide.name}
@@ -576,12 +664,8 @@ export default async function ProductPage({ params }: Props) {
         <section id="who-its-for" className="py-16 md:py-20 lg:py-28">
           <Container>
             <SectionHeading
-              eyebrow="Who it’s for"
-              title={
-                <>
-                  Where the <span className="inline-block">{product.name}</span> <Highlight className="inline-block">fits best</Highlight>
-                </>
-              }
+              eyebrow={whoForCopy.eyebrow}
+              title={heading(whoForCopy.title, name, (phrase) => <Highlight className="inline-block">{phrase}</Highlight>)}
             />
             <ul className="mt-12 grid gap-4 md:grid-cols-3 lg:mt-14 lg:gap-5">
               {product.whoFor.map((audience) => {
@@ -608,13 +692,9 @@ export default async function ProductPage({ params }: Props) {
           <Container>
             <SectionHeading
               layout="split"
-              eyebrow="LUSAKO Care"
-              title={
-                <>
-                  Set up, covered and <Highlight>cared for</Highlight>
-                </>
-              }
-              description="Our team sets it up, a product warranty covers it, and LUSAKO Care keeps it performing."
+              eyebrow={careCopy.eyebrow}
+              title={marked(careCopy.title)}
+              description={careCopy.description}
             />
             <div className="mt-12 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-5">
               <article id="installation" className="card-line flex flex-col md:scroll-mt-44 rounded-card-xl p-6 sm:p-8">
@@ -624,7 +704,7 @@ export default async function ProductPage({ params }: Props) {
                   </IconBadge>
                   <Pill variant="tint">{product.installation}</Pill>
                 </div>
-                <h3 className="mt-10 font-display text-h3 font-bold text-ink">Installation</h3>
+                <h3 className="mt-10 font-display text-h3 font-bold text-ink">{careCopy.installationTitle}</h3>
                 <p className="mt-3 text-[15px] leading-relaxed text-muted">{product.installationNote}</p>
               </article>
 
@@ -636,11 +716,8 @@ export default async function ProductPage({ params }: Props) {
                   </IconBadge>
                   <Pill variant="white">{product.warranty}</Pill>
                 </div>
-                <h3 className="relative mt-10 font-display text-h3 font-bold">Warranty</h3>
-                <p className="relative mt-3 text-[15px] leading-relaxed text-white">
-                  Every purchased LUSAKO system comes with a product warranty, plus access to LUSAKO after-sales service and Annual
-                  Maintenance Contracts (AMC).
-                </p>
+                <h3 className="relative mt-10 font-display text-h3 font-bold">{careCopy.warrantyTitle}</h3>
+                <p className="relative mt-3 text-[15px] leading-relaxed text-white">{careCopy.warrantyText}</p>
               </article>
 
               <article id="maintenance" className="card-line flex flex-col md:scroll-mt-44 rounded-card-xl p-6 sm:p-8">
@@ -648,16 +725,16 @@ export default async function ProductPage({ params }: Props) {
                   <IconBadge>
                     <CalendarCheck />
                   </IconBadge>
-                  <Pill variant="tint">LUSAKO Care</Pill>
+                  <Pill variant="tint">{careCopy.maintenancePill}</Pill>
                 </div>
-                <h3 className="mt-10 font-display text-h3 font-bold text-ink">Maintenance</h3>
-                <p className="mt-3 text-[15px] leading-relaxed text-muted">{productMaintenanceNote(product)}</p>
+                <h3 className="mt-10 font-display text-h3 font-bold text-ink">{careCopy.maintenanceTitle}</h3>
+                <p className="mt-3 text-[15px] leading-relaxed text-muted">{maintenance}</p>
                 <div className="mt-auto pt-6">
                   <Link
                     href="/service-support"
                     className="group inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-deep transition-colors hover:text-brand"
                   >
-                    Service & support
+                    {careCopy.serviceLink}
                     <ArrowUpRight aria-hidden className="size-4 transition-transform duration-200 group-hover:rotate-45" />
                   </Link>
                 </div>
@@ -667,12 +744,16 @@ export default async function ProductPage({ params }: Props) {
         </section>
 
         <FaqSection
-          faqs={productFaqs(product, rent)}
-          title={
-            <>
-              Questions about the <span className="inline-block">{product.name}</span>
-            </>
-          }
+          faqs={questionsFor(product, {
+            copy: faqsCopy,
+            maintenance,
+            initialPayment: rentalPrices.initial,
+            more: [
+              ...faqs.filter((faq) => faq.key === "warranty"),
+              ...(product.faqs ?? []).map(({ q, a }): Faq => ({ topic: "buying", q, a })),
+            ],
+          })}
+          title={heading(faqsCopy.title, name)}
         />
       </div>
 
@@ -680,23 +761,19 @@ export default async function ProductPage({ params }: Props) {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Explore the range"
-            title={
-              <>
-                Other LUSAKO <Highlight>purifiers</Highlight>
-              </>
-            }
+            eyebrow={othersCopy.eyebrow}
+            title={marked(othersCopy.title)}
             action={
               <ButtonLink href="/water-purifiers" variant="outline" arrow>
-                View all purifiers
+                {othersCopy.button}
               </ButtonLink>
             }
           />
         </Container>
-        <SnapRow label="Other LUSAKO purifiers" className="mt-12">
+        <SnapRow label={plain(othersCopy.title)} className="mt-12">
           {others.map((item) => (
             <li key={item.slug} className="w-[80vw] shrink-0 snap-start sm:w-[340px]">
-              <ProductCard product={item} />
+              <ProductCard product={item} copy={cardCopy} />
             </li>
           ))}
         </SnapRow>

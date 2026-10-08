@@ -59,6 +59,33 @@ function ContactForm({ initial }: { initial: SiteContact }) {
             <Input id="c-wae" inputMode="tel" value={form.whatsappEmergency} onChange={(event) => set("whatsappEmergency", event.target.value)} />
           </Field>
         </div>
+        <Field
+          label="WhatsApp greeting (optional)"
+          htmlFor="c-greeting"
+          hint={`${form.whatsappGreeting.trim().length}/300 · the message a chat on the sales WhatsApp number starts with. Leave empty to start a blank chat.`}
+        >
+          <Textarea
+            id="c-greeting"
+            rows={2}
+            maxLength={300}
+            className="min-h-20"
+            placeholder="For example: Hello LUSAKO, I’d like to know more about your water purifiers."
+            value={form.whatsappGreeting}
+            onChange={(event) => set("whatsappGreeting", event.target.value)}
+          />
+        </Field>
+        <label className="flex cursor-pointer items-start gap-3 text-[15px] text-ink">
+          <input
+            type="checkbox"
+            checked={form.showWhatsappButton}
+            onChange={(event) => set("showWhatsappButton", event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-deep)]"
+          />
+          <span>
+            Show the floating WhatsApp button
+            <span className="block text-[13px] text-muted">The round WhatsApp button in the corner of every page. It needs the sales WhatsApp number.</span>
+          </span>
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Sales email" htmlFor="c-sales">
             <Input id="c-sales" type="email" value={form.salesEmail} onChange={(event) => set("salesEmail", event.target.value)} />

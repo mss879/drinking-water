@@ -1,6 +1,3 @@
-import { formatLKR } from "@/lib/format";
-import { rentalCharges } from "./pricing";
-
 /**
  * The essential FAQ topics from the brief (§17). The AMC questions are worked out from the current plans in
  * content/amc.ts (`amcFaqs`), so their prices always match the AMC page.
@@ -8,8 +5,12 @@ import { rentalCharges } from "./pricing";
  */
 export type FaqTopic = "purification" | "buying" | "rental" | "service" | "amc";
 
-/** `home` marks the questions the home page shows (no rental amounts there, at the client's request). */
-export type Faq = { q: string; a: string; topic: FaqTopic; home?: boolean };
+/**
+ * `home` marks the questions the home page shows, `corporate` the ones on Corporate hydration, and `key` a question the
+ * website looks for by name ("warranty" is repeated on every product page). These are the defaults: the admin's FAQs
+ * section edits them (cms_faqs). The AMC questions are always worked out from the AMC plans.
+ */
+export type Faq = { q: string; a: string; topic: FaqTopic; home?: boolean; corporate?: boolean; key?: string };
 
 export const faqTopics: { id: FaqTopic; label: string }[] = [
   { id: "purification", label: "Choosing UF or RO" },
@@ -18,8 +19,6 @@ export const faqTopics: { id: FaqTopic; label: string }[] = [
   { id: "service", label: "Installation & service" },
   { id: "amc", label: "AMC & service plans" },
 ];
-
-const initial = formatLKR(rentalCharges.initialPaymentPerUnit);
 
 export const faqs: Faq[] = [
   {
@@ -52,8 +51,8 @@ export const faqs: Faq[] = [
   },
   {
     topic: "rental",
-    q: `What is the ${initial} initial payment?`,
-    a: `It is a one-time payment of ${initial} per rented unit, payable only in the first month together with the first month’s rental. From the second month onwards, you pay only the monthly rental.`,
+    q: "What is the initial payment?",
+    a: "It is a one-time payment per rented unit, payable only in the first month together with the first month’s rental. From the second month onwards, you pay only the monthly rental. Your rental quote confirms the amount.",
   },
   {
     topic: "rental",
@@ -85,19 +84,20 @@ export const faqs: Faq[] = [
   {
     topic: "rental",
     home: true,
+    corporate: true,
     q: "Can companies rent multiple machines?",
     a: "Yes. Companies can rent as many units as they need. For multiple units or sites we prepare a Corporate Hydration proposal, so you don’t have to pick machines one by one.",
   },
   {
     topic: "service",
+    corporate: true,
     q: "Can LUSAKO support multiple company locations?",
     a: "Yes. Corporate Hydration Solutions cover single offices and multi-location organisations, with installation and service planning, preventive maintenance and centralised account management.",
   },
   {
     topic: "buying",
+    key: "warranty",
     q: "What warranty is provided for purchased products?",
     a: "Every purchased LUSAKO system comes with a product warranty, shown on each product page, plus access to LUSAKO after-sales service and Annual Maintenance Contracts.",
   },
 ];
-
-export const homeFaqs = faqs.filter((faq) => faq.home);

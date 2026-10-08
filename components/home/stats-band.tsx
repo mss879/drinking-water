@@ -8,8 +8,9 @@ import { useRef } from "react";
 import { createVideoScrub } from "@/components/motion/video-scrub";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
+import type { homePromise } from "@/content/copy/home";
 import { site } from "@/content/site";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -22,20 +23,12 @@ const film = {
 };
 
 /**
- * What every LUSAKO system comes with, set large on the band. The client asked for the rental price, the number of
+ * "More than a purifier" (the GrowSphere stats band): the promise as a heading, then a rounded band over the
+ * brand-blue water film, which plays as the band scrolls past, with the three parts of that promise set large. Its
+ * text is the home.promise block, passed in by the page. The client asked for the rental price, the number of
  * filtration stages and the product count to stay off the home page (they live on the product pages instead).
  */
-const promises = [
-  { title: "UF or RO", caption: "Purification matched to your water source." },
-  { title: "Installed", caption: "Professionally, by trained LUSAKO technicians." },
-  { title: "Cared for", caption: "Preventive maintenance and technical support." },
-];
-
-/**
- * "More than a purifier" (the GrowSphere stats band): the promise as a heading, then a rounded band over the
- * brand-blue water film, which plays as the band scrolls past, with the three parts of that promise.
- */
-export function StatsBand() {
+export function StatsBand({ copy }: { copy: typeof homePromise.defaults }) {
   const root = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -76,14 +69,10 @@ export function StatsBand() {
     <section ref={root} aria-labelledby="promise-title" className="py-16 lg:py-24">
       <Container>
         <SectionHeading
-          eyebrow="More than a purifier"
-          title={
-            <span id="promise-title">
-              The right purification, professional installation and <Highlight>long-term care</Highlight>.
-            </span>
-          }
+          eyebrow={copy.eyebrow}
+          title={<span id="promise-title">{marked(copy.title)}</span>}
           layout="split"
-          description="Every LUSAKO system comes with the right purification for your water, a professional installation and care for as long as you have it."
+          description={copy.description}
         />
 
         <div data-expand className="relative isolate mt-10 overflow-hidden rounded-card-xl bg-deep text-white lg:mt-14">
@@ -103,14 +92,12 @@ export function StatsBand() {
               <p className="font-display text-sm font-bold tracking-[0.16em] text-white uppercase">{site.name}</p>
               <div>
                 <p className="font-display text-3xl leading-tight font-bold sm:text-[2.15rem]">{site.tagline}</p>
-                <p className="mt-4 text-[15px] leading-relaxed text-white">
-                  Water purification and hydration solutions for homes, offices and organisations across Sri Lanka.
-                </p>
+                <p className="mt-4 text-[15px] leading-relaxed text-white">{copy.brandText}</p>
               </div>
             </div>
             <ul className="grid content-center gap-8 px-4 py-6 sm:grid-cols-3 sm:gap-6 lg:col-span-8 lg:px-8">
-              {promises.map((promise) => (
-                <li key={promise.title} className="flex flex-col gap-4 border-t border-white/30 pt-5">
+              {copy.promises.map((promise, i) => (
+                <li key={i} className="flex flex-col gap-4 border-t border-white/30 pt-5">
                   <p className="font-sans text-[length:clamp(2.25rem,1.6rem+1.9vw,3.25rem)] leading-none font-light tracking-[-0.04em] whitespace-nowrap">
                     {promise.title}
                   </p>

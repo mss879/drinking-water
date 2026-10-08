@@ -11,15 +11,24 @@ export const metadata: Metadata = { title: "Website" };
 /** The Website group in one place (the phone tab bar's "Website" tab lands here), with what each section holds. */
 export default async function WebsiteHubPage() {
   const { supabase } = await requireAdmin();
-  const count = async (table: "cms_products" | "cms_parts" | "cms_client_logos" | "blog_posts") => {
+  const count = async (table: "cms_products" | "cms_parts" | "cms_client_logos" | "cms_faqs" | "cms_case_studies" | "blog_posts") => {
     const { count: total, error } = await supabase.from(table).select("id", { count: "exact", head: true });
     return error ? null : (total ?? 0);
   };
-  const [products, parts, logos, posts] = await Promise.all([count("cms_products"), count("cms_parts"), count("cms_client_logos"), count("blog_posts")]);
+  const [products, parts, logos, faqs, stories, posts] = await Promise.all([
+    count("cms_products"),
+    count("cms_parts"),
+    count("cms_client_logos"),
+    count("cms_faqs"),
+    count("cms_case_studies"),
+    count("blog_posts"),
+  ]);
   const totals: Record<string, string | null> = {
     "/admin/products": products === null ? null : `${products} ${products === 1 ? "product" : "products"}`,
     "/admin/parts": parts === null ? null : `${parts} ${parts === 1 ? "item" : "items"}`,
+    "/admin/faqs": faqs === null ? null : `${faqs} ${faqs === 1 ? "question" : "questions"}`,
     "/admin/logos": logos === null ? null : `${logos} ${logos === 1 ? "logo" : "logos"}`,
+    "/admin/stories": stories === null ? null : `${stories} ${stories === 1 ? "story" : "stories"}`,
     "/admin/blog": posts === null ? null : `${posts} ${posts === 1 ? "post" : "posts"}`,
   };
 

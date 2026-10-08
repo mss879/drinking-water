@@ -12,9 +12,9 @@ import { JsonLd } from "@/lib/jsonld";
 import { ogImage, organizationRef, websiteId } from "@/lib/seo";
 import type { PostSummary } from "@/lib/blog/queries";
 import { renderArticle } from "@/lib/blog/render";
+import { getPhotos } from "@/lib/cms/content";
 import { autoExcerpt, headings } from "@/lib/blog/text";
 import type { BlogPost } from "@/lib/supabase/types";
-import { heroImages } from "@/content/images";
 
 function Contents({ entries }: { entries: ReturnType<typeof headings> }) {
   return (
@@ -39,6 +39,10 @@ export async function ArticleView({ post, related }: { post: BlogPost; related: 
   const toc = headings(content);
   const url = new URL(`/blog/${post.slug}`, site.url).toString();
   const description = post.seo_description ?? post.excerpt ?? autoExcerpt(content);
+  // Without a cover photo, the article opens on the Blog page's header image.
+  const heroImage = post.cover_url
+    ? { src: post.cover_url, mono: true, alt: post.cover_alt ?? undefined }
+    : { src: (await getPhotos()).pageBlog.src, position: "object-right" };
 
   return (
     <>
@@ -68,7 +72,7 @@ export async function ArticleView({ post, related }: { post: BlogPost; related: 
         eyebrow={post.category ?? "Blog"}
         title={post.title}
         description={post.excerpt}
-        image={post.cover_url ? { src: post.cover_url, mono: true, alt: post.cover_alt ?? undefined } : { src: heroImages.blog, position: "object-right" }}
+        image={heroImage}
       >
         <PostMeta publishedAt={post.published_at} minutes={post.reading_minutes} author={post.author_name} tone="dark" />
       </PageHero>

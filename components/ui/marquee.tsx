@@ -25,9 +25,9 @@ export function Marquee({
   const row = (
     <ul className="flex shrink-0 items-center">
       {[0, 1, 2].flatMap((copy) =>
-        items.map((item) => (
+        items.map((item, i) => (
           <li
-            key={`${copy}-${item}`}
+            key={`${copy}-${i}`}
             className="flex items-center gap-8 pr-8 font-display text-2xl font-bold tracking-[-0.01em] whitespace-nowrap uppercase sm:gap-10 sm:pr-10 sm:text-[1.75rem]"
           >
             {item}

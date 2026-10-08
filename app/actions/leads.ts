@@ -1,9 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import { after } from "next/server";
 import { isLeadFormType, leadForms, productOptions, resolveFields } from "@/content/forms";
 import { getProducts } from "@/lib/cms/content";
 import {
+  allowSubmission,
   deliverLead,
   hasInquiryStore,
   hasLeadWebhook,
@@ -73,6 +75,14 @@ export async function submitLead(_previous: LeadState, formData: FormData): Prom
     return { status: "error", message: "Please check the highlighted fields.", errors, values };
   }
 
+  if (!(await allowSubmission(await clientAddress()))) {
+    return {
+      status: "error",
+      message: "You’ve sent several requests in the last few minutes. Please wait a little and try again, or call us.",
+      values,
+    };
+  }
+
   const lead: Lead = {
     reference: newReference(),
     form: type,
@@ -113,6 +123,17 @@ export async function submitLead(_previous: LeadState, formData: FormData): Prom
   }
 
   return { status: "success", reference: lead.reference };
+}
+
+/** The visitor's address as the host saw it: Netlify's own header first, then the usual proxy headers. */
+async function clientAddress() {
+  const list = await headers();
+  return (
+    list.get("x-nf-client-connection-ip") ??
+    list.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    list.get("x-real-ip") ??
+    null
+  );
 }
 
 function failure(values: Record<string, string>): LeadState {

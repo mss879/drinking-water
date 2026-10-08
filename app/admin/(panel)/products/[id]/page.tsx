@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MigrationNotice } from "@/components/admin/website/migration-notice";
 import { ProductEditor } from "@/components/admin/website/product-editor";
+import { productCare } from "@/content/copy/product";
 import { isMissingSchema, requireAdmin } from "@/lib/admin/auth";
+import { getCopy } from "@/lib/cms/content";
 
 export const metadata: Metadata = { title: "Edit product" };
 
@@ -16,5 +18,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   if (error && isMissingSchema(error)) return <MigrationNotice />;
   if (error) throw new Error(error.message);
   if (!product) notFound();
-  return <ProductEditor key={product.updated_at} product={product} />;
+  // The shared maintenance note as Page text has it, shown as the placeholder for a product's own note.
+  const { maintenanceNote } = await getCopy(productCare);
+  return <ProductEditor key={product.updated_at} product={product} sharedMaintenanceNote={maintenanceNote} />;
 }

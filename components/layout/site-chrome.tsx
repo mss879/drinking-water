@@ -10,18 +10,29 @@ import { MotionRoot } from "@/components/motion/motion-root";
 import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import { introScript } from "@/components/preloader/intro-script";
 import { Preloader } from "@/components/preloader/preloader";
-import { productOptions } from "@/content/forms";
-import { getProducts, getSiteSettings } from "@/lib/cms/content";
+import { chromeActionBar, chromeContactLabels, chromeContactMenu, chromeMobileMenu, chromeSite, chromeWhatsappButton } from "@/content/copy/chrome";
+import { amcOptionLabels, productOptions } from "@/content/forms";
+import { getAmc, getCopy, getProducts, getSiteSettings } from "@/lib/cms/content";
 import { JsonLd } from "@/lib/jsonld";
 import { localBusinessJsonLd } from "@/lib/local-business";
 
 /**
  * Everything around a marketing page: the home intro, the floating navigation, the footer, the mobile action bar,
  * WhatsApp, the motion engine and smooth scrolling. The `(site)` layout and the root 404 both render it; the admin
- * has its own shell.
+ * has its own shell. The chrome's wording is read here (content/copy/chrome.ts) and handed to the client parts.
  */
 export async function SiteChrome({ children }: { children: ReactNode }) {
-  const [{ contact, social }, products] = await Promise.all([getSiteSettings(), getProducts()]);
+  const [{ contact, social }, products, seo, contactMenu, mobileMenu, { labels }, actionBar, whatsapp, amc] = await Promise.all([
+    getSiteSettings(),
+    getProducts(),
+    getCopy(chromeSite),
+    getCopy(chromeContactMenu),
+    getCopy(chromeMobileMenu),
+    getCopy(chromeContactLabels),
+    getCopy(chromeActionBar),
+    getCopy(chromeWhatsappButton),
+    getAmc(),
+  ]);
 
   return (
     <>
@@ -34,16 +45,18 @@ export async function SiteChrome({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
-      <Header contact={contact} social={social} />
+      <Header contact={contact} social={social} copy={{ contactMenu, mobileMenu, contactLabels: labels }} />
       <main id="main" className="flex-1">
-        <CatalogProvider options={productOptions(products)}>{children}</CatalogProvider>
+        <CatalogProvider options={productOptions(products)} labels={amcOptionLabels(amc.plans)}>
+          {children}
+        </CatalogProvider>
       </main>
       <Footer />
-      <MobileCtaBar contact={contact} social={social} />
-      <WhatsAppButton number={contact.whatsappSales} />
+      <MobileCtaBar contact={contact} social={social} copy={actionBar} labels={labels} />
+      <WhatsAppButton contact={contact} label={whatsapp.label} />
       <MotionRoot />
       <SmoothScroll />
-      <JsonLd data={localBusinessJsonLd(contact, social)} />
+      <JsonLd data={localBusinessJsonLd(contact, social, seo.description)} />
       <Analytics />
       <Tracker />
     </>

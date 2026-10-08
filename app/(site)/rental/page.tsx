@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { LeadForm } from "@/components/forms/lead-form";
-import { RentalCalculator } from "@/components/rental/rental-calculator";
+import { RentalQuoteBuilder } from "@/components/rental/rental-quote-builder";
 import { CtaBand } from "@/components/sections/cta-band";
 import { BuyVsRent } from "@/components/sections/buy-vs-rent";
 import { FaqSection } from "@/components/sections/faq-section";
@@ -31,77 +31,86 @@ import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { faqs } from "@/content/faqs";
-import { leadForms } from "@/content/forms";
-import { planFor, rentalCharges, rentalPlans } from "@/content/pricing";
+import {
+  rentalAquaspark,
+  rentalCharges,
+  rentalEnquiry,
+  rentalFaq,
+  rentalHero,
+  rentalNextSteps,
+  rentalQuote,
+  rentalQuoteBuilder,
+  rentalRegional,
+  rentalSeo,
+  rentalWhy,
+} from "@/content/copy/rental";
+import { fill } from "@/content/copy/schema";
 import { findProduct } from "@/content/products";
-import { howItWorks } from "@/content/services";
 import { site } from "@/content/site";
-import { getPhotos, getProducts } from "@/lib/cms/content";
+import { getCopy, getFaqs, getPhotos, getProducts, getRentalPlans, getRentalPrices } from "@/lib/cms/content";
 import { formatLKR } from "@/lib/format";
 import { JsonLd } from "@/lib/jsonld";
 import { organizationRef, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Water Purifier Rental for Offices",
-  description:
-    "Rent a LUSAKO water purifier for your office or company: one predictable monthly payment for the equipment and ongoing service. PureFlow UF and RO plans.",
-  path: "/rental",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(rentalSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/rental" });
+}
 
-/** The rental message from the brief (Doc 1 §13): sell convenience, not a machine. A title in parts sets each part on its own line. */
-const benefits: { icon: LucideIcon; title: string | string[]; body: string }[] = [
-  { icon: GlassWater, title: "Convenience", body: "Pure water on tap, with no bottle deliveries to arrange or store." },
-  { icon: CalendarClock, title: "Predictability", body: "One predictable monthly payment that’s easy to budget for." },
-  {
-    icon: Wallet,
-    title: ["Low Initial Cost.", "Simple Monthly Rentals."],
-    body: `Start with just ${formatLKR(rentalCharges.initialPaymentPerUnit)} as a one-time initial payment, plus the monthly rental for the first month. From the second month onwards, pay only the monthly rental.`,
-  },
-  { icon: Wrench, title: "Maintenance", body: "Scheduled preventive maintenance, according to your rental agreement." },
-  { icon: Headset, title: "Service", body: "Technical support from LUSAKO whenever your team needs it." },
-  { icon: KeyRound, title: "No ownership headache", body: "The equipment remains LUSAKO’s, and so does looking after it." },
+/**
+ * The benefit cards' icons, by position (the brief's rental message, Doc 1 §13: sell convenience, not a machine).
+ * Their wording is in content/copy/rental.ts; the third is the "Low initial cost" card.
+ */
+const benefitIcons: LucideIcon[] = [GlassWater, CalendarClock, Wallet, Wrench, Headset, KeyRound];
+
+const coverageIcons: LucideIcon[] = [Settings2, CalendarCheck, MapPinned];
+
+/** The two charge cards: the initial payment, then the Regional Hydration Service. */
+const chargeIcons: LucideIcon[] = [Receipt, MapPinned];
+
+/** The cards under "What happens next", by position. */
+const crossLinks: { href: string; icon: LucideIcon }[] = [
+  { href: "/hydration-solutions/corporate", icon: Building2 },
+  { href: "/water-purifiers", icon: House },
 ];
 
-const regionalCoverage = [
-  { icon: Settings2, label: "Additional technical service" },
-  { icon: CalendarCheck, label: "Preventive maintenance" },
-  { icon: MapPinned, label: "Regional support" },
-];
+/** A title with line breaks sets each line on its own line. */
+function titleLines(title: string) {
+  const lines = title.split(/\n+/).filter(Boolean);
+  return lines.length > 1 ? lines.map((line, i) => <span key={i} className="block">{line}</span>) : title;
+}
 
 export default async function RentalPage() {
-  const [products, photos] = await Promise.all([getProducts(), getPhotos()]);
-  const uf = planFor("UF");
-  const aquaspark = rentalPlans.find((plan) => plan.id === "aquaspark");
+  const [products, photos, plans, prices, faqs, hero, why, aquasparkCopy, quote, builder, charges, regional, enquiry, next, faqCopy] =
+    await Promise.all([
+      getProducts(),
+      getPhotos(),
+      getRentalPlans(),
+      getRentalPrices(),
+      getFaqs(),
+      getCopy(rentalHero),
+      getCopy(rentalWhy),
+      getCopy(rentalAquaspark),
+      getCopy(rentalQuote),
+      getCopy(rentalQuoteBuilder),
+      getCopy(rentalCharges),
+      getCopy(rentalRegional),
+      getCopy(rentalEnquiry),
+      getCopy(rentalNextSteps),
+      getCopy(rentalFaq),
+    ]);
+  const aquaspark = plans.find((plan) => plan.id === "aquaspark");
   const sparklingProduct = findProduct(products, "aquaspark-elite") ?? products.find((product) => product.types.includes("sparkling"));
-  const regional = rentalCharges.regionalServiceMonthlyPerUnit;
   const rentalFaqs = faqs.filter((faq) => faq.topic === "rental");
-  const nextSteps = [
-    { title: "Site assessment", body: howItWorks.rent[1]?.body ?? "We check your water source and where the machines should go." },
-    { title: "Proposal", body: "A clear proposal with the machines, the monthly rental and every charge listed separately." },
-    { title: "Installation", body: howItWorks.rent[2]?.body ?? "Professional installation, ready for your team on day one." },
-  ];
 
-  const charges = [
-    {
-      icon: Receipt,
-      title: "One-time initial payment",
-      amount: formatLKR(rentalCharges.initialPaymentPerUnit),
-      unit: "per unit",
-      body: "Payable only in the first month. From the second month onwards, you pay only the monthly rental.",
-    },
-    {
-      icon: MapPinned,
-      title: "Regional Hydration Service",
-      amount: regional === null ? "Confirmed in your quote" : formatLKR(regional),
-      unit: regional === null ? "" : "per unit, per month",
-      body: "Outside the Western Province only. Always shown as a separate line, never hidden inside the rental.",
-    },
-  ];
+  // The amounts the admin has switched on (Prices & quotes). A hidden one keeps the page's wording without a price.
+  const ufFrom = prices.plans["pureflow-uf"];
+  const aquasparkFrom = aquaspark ? prices.plans[aquaspark.id] : undefined;
+  const chargeAmounts = [prices.initial, prices.regional];
 
   return (
     <>
@@ -116,39 +125,45 @@ export default async function RentalPage() {
           url: new URL("/rental", site.url).toString(),
           provider: organizationRef,
           areaServed: { "@type": "Country", name: "Sri Lanka" },
-          offers: rentalPlans
-            .filter((plan) => plan.fromMonthly !== null)
-            .map((plan) => ({
-              "@type": "Offer",
-              name: plan.name,
-              description: plan.description,
-              priceSpecification: {
-                "@type": "UnitPriceSpecification",
-                minPrice: plan.fromMonthly,
-                priceCurrency: "LKR",
-                unitCode: "MON",
-                valueAddedTaxIncluded: false,
-              },
-            })),
+          hasOfferCatalog: {
+            "@type": "OfferCatalog",
+            name: "LUSAKO rental plans",
+            itemListElement: plans.map((plan) => {
+              const from = prices.plans[plan.id];
+              return {
+                "@type": "Offer",
+                itemOffered: { "@type": "Service", name: plan.name, description: plan.description },
+                ...(from !== undefined && {
+                  priceSpecification: {
+                    "@type": "UnitPriceSpecification",
+                    minPrice: from,
+                    priceCurrency: "LKR",
+                    unitCode: "MON",
+                    valueAddedTaxIncluded: false,
+                  },
+                }),
+              };
+            }),
+          },
         }}
       />
 
       <PageHero
         crumbs={[{ label: "Rental", href: "/rental" }]}
-        eyebrow="LUSAKO Hydration Solutions"
-        title={["Your water purifier.", <Highlight key="ours">Our responsibility.</Highlight>]}
-        description="For one predictable monthly payment, LUSAKO provides the equipment and ongoing service required to keep your drinking-water system operating."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Calculate my rental", href: "#calculator" },
-          { label: "Rent for your office", href: "#enquiry" },
+          { label: hero.quoteButton, href: "#calculator" },
+          { label: hero.enquiryButton, href: "#enquiry" },
         ]}
         image={{ src: photos.officePantry.src, position: "object-[50%_45%]" }}
       />
       <HeroStrip
-        title="Pure water. Zero ownership hassle."
-        description="Equipment and ongoing service, for one predictable monthly payment."
-        pills={["Offices", "Companies"]}
-        highlight={uf.fromMonthly ? `PureFlow from ${formatLKR(uf.fromMonthly)}/month + VAT` : undefined}
+        title={hero.stripTitle}
+        description={hero.stripText}
+        pills={hero.stripPills}
+        highlight={ufFrom !== undefined ? `${fill(hero.stripPrice, { price: formatLKR(ufFrom) })}/month + VAT` : undefined}
       />
 
       <section className="py-16 md:py-20 lg:py-28">
@@ -156,35 +171,38 @@ export default async function RentalPage() {
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+3rem)]">
               <SectionHeading
-                eyebrow="Why rent with LUSAKO"
+                eyebrow={why.eyebrow}
                 title={
                   <>
-                    <span className="block">Enjoy better water.</span> <Highlight>Leave the maintenance to us.</Highlight>
+                    <span className="block">{marked(why.title[0])}</span> {marked(why.title[1])}
                   </>
                 }
-                description="You’re not simply renting equipment. LUSAKO provides an ongoing hydration solution, so your team just enjoys the water."
+                description={why.description}
               />
               <div data-reveal="up" className="mt-8">
                 <ButtonLink href="#calculator" variant="outline" arrow>
-                  See what it costs
+                  {why.button}
                 </ButtonLink>
               </div>
             </div>
           </div>
           <ul data-stagger className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
-            {benefits.map(({ icon: Icon, title, body }) => (
-              <li key={String(title)} className="card-line flex flex-col p-6 sm:min-h-52">
-                <span className="grid size-14 place-items-center rounded-card-sm bg-tint">
-                  <IconBadge size="sm">
-                    <Icon />
-                  </IconBadge>
-                </span>
-                <h3 className="pt-6 font-display text-xl font-bold text-ink sm:pt-8">
-                  {Array.isArray(title) ? title.map((part) => <span key={part} className="block">{part}</span>) : title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
-              </li>
-            ))}
+            {why.benefits.map(({ title, body }, i) => {
+              const Icon = benefitIcons[i] ?? GlassWater;
+              // The "Low initial cost" card names the initial payment while it is shown.
+              const text = i === 2 && prices.initial !== null ? fill(why.initialWithPrice, { price: formatLKR(prices.initial) }) : body;
+              return (
+                <li key={i} className="card-line flex flex-col p-6 sm:min-h-52">
+                  <span className="grid size-14 place-items-center rounded-card-sm bg-tint">
+                    <IconBadge size="sm">
+                      <Icon />
+                    </IconBadge>
+                  </span>
+                  <h3 className="pt-6 font-display text-xl font-bold text-ink sm:pt-8">{titleLines(title)}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{text}</p>
+                </li>
+              );
+            })}
           </ul>
         </Container>
       </section>
@@ -212,18 +230,21 @@ export default async function RentalPage() {
               </div>
               <div className="flex flex-col gap-4 sm:items-end sm:text-right">
                 <p>
-                  <span className="block text-sm text-muted">Rental</span>
+                  <span className="block text-sm text-muted">{aquasparkCopy.rateLabel}</span>
                   <span className="font-display text-lg font-bold text-deep">
-                    {aquaspark.fromMonthly ? `From ${formatLKR(aquaspark.fromMonthly)}/month + VAT` : "Price on request"}
+                    {aquasparkFrom !== undefined
+                      ? `${fill(aquasparkCopy.rateWithPrice, { price: formatLKR(aquasparkFrom) })}/month + VAT`
+                      : aquasparkCopy.rate}
                   </span>
                 </p>
                 <ButtonLink
-                  href={`/contact?type=rental&preferredSolution=${aquaspark.id}`}
+                  href={`/contact?type=rental&preferredSolution=${aquaspark.id}#quote`}
                   variant="primary"
                   arrow
                   className="w-full sm:w-auto"
                 >
-                  Ask about {aquaspark.name}
+                  {aquasparkCopy.button}
+                  <span className="sr-only"> for {aquaspark.name} rental</span>
                 </ButtonLink>
               </div>
             </article>
@@ -237,38 +258,41 @@ export default async function RentalPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Rental calculator"
-            title={
-              <>
-                See your costs, <Highlight>clearly</Highlight>
-              </>
-            }
-            description="Start with your province. Every charge is shown as its own line, so you know what you pay in the first month and every month after."
+            eyebrow={quote.eyebrow}
+            title={marked(quote.title)}
+            description={quote.description}
           />
 
-          <RentalCalculator className="mt-12 lg:mt-14" />
+          <RentalQuoteBuilder className="mt-12 lg:mt-14" copy={builder} plans={plans} prices={prices} />
 
           <div className="mt-16 lg:mt-20">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <h3 className="font-display text-h3 font-bold text-ink">Transparent charges</h3>
-              <p className="text-sm text-muted">Shown before you enquire. All amounts exclude VAT.</p>
+              <h3 className="font-display text-h3 font-bold text-ink">{charges.title}</h3>
+              {/* The VAT statement stays in the code. */}
+              <p className="text-sm text-muted">{`${charges.note} All amounts exclude VAT.`}</p>
             </div>
             <ul className="mt-6 grid gap-4 md:grid-cols-2 lg:gap-5">
-              {charges.map(({ icon: Icon, title, amount, unit, body }) => (
-                <li key={title} className="card-line flex flex-col p-6">
-                  <div className="flex items-center gap-3">
-                    <IconBadge size="sm">
-                      <Icon />
-                    </IconBadge>
-                    <h4 className="font-display text-[15px] font-bold text-ink">{title}</h4>
-                  </div>
-                  <p className="mt-6 lg:mt-8">
-                    <span className="font-sans text-[2rem] leading-tight font-light tracking-[-0.03em] text-deep">{amount}</span>
-                    {unit && <span className="ml-1.5 text-sm text-muted">{unit}</span>}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">{body}</p>
-                </li>
-              ))}
+              {charges.cards.map(({ title, when, unit, unitWithPrice, body }, i) => {
+                const Icon = chargeIcons[i] ?? Receipt;
+                const amount = chargeAmounts[i] ?? null;
+                return (
+                  <li key={i} className="card-line flex flex-col p-6">
+                    <div className="flex items-center gap-3">
+                      <IconBadge size="sm">
+                        <Icon />
+                      </IconBadge>
+                      <h4 className="font-display text-[15px] font-bold text-ink">{title}</h4>
+                    </div>
+                    <p className="mt-6 lg:mt-8">
+                      <span className="font-sans text-[2rem] leading-tight font-light tracking-[-0.03em] text-deep">
+                        {amount !== null ? formatLKR(amount) : when}
+                      </span>
+                      <span className="ml-1.5 text-sm text-muted">{amount !== null ? unitWithPrice : unit}</span>
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-muted">{body}</p>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </Container>
@@ -279,43 +303,45 @@ export default async function RentalPage() {
           <div data-expand className="relative isolate grid gap-10 overflow-hidden rounded-card-xl bg-deep p-6 text-white sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14">
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative lg:col-span-7">
-              <Pill variant="glass">Regional Hydration Service</Pill>
+              <Pill variant="glass">{regional.pill}</Pill>
               <h2 id="regional-service-title" className="mt-5 max-w-2xl text-h2 font-bold">
-                The same standard of care, wherever you are
+                {regional.title}
               </h2>
-              <p className="mt-5 max-w-xl text-lead text-white">
-                For customers outside the Western Province, a Regional Hydration Service charge applies to cover additional technical
-                service, preventive maintenance and regional support requirements.
-              </p>
+              <p className="mt-5 max-w-xl text-lead text-white">{regional.text}</p>
               <ul className="mt-8 flex flex-wrap gap-2">
-                {regionalCoverage.map(({ icon: Icon, label }) => (
-                  <li key={label} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-ink">
-                    <Icon aria-hidden className="size-4 text-deep" strokeWidth={1.75} />
-                    {label}
-                  </li>
-                ))}
+                {regional.chips.map((label, i) => {
+                  const Icon = coverageIcons[i] ?? MapPinned;
+                  return (
+                    <li key={i} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-ink">
+                      <Icon aria-hidden className="size-4 text-deep" strokeWidth={1.75} />
+                      {label}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
             <div className="relative flex flex-col gap-3 lg:col-span-5 lg:justify-center">
-              <h3 className="font-display text-sm font-bold tracking-[0.14em] text-white uppercase">How it shows on your quote</h3>
+              <h3 className="font-display text-sm font-bold tracking-[0.14em] text-white uppercase">{regional.examplesTitle}</h3>
               <div className="rounded-card bg-white p-5 text-ink sm:p-6">
-                <p className="text-sm text-muted">Western Province</p>
-                <p className="mt-1 font-display text-xl font-bold text-ink">Rental only</p>
+                <p className="text-sm text-muted">{regional.westernLabel}</p>
+                <p className="mt-1 font-display text-xl font-bold text-ink">{regional.westernTitle}</p>
                 <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-[15px] text-ink">
-                  <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> Monthly rental
+                  <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> {regional.westernLine}
                 </p>
               </div>
               <div className="rounded-card bg-white p-5 text-ink sm:p-6">
-                <p className="text-sm text-muted">Outside the Western Province</p>
-                <p className="mt-1 font-display text-xl font-bold text-ink">Rental + Regional Hydration Service</p>
+                <p className="text-sm text-muted">{regional.outsideLabel}</p>
+                <p className="mt-1 font-display text-xl font-bold text-ink">{regional.outsideTitle}</p>
                 <ul className="mt-4 grid gap-2 border-t border-line pt-4 text-[15px] text-ink">
                   <li className="flex items-center gap-2">
-                    <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> Monthly rental
+                    <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> {regional.outsideRentalLine}
                   </li>
                   <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> Regional Hydration Service
+                    <Check aria-hidden className="size-4 text-deep" strokeWidth={2.5} /> {regional.outsideRegionalLine}
                     <span className="text-sm text-muted">
-                      {regional === null ? "· separate line, confirmed in your quote" : `· ${formatLKR(regional)} per unit, per month`}
+                      {prices.regional !== null
+                        ? fill(regional.regionalNoteWithPrice, { price: formatLKR(prices.regional) })
+                        : regional.regionalNote}
                     </span>
                   </li>
                 </ul>
@@ -331,20 +357,12 @@ export default async function RentalPage() {
       <section id="enquiry" className="py-16 md:py-20 lg:py-28">
         <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12" data-no-reveal>
           <div className="flex flex-col lg:col-span-5">
-            <SectionHeading
-              eyebrow="Office rental"
-              title={
-                <>
-                  Rent LUSAKO for <Highlight>your office</Highlight>
-                </>
-              }
-              description={leadForms.rental.description}
-            />
+            <SectionHeading eyebrow={enquiry.eyebrow} title={marked(enquiry.title)} description={enquiry.description} />
 
-            <h3 data-reveal="up" className="label mt-10">What happens next</h3>
+            <h3 data-reveal="up" className="label mt-10">{enquiry.stepsTitle}</h3>
             <ol data-stagger className="mt-5 grid gap-5">
-              {nextSteps.map((step, i) => (
-                <li key={step.title} className="flex gap-4">
+              {next.steps.map((step, i) => (
+                <li key={i} className="flex gap-4">
                   <span
                     aria-hidden
                     className="grid size-10 shrink-0 place-items-center rounded-full bg-deep text-sm font-semibold text-white"
@@ -360,49 +378,38 @@ export default async function RentalPage() {
             </ol>
 
             <div data-stagger className="mt-10 grid gap-3">
-              <Link
-                href="/hydration-solutions/corporate"
-                className="group/card card-line flex items-center gap-4 p-4 pr-5 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-5"
-              >
-                <IconBadge>
-                  <Building2 />
-                </IconBadge>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-display font-bold text-ink">Renting across several locations?</span>
-                  <span className="mt-0.5 block text-sm text-muted">
-                    Get a corporate proposal, so you don’t have to choose machines one by one.
-                  </span>
-                </span>
-                <ArrowCircle variant="deep" />
-              </Link>
-              <Link
-                href="/water-purifiers"
-                className="group/card card-line flex items-center gap-4 p-4 pr-5 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-5"
-              >
-                <IconBadge>
-                  <House />
-                </IconBadge>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-display font-bold text-ink">Renting for your home?</span>
-                  <span className="mt-0.5 block text-sm text-muted">Buying is usually the better long-term value.</span>
-                </span>
-                <ArrowCircle variant="deep" />
-              </Link>
+              {crossLinks.map(({ href, icon: Icon }, i) => {
+                const card = enquiry.links[i];
+                if (!card) return null;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="group/card card-line flex items-center gap-4 p-4 pr-5 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-5"
+                  >
+                    <IconBadge>
+                      <Icon />
+                    </IconBadge>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display font-bold text-ink">{card.title}</span>
+                      <span className="mt-0.5 block text-sm text-muted">{card.body}</span>
+                    </span>
+                    <ArrowCircle variant="deep" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
           <div data-reveal="up" className="card-line rounded-card-xl p-6 sm:p-8 lg:col-span-7 lg:p-10">
-            <h3 className="font-display text-h3 font-bold text-ink">Tell us about your workplace</h3>
-            <p className="mt-2 mb-8 text-[15px] text-muted">
-              Share your team size, the number of units you need and your water source. We’ll reply with next steps and arrange a site
-              assessment.
-            </p>
+            <h3 className="font-display text-h3 font-bold text-ink">{enquiry.formTitle}</h3>
+            <p className="mt-2 mb-8 text-[15px] text-muted">{enquiry.formText}</p>
             <LeadForm type="rental" />
           </div>
         </Container>
       </section>
 
-      <FaqSection faqs={rentalFaqs} title="Rental questions, answered" />
+      <FaqSection faqs={rentalFaqs} title={faqCopy.title} />
       <CtaBand />
     </>
   );

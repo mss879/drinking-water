@@ -1,6 +1,8 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import type { LeadSource } from "@/lib/analytics";
 import { fieldValueLabel, leadFieldMap, type LeadFormType } from "@/content/forms";
+import { isMissingSchema } from "@/lib/supabase/errors";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Json } from "@/lib/supabase/types";
 
@@ -60,6 +62,30 @@ export function parseAttribution(raw: FormDataEntryValue | null): Attribution {
   } catch {
     return empty;
   }
+}
+
+/** How many quote requests one connection may send in the window before it's asked to wait. */
+const SUBMISSIONS = { limit: 5, windowSeconds: 600 };
+
+/**
+ * Whether this connection may send another quote request (public.rate_limit_hit, migration 8), so a script can't
+ * flood the inquiries. Only a hash of the address reaches the database. It lets everything through when Supabase
+ * isn't set up, the migration hasn't been run, or the check itself fails: a real customer is never turned away.
+ */
+export async function allowSubmission(ip: string | null): Promise<boolean> {
+  const supabase = createServiceClient();
+  if (!supabase || !ip) return true;
+  const bucket = `lead:${createHash("sha256").update(ip).digest("hex").slice(0, 40)}`;
+  const { data, error } = await supabase.rpc("rate_limit_hit", {
+    p_bucket: bucket,
+    p_limit: SUBMISSIONS.limit,
+    p_window_seconds: SUBMISSIONS.windowSeconds,
+  });
+  if (error) {
+    if (!isMissingSchema(error)) console.error("[lead] rate limit check failed", error.message);
+    return true;
+  }
+  return data !== false;
 }
 
 /** A new inquiry reference, e.g. LSK-4F9A2C. */

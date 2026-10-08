@@ -52,8 +52,11 @@ export function postalAddress(address: string) {
 
 const e164 = (number: string) => telHref(number).slice(4);
 
-/** LUSAKO as a local business, on every public page. Services, products and articles point at it by id. */
-export function localBusinessJsonLd(contact: SiteContact, social: SocialLink[]) {
+/**
+ * LUSAKO as a local business, on every public page. Services, products and articles point at it by id. `description`
+ * is the website description from Page text (Search & sharing, whole site).
+ */
+export function localBusinessJsonLd(contact: SiteContact, social: SocialLink[], description: string = site.description) {
   const address = postalAddress(contact.address);
   const hours = openingHours(contact.hours);
   const logo = new URL("/brand/lusako-logo.png", site.url).toString();
@@ -68,7 +71,7 @@ export function localBusinessJsonLd(contact: SiteContact, social: SocialLink[]) 
       logo,
       image: new URL("/og", site.url).toString(),
       slogan: site.tagline,
-      description: site.description,
+      description,
       ...(contact.phones[0] ? { telephone: e164(contact.phones[0]) } : {}),
       ...(contact.salesEmail ? { email: contact.salesEmail } : {}),
       ...(address ? { address } : {}),
@@ -102,7 +105,7 @@ export function localBusinessJsonLd(contact: SiteContact, social: SocialLink[]) 
       "@id": websiteId,
       name: site.name,
       url: site.url,
-      description: site.description,
+      description,
       inLanguage: "en-LK",
       publisher: { "@id": organizationId },
     },

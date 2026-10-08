@@ -2,65 +2,38 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { Container } from "@/components/ui/container";
-import { Highlight } from "@/components/ui/highlight";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { sharedSolutionsTrio } from "@/content/copy/shared";
 import type { Photos } from "@/content/images";
-import { getPhotos } from "@/lib/cms/content";
+import { getCopy, getPhotos } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 
-/** LUSAKO Hydration Solutions: For Homes (buy) · For Offices (rent) · For Companies (corporate). */
+/**
+ * LUSAKO Hydration Solutions: For Homes (buy) · For Offices (rent) · For Companies (corporate). Each card's link and
+ * photo, in the order of the block's cards (content/copy/shared.ts), which hold their wording.
+ */
 const solutionsWith = (photos: Photos) => [
-  {
-    label: "For homes",
-    title: "Buy a LUSAKO purifier",
-    body: "Recommended option for domestic customers.",
-    cta: "Explore products",
-    href: "/water-purifiers",
-    photo: photos.heroHome,
-    position: "object-[50%_70%]",
-  },
-  {
-    label: "For offices",
-    title: "Rent a LUSAKO purifier",
-    body: "Low upfront investment. Professional installation and ongoing service.",
-    cta: "Explore rental",
-    href: "/rental",
-    photo: photos.officePantry,
-    position: "object-center",
-  },
-  {
-    label: "For companies",
-    title: "Corporate Hydration Solutions",
-    body: "One partner for your organisation’s drinking-water requirements.",
-    cta: "Talk to our team",
-    href: "/hydration-solutions/corporate",
-    photo: photos.corporateTeam,
-    position: "object-center",
-  },
+  { href: "/water-purifiers", photo: photos.heroHome, position: "object-[50%_70%]" },
+  { href: "/rental", photo: photos.officePantry, position: "object-center" },
+  { href: "/hydration-solutions/corporate", photo: photos.corporateTeam, position: "object-center" },
 ];
 
 /** Three outlined photo cards (the StomDent doctor cards): black & white photo, then title, text and a link. */
 export async function SolutionsTrio({ showHeading = true }: { showHeading?: boolean }) {
-  const solutions = solutionsWith(await getPhotos());
+  const [photos, copy] = await Promise.all([getPhotos(), getCopy(sharedSolutionsTrio)]);
+  const places = solutionsWith(photos);
+  const solutions = copy.cards.map((words, i) => ({ ...words, ...places[i] }));
   return (
     <section className="py-16 md:py-20 lg:py-28">
       <Container>
         {showHeading && (
-          <SectionHeading
-            layout="split"
-            eyebrow="LUSAKO Hydration Solutions"
-            title={
-              <>
-                The right solution for <Highlight>every space</Highlight>
-              </>
-            }
-            description="Buy for your home, rent for your office, or let us manage hydration across your whole organisation."
-          />
+          <SectionHeading layout="split" eyebrow={copy.eyebrow} title={marked(copy.title)} description={copy.description} />
         )}
         <ul className={cn("grid gap-4 md:grid-cols-3 lg:gap-5", showHeading && "mt-12 lg:mt-14")}>
           {solutions.map((solution) => (
-            <li key={solution.label}>
+            <li key={solution.href}>
               <Link
                 href={solution.href}
                 className="group/card card-line flex h-full flex-col p-2.5 transition-colors duration-300 hover:border-brand"
@@ -83,7 +56,7 @@ export async function SolutionsTrio({ showHeading = true }: { showHeading?: bool
                   <span className="mt-2 block text-[15px] leading-relaxed text-muted">{solution.body}</span>
                   <span className="mt-auto flex items-center gap-3 pt-7 text-sm font-semibold text-deep">
                     <ArrowCircle variant="deep" className="size-10" />
-                    {solution.cta}
+                    {solution.button}
                   </span>
                 </span>
               </Link>

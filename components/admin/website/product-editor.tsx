@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ArrowLeft, ExternalLink, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ExternalLink, Plus, Trash2, X } from "lucide-react";
 import { deleteProduct, saveProduct, type ProductInput } from "@/app/actions/admin/website";
 import { Badge } from "@/components/admin/ui/badge";
 import { ConfirmDialog } from "@/components/admin/ui/dialog";
@@ -14,7 +14,8 @@ import { ImageField } from "@/components/admin/website/image-field";
 import { CardListEditor, TextListEditor } from "@/components/admin/website/list-editors";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { maintenanceNote, productTypes } from "@/content/products";
-import { parseCards, parseVariants } from "@/lib/cms/map";
+import { site } from "@/content/site";
+import { parseCards, parseQuestions, parseSpecs, parseVariants } from "@/lib/cms/map";
 import { cn } from "@/lib/cn";
 import type { ProductRow } from "@/lib/supabase/types";
 
@@ -31,8 +32,6 @@ function formFrom(row: ProductRow): ProductInput {
       filtration: variant.filtration,
       label: variant.label,
       code: variant.code ?? "",
-      price: variant.price ? String(variant.price) : "",
-      rent: variant.rent ? String(variant.rent) : "",
     })),
     purification: row.purification,
     temperatures: row.temperatures,
@@ -47,8 +46,14 @@ function formFrom(row: ProductRow): ProductInput {
     installation_note: row.installation_note,
     maintenance_note: row.maintenance_note ?? "",
     published: row.published,
+    ...(hasExtras(row)
+      ? { specs: parseSpecs(row.specs), faqs: parseQuestions(row.faqs), seo_title: row.seo_title ?? "", seo_description: row.seo_description ?? "" }
+      : {}),
   };
 }
+
+/** Whether the database has the extra specifications, questions and search text yet (the October 9 migration). */
+const hasExtras = (row: ProductRow) => "specs" in row;
 
 const slugify = (text: string) =>
   text
@@ -63,11 +68,108 @@ const slugify = (text: string) =>
 const removeButton =
   "grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-muted transition-colors hover:bg-tint hover:text-ink";
 
+const listButton = cn(removeButton, "disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent");
+
+const textLink = "font-semibold text-deep underline-offset-2 hover:underline";
+
+type Pair = { first: string; second: string };
+
+function swap<T>(list: T[], from: number, to: number) {
+  const next = [...list];
+  [next[from], next[to]] = [next[to], next[from]];
+  return next;
+}
+
+/** Two-part rows (a specification's name and value, a question and its answer): edit, reorder, add, remove. */
+function PairListEditor({
+  label,
+  items,
+  onChange,
+  max,
+  addLabel,
+  first,
+  second,
+}: {
+  label: string;
+  items: Pair[];
+  onChange: (items: Pair[]) => void;
+  max: number;
+  addLabel: string;
+  first: { name: string; placeholder: string; max: number };
+  second: { name: string; placeholder: string; max: number; multiline?: boolean };
+}) {
+  const update = (i: number, patch: Partial<Pair>) => onChange(items.map((item, j) => (j === i ? { ...item, ...patch } : item)));
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      {items.length > 0 && (
+        <ol className="grid gap-3">
+          {items.map((item, i) => (
+            <li key={i} className="grid gap-2 rounded-card-sm border border-line bg-white p-3">
+              <div className="flex items-center gap-1.5">
+                <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-tint-2 text-xs font-bold text-deep">
+                  {i + 1}
+                </span>
+                <Input
+                  value={item.first}
+                  maxLength={first.max}
+                  placeholder={first.placeholder}
+                  aria-label={`${label} ${i + 1}: ${first.name.toLowerCase()}`}
+                  onChange={(event) => update(i, { first: event.target.value })}
+                />
+                <button type="button" className={listButton} aria-label="Move up" disabled={i === 0} onClick={() => onChange(swap(items, i, i - 1))}>
+                  <ArrowUp aria-hidden className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  className={listButton}
+                  aria-label="Move down"
+                  disabled={i === items.length - 1}
+                  onClick={() => onChange(swap(items, i, i + 1))}
+                >
+                  <ArrowDown aria-hidden className="size-4" />
+                </button>
+                <button type="button" className={listButton} aria-label={`Remove ${item.first || first.name.toLowerCase()}`} onClick={() => onChange(items.filter((_, j) => j !== i))}>
+                  <X aria-hidden className="size-4" />
+                </button>
+              </div>
+              {second.multiline ? (
+                <Textarea
+                  value={item.second}
+                  maxLength={second.max}
+                  placeholder={second.placeholder}
+                  aria-label={`${label} ${i + 1}: ${second.name.toLowerCase()}`}
+                  rows={3}
+                  className="min-h-20"
+                  onChange={(event) => update(i, { second: event.target.value })}
+                />
+              ) : (
+                <Input
+                  value={item.second}
+                  maxLength={second.max}
+                  placeholder={second.placeholder}
+                  aria-label={`${label} ${i + 1}: ${second.name.toLowerCase()}`}
+                  onChange={(event) => update(i, { second: event.target.value })}
+                />
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      {items.length < max && (
+        <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => onChange([...items, { first: "", second: "" }])}>
+          <Plus aria-hidden className="size-4" /> {addLabel}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /**
- * Editing one product: everything its card and page show. The prices section is the client's "Buy UF, RO & rental"
- * request: one row per purification option, each with its own model number, buy price and rental-from price.
+ * Editing one product: everything its card and page show, from the client's "Buy UF, RO & rental" request (one row per
+ * purification option, each with its own model number) to its extra rows and search text. Each option's prices are set
+ * in Prices & quotes.
  */
-export function ProductEditor({ product }: { product: ProductRow }) {
+export function ProductEditor({ product, sharedMaintenanceNote = maintenanceNote }: { product: ProductRow; sharedMaintenanceNote?: string }) {
   const router = useRouter();
   const [form, setForm] = useState<ProductInput>(() => formFrom(product));
   const [dirty, setDirty] = useState(false);
@@ -75,6 +177,12 @@ export function ProductEditor({ product }: { product: ProductRow }) {
   const [pending, startTransition] = useTransition();
   const [deleting, startDeleting] = useTransition();
   const slugTouched = !product.slug.startsWith("new-product-");
+  const extras = hasExtras(product);
+  // What Google and shared links show; empty fields fall back to the name, tagline and summary, as on the website.
+  const defaultTitle = `${form.name} – ${form.tagline}`;
+  const searchTitle = form.seo_title?.trim() || defaultTitle;
+  const searchDescription = form.seo_description?.trim() || form.summary;
+  const shownTitle = `${searchTitle} | ${site.name}`.length > 60 ? searchTitle : `${searchTitle} | ${site.name}`;
 
   function set<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -182,10 +290,7 @@ export function ProductEditor({ product }: { product: ProductRow }) {
             </div>
           </Panel>
 
-          <Panel
-            title="Purification options and prices"
-            description="One row per option the customer can choose. Prices are in LKR, excluding VAT. Leave a price empty to show “Price on request”."
-          >
+          <Panel title="Purification options" description="One row per option the customer can choose.">
             <div className="grid gap-3">
               {form.variants.map((variant, i) => (
                 <fieldset key={i} className="grid gap-3 rounded-card-sm border border-line bg-tint/60 p-3 sm:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
@@ -210,12 +315,6 @@ export function ProductEditor({ product }: { product: ProductRow }) {
                   >
                     <X aria-hidden className="size-4" />
                   </button>
-                  <Field label="Buy price (LKR)" htmlFor={`v-${i}-p`} className="sm:col-span-2">
-                    <Input id={`v-${i}-p`} inputMode="numeric" value={variant.price} placeholder="Price on request" onChange={(event) => setVariant(i, { price: event.target.value })} />
-                  </Field>
-                  <Field label="Rent from (LKR / month)" htmlFor={`v-${i}-r`} className="sm:col-span-2">
-                    <Input id={`v-${i}-r`} inputMode="numeric" value={variant.rent} placeholder="Rental on request" onChange={(event) => setVariant(i, { rent: event.target.value })} />
-                  </Field>
                   <Button
                     type="button"
                     variant="ghost"
@@ -235,12 +334,19 @@ export function ProductEditor({ product }: { product: ProductRow }) {
                   className="w-fit"
                   onClick={() => {
                     const filtration = form.variants.some((variant) => variant.filtration === "UF") ? "RO" : "UF";
-                    set("variants", [...form.variants, { filtration, label: `4-Stage ${filtration}`, code: "", price: "", rent: "" }]);
+                    set("variants", [...form.variants, { filtration, label: `4-Stage ${filtration}`, code: "" }]);
                   }}
                 >
                   <Plus aria-hidden className="size-4" /> Add an option
                 </Button>
               )}
+              <p className="text-sm text-muted">
+                Each option’s buy and rent-from prices are set in{" "}
+                <Link href="/admin/pricing" className={textLink}>
+                  Prices &amp; quotes
+                </Link>
+                . While a price is hidden, the website asks for a quote instead.
+              </p>
             </div>
           </Panel>
 
@@ -289,10 +395,51 @@ export function ProductEditor({ product }: { product: ProductRow }) {
                 <Textarea id="p-in" value={form.installation_note} onChange={(event) => set("installation_note", event.target.value)} />
               </Field>
               <Field label="Maintenance note" htmlFor="p-mn" hint="Leave empty to use the standard LUSAKO Care text.">
-                <Textarea id="p-mn" value={form.maintenance_note} placeholder={maintenanceNote} onChange={(event) => set("maintenance_note", event.target.value)} />
+                <Textarea id="p-mn" value={form.maintenance_note} placeholder={sharedMaintenanceNote} onChange={(event) => set("maintenance_note", event.target.value)} />
               </Field>
             </div>
           </Panel>
+
+          {extras ? (
+            <>
+              <Panel
+                title="Extra specifications"
+                description="Rows added to the product page’s specifications, after the standard ones (model, category, purification, water, installation and warranty). Up to 10."
+              >
+                <PairListEditor
+                  label="Extra specification"
+                  items={(form.specs ?? []).map((spec) => ({ first: spec.label, second: spec.value }))}
+                  onChange={(items) => set("specs", items.map((item) => ({ label: item.first, value: item.second })))}
+                  max={10}
+                  addLabel="Add a specification"
+                  first={{ name: "Name", placeholder: "Name, for example Tank capacity", max: 40 }}
+                  second={{ name: "Value", placeholder: "Value, for example 5 litres", max: 200 }}
+                />
+              </Panel>
+
+              <Panel
+                title="Extra questions"
+                description="Questions added to the product page, after the standard ones (UF or RO, renting, installation, maintenance and warranty). Up to 6."
+              >
+                <PairListEditor
+                  label="Extra question"
+                  items={(form.faqs ?? []).map((faq) => ({ first: faq.q, second: faq.a }))}
+                  onChange={(items) => set("faqs", items.map((item) => ({ q: item.first, a: item.second })))}
+                  max={6}
+                  addLabel="Add a question"
+                  first={{ name: "Question", placeholder: "Question", max: 200 }}
+                  second={{ name: "Answer", placeholder: "Answer, as one paragraph", max: 1200, multiline: true }}
+                />
+              </Panel>
+            </>
+          ) : (
+            <Panel title="Extra specifications, questions and search text">
+              <p className="text-sm text-muted">
+                Run <code className="rounded bg-tint px-1.5 py-0.5 text-[13px] text-deep">supabase/migrations/20261009120000_editable_website.sql</code> in the
+                Supabase SQL editor to add extra specification rows, extra questions and this product’s own search title and description.
+              </p>
+            </Panel>
+          )}
         </div>
 
         <div className="grid min-w-0 gap-5 lg:sticky lg:top-6">
@@ -343,6 +490,33 @@ export function ProductEditor({ product }: { product: ProductRow }) {
               </Field>
             )}
           </Panel>
+
+          {extras && (
+            <Panel title="Search & sharing" description="The title and description Google and shared links show for this product’s page.">
+              <div className="grid gap-4">
+                <div className="rounded-chip border border-line p-3.5">
+                  <p className="truncate text-[12px] text-muted">
+                    {site.url.replace(/^https?:\/\//, "")} › water-purifiers › {form.slug || "…"}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[17px] text-deep">{shownTitle}</p>
+                  <p className="mt-1 line-clamp-2 text-[13px] text-muted">{searchDescription}</p>
+                </div>
+                <Field label="Search title" htmlFor="p-seo-title" hint={`${(form.seo_title ?? "").trim().length}/70 · leave empty to use the name and tagline`}>
+                  <Input id="p-seo-title" maxLength={70} placeholder={defaultTitle} value={form.seo_title ?? ""} onChange={(event) => set("seo_title", event.target.value)} />
+                </Field>
+                <Field label="Search description" htmlFor="p-seo-description" hint={`${(form.seo_description ?? "").trim().length}/170 · leave empty to use the summary`}>
+                  <Textarea
+                    id="p-seo-description"
+                    maxLength={170}
+                    placeholder={form.summary}
+                    value={form.seo_description ?? ""}
+                    className="min-h-24"
+                    onChange={(event) => set("seo_description", event.target.value)}
+                  />
+                </Field>
+              </div>
+            </Panel>
+          )}
 
           <Panel title="Delete">
             <p className="text-sm text-muted">Removes the product and its page from the website. To take it down for a while, hide it instead.</p>

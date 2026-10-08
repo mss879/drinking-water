@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat, Raleway } from "next/font/google";
+import { chromeSite } from "@/content/copy/chrome";
 import { site } from "@/content/site";
+import { getCopy } from "@/lib/cms/content";
 import { isPreviewDeploy, ogImage } from "@/lib/seo";
 import "./globals.css";
 
@@ -8,21 +10,26 @@ import "./globals.css";
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-raleway", display: "swap" });
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: { default: `${site.name} | ${site.tagline}`, template: `%s | ${site.name}` },
-  description: site.description,
-  applicationName: site.name,
-  openGraph: { type: "website", siteName: site.name, locale: "en_LK", images: [ogImage] },
-  twitter: { card: "summary_large_image", images: [ogImage.url] },
-  formatDetection: { telephone: false, address: false, email: false },
-  // Search Console and Bing Webmaster Tools ownership tags, when their codes are set.
-  verification: {
-    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
-    ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
-  },
-  ...(isPreviewDeploy ? { robots: { index: false, follow: false } } : {}),
-};
+/** The site-wide defaults. The description and the share card's alt text are editable (Page text › Search & sharing). */
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(chromeSite);
+  const image = { ...ogImage, alt: seo.imageAlt };
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: `${site.name} | ${site.tagline}`, template: `%s | ${site.name}` },
+    description: seo.description,
+    applicationName: site.name,
+    openGraph: { type: "website", siteName: site.name, locale: "en_LK", images: [image] },
+    twitter: { card: "summary_large_image", images: [image.url] },
+    formatDetection: { telephone: false, address: false, email: false },
+    // Search Console and Bing Webmaster Tools ownership tags, when their codes are set.
+    verification: {
+      ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+      ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
+    },
+    ...(isPreviewDeploy ? { robots: { index: false, follow: false } } : {}),
+  };
+}
 
 // The theme colour matches the page canvas (--color-canvas). `viewportFit: "cover"` lets fixed bars read the
 // iPhone safe-area insets through env(); containers pad themselves out of the notch in landscape.

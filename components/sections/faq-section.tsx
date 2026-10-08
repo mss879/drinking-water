@@ -4,18 +4,22 @@ import type { ReactNode } from "react";
 import { Accordion } from "@/components/ui/accordion";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { sharedFaqBlock } from "@/content/copy/shared";
 import type { Faq } from "@/content/faqs";
 import { waterRibbon } from "@/content/images";
+import { getCopy } from "@/lib/cms/content";
 
 /**
  * FAQs as the StomDent black block: the questions ruled on near-black with the open one lifted onto deep blue,
- * the water ribbon glowing beside the heading. The block opens out to the full width as it scrolls in.
+ * the water ribbon glowing beside the heading. The block opens out to the full width as it scrolls in. Its wording
+ * is the shared block (content/copy/shared.ts); a heading or label the page passes wins.
  */
-export function FaqSection({
+export async function FaqSection({
   faqs,
-  eyebrow = "FAQs",
-  title = "Questions, answered",
+  eyebrow,
+  title,
   showAllLink = true,
 }: {
   faqs: Faq[];
@@ -23,26 +27,29 @@ export function FaqSection({
   title?: ReactNode;
   showAllLink?: boolean;
 }) {
+  const copy = await getCopy(sharedFaqBlock);
   return (
     <section id="faqs" className="py-6 lg:py-8">
       <div data-expand="full" data-surface="dark" className="relative isolate overflow-hidden bg-ink py-16 text-white md:py-20 lg:py-28">
         <Container className="grid gap-12 lg:grid-cols-12 lg:gap-12" data-no-reveal>
           <div className="flex flex-col lg:col-span-5">
-            <SectionHeading tone="dark" eyebrow={eyebrow} title={title} />
+            <SectionHeading tone="dark" eyebrow={eyebrow ?? copy.eyebrow} title={title ?? copy.title} />
             <p data-reveal="up" className="mt-6 max-w-sm text-mist">
-              Can’t find your answer?{" "}
-              <Link
-                href="/contact"
-                className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:text-brand"
-              >
-                Talk to our team
-              </Link>
-              .
+              {marked(copy.prompt, {
+                mark: (words) => (
+                  <Link
+                    href="/contact"
+                    className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:text-brand"
+                  >
+                    {words}
+                  </Link>
+                ),
+              })}
             </p>
             {showAllLink && (
               <div data-reveal="up" className="mt-8">
                 <ButtonLink href="/faq" variant="glass" arrow>
-                  See all FAQs
+                  {copy.button}
                 </ButtonLink>
               </div>
             )}

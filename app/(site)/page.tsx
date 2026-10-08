@@ -14,46 +14,49 @@ import { HowItWorks } from "@/components/sections/how-it-works";
 import { PurificationChooser } from "@/components/sections/purification-chooser";
 import { RentalInclusions } from "@/components/sections/rental-inclusions";
 import { Marquee } from "@/components/ui/marquee";
-import { homeFaqs } from "@/content/faqs";
-import { getClientLogos, getProducts } from "@/lib/cms/content";
+import { homeHero, homeMarquee, homePromise, homeSeo } from "@/content/copy/home";
+import { findProduct } from "@/content/products";
+import { getClientLogos, getCopy, getFaqs, getPicks, getPricing, getProducts } from "@/lib/cms/content";
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "LUSAKO | Water Purifiers & Office Water Rental, Sri Lanka",
-  description:
-    "Bottleless water purifiers for homes, offices and businesses in Sri Lanka. Buy a LUSAKO purifier, rent for your office, or get a corporate hydration solution.",
-  path: "/",
-  absolute: true,
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(homeSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/", absolute: true });
+}
 
 export default async function HomePage() {
-  const [products, logos] = await Promise.all([getProducts(), getClientLogos()]);
+  const [products, logos, hero, promise, marquee, faqs, picks, pricing] = await Promise.all([
+    getProducts(),
+    getClientLogos(),
+    getCopy(homeHero),
+    getCopy(homePromise),
+    getCopy(homeMarquee),
+    getFaqs(),
+    getPicks(),
+    getPricing(),
+  ]);
+  // The Buy card's purifier: the one picked in the admin while it's in the catalogue, else the first countertop one.
+  const featured =
+    (picks.homeBuyCard ? findProduct(products, picks.homeBuyCard) : undefined) ??
+    products.find((product) => product.types.includes("countertop")) ??
+    products[0];
 
   return (
     <>
-      <Hero />
+      <Hero copy={hero} />
       <Problems />
-      <StatsBand />
-      <ChooseYourWay featured={products.find((product) => product.types.includes("countertop")) ?? products[0]} />
+      <StatsBand copy={promise} />
+      <ChooseYourWay featured={featured} />
       <RentalInclusions />
       <PurificationChooser />
       <BigType />
       <FunctionalWater />
-      <FeaturedProducts products={products} />
-      <Marquee
-        items={[
-          "Better water. Better way.",
-          "Buy it. Rent it. We take care of it.",
-          "Bottleless hydration",
-          "UF & RO purification",
-          "Professional installation",
-          "Preventive maintenance",
-        ]}
-      />
+      <FeaturedProducts products={products} showPrices={pricing.showOnHome} />
+      <Marquee items={marquee.phrases} />
       <BuyVsRent />
       <Trust logos={logos} />
       <HowItWorks />
-      <FaqSection faqs={homeFaqs} />
+      <FaqSection faqs={faqs.filter((faq) => faq.home)} />
       <CtaBand />
     </>
   );

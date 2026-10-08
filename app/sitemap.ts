@@ -44,6 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...(product.updatedAt ? { lastModified: new Date(product.updatedAt) } : {}),
       changeFrequency: "monthly" as const,
       priority: 0.8,
+      // The product photo, so it can show in image search (skipped while a product only has the placeholder mark).
+      ...(product.image.startsWith("/brand/") ? {} : { images: [absolute(product.image)] }),
     })),
     ...posts.map((post) => ({
       url: absolute(`/blog/${post.slug}`),

@@ -4,16 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
-import { ContactList } from "@/components/layout/contact-list";
+import { ContactList, type ContactLabels } from "@/components/layout/contact-list";
 import { useOverHero } from "@/components/layout/hero-tone";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Logo } from "@/components/ui/logo";
 import { SocialIcons } from "@/components/ui/social-icons";
+import type { chromeContactMenu, chromeMobileMenu } from "@/content/copy/chrome";
 import { primaryNav, type NavItem, type NavLink, type SiteContact, type SocialLink } from "@/content/site";
 import { cn } from "@/lib/cn";
 
 type Tone = "dark" | "light";
+
+/** The header's editable text (content/copy/chrome.ts), read by SiteChrome on the server and handed down. */
+export type HeaderCopy = {
+  contactMenu: typeof chromeContactMenu.defaults;
+  mobileMenu: typeof chromeMobileMenu.defaults;
+  contactLabels: ContactLabels;
+};
 
 /**
  * The navigation floats: one glass bar carrying the logo, a capsule of links, Buy, Rent and the contact menu. It is
@@ -140,7 +148,19 @@ function NavDropdown({ item, active, tone }: { item: NavItem; active: boolean; t
  * "Contact / Get a quote" next to Buy and Rent (client request): every number, the emergency hotline, WhatsApp,
  * email and opening hours one hover away on every page, with the quote form a click further.
  */
-function ContactMenu({ tone, contact, social }: { tone: Tone; contact: SiteContact; social: SocialLink[] }) {
+function ContactMenu({
+  tone,
+  contact,
+  social,
+  copy,
+  labels,
+}: {
+  tone: Tone;
+  contact: SiteContact;
+  social: SocialLink[];
+  copy: HeaderCopy["contactMenu"];
+  labels: ContactLabels;
+}) {
   const { open, setOpen, ref, onEnter, onLeave, onToggle } = usePopover();
   const panelId = useId();
   const variant = tone === "dark" ? "white" : "primary";
@@ -154,7 +174,7 @@ function ContactMenu({ tone, contact, social }: { tone: Tone; contact: SiteConta
         onClick={onToggle}
         className={buttonClasses({ variant, size: "sm", arrow: true, className: "cursor-pointer whitespace-nowrap" })}
       >
-        Contact / Get a quote
+        {copy.button}
         <span
           aria-hidden
           className={cn(
@@ -169,16 +189,16 @@ function ContactMenu({ tone, contact, social }: { tone: Tone; contact: SiteConta
         <div className="card-line w-[640px] max-w-[calc(100vw-2rem)] animate-fade-up p-3 text-ink shadow-float">
           <div className="flex items-start justify-between gap-4 px-3 pt-2 pb-1">
             <div>
-              <p className="font-display text-lg font-bold text-ink">Talk to LUSAKO</p>
-              <p className="text-[13px] text-muted">Call, message or email, or send us a quote request.</p>
+              <p className="font-display text-lg font-bold text-ink">{copy.title}</p>
+              <p className="text-[13px] text-muted">{copy.text}</p>
             </div>
             <SocialIcons links={social} />
           </div>
-          <ContactList contact={contact} className="mt-1 grid-cols-2" />
+          <ContactList contact={contact} labels={labels} className="mt-1 grid-cols-2" />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-card-sm bg-tint px-4 py-3">
-            <p className="text-sm text-ink">Tell us what you need and we’ll come back with a quote.</p>
+            <p className="text-sm text-ink">{copy.quoteText}</p>
             <ButtonLink href="/contact" size="sm" arrow onClick={() => setOpen(false)}>
-              Get a quote
+              {copy.quoteButton}
             </ButtonLink>
           </div>
         </div>
@@ -187,7 +207,19 @@ function ContactMenu({ tone, contact, social }: { tone: Tone; contact: SiteConta
   );
 }
 
-function MobileMenu({ onNavigate, contact, social }: { onNavigate: () => void; contact: SiteContact; social: SocialLink[] }) {
+function MobileMenu({
+  onNavigate,
+  contact,
+  social,
+  copy,
+  labels,
+}: {
+  onNavigate: () => void;
+  contact: SiteContact;
+  social: SocialLink[];
+  copy: HeaderCopy["mobileMenu"];
+  labels: ContactLabels;
+}) {
   return (
     <div id="mobile-menu" className="fixed inset-0 z-40 xl:hidden">
       <button type="button" aria-label="Close menu" tabIndex={-1} onClick={onNavigate} className="absolute inset-0 cursor-default bg-ink/40 backdrop-blur-sm" />
@@ -232,17 +264,17 @@ function MobileMenu({ onNavigate, contact, social }: { onNavigate: () => void; c
           </nav>
           <div className="grid gap-3">
             <ButtonLink href="/contact" onClick={onNavigate} size="lg" arrow>
-              Contact / Get a quote
+              {copy.contactButton}
             </ButtonLink>
             <ButtonLink href="/find-my-solution" onClick={onNavigate} variant="outline" size="lg" arrow>
-              Find my solution
+              {copy.finderButton}
             </ButtonLink>
           </div>
           <section aria-labelledby="mobile-contact-title" className="card-line p-2">
             <h2 id="mobile-contact-title" className="px-3 pt-3 font-display text-lg font-bold text-ink">
-              Talk to LUSAKO
+              {copy.title}
             </h2>
-            <ContactList contact={contact} className="mt-1" />
+            <ContactList contact={contact} labels={labels} className="mt-1" />
             <SocialIcons links={social} className="px-3 pt-2 pb-3" />
           </section>
         </Container>
@@ -251,7 +283,7 @@ function MobileMenu({ onNavigate, contact, social }: { onNavigate: () => void; c
   );
 }
 
-export function Header({ contact, social }: { contact: SiteContact; social: SocialLink[] }) {
+export function Header({ contact, social, copy }: { contact: SiteContact; social: SocialLink[]; copy: HeaderCopy }) {
   const pathname = usePathname();
   // The menu is "open for" a path, so navigating anywhere closes it without an effect.
   const [menuPath, setMenuPath] = useState<string | null>(null);
@@ -321,7 +353,7 @@ export function Header({ contact, social }: { contact: SiteContact; social: Soci
                 <Link href="/rental" className={cn(navLink, navIdle[tone])}>
                   Rent
                 </Link>
-                <ContactMenu tone={tone} contact={contact} social={social} />
+                <ContactMenu tone={tone} contact={contact} social={social} copy={copy.contactMenu} labels={copy.contactLabels} />
               </div>
               <button
                 type="button"
@@ -340,7 +372,15 @@ export function Header({ contact, social }: { contact: SiteContact; social: Soci
           </div>
         </div>
       </header>
-      {mobileOpen && <MobileMenu onNavigate={() => setMenuPath(null)} contact={contact} social={social} />}
+      {mobileOpen && (
+        <MobileMenu
+          onNavigate={() => setMenuPath(null)}
+          contact={contact}
+          social={social}
+          copy={copy.mobileMenu}
+          labels={copy.contactLabels}
+        />
+      )}
     </>
   );
 }

@@ -2,34 +2,42 @@
 
 import { Check } from "lucide-react";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { KokoBadge } from "@/components/products/koko-badge";
 import { ButtonLink } from "@/components/ui/button";
 import { WaveLines } from "@/components/ui/decor";
+import type { productOptions } from "@/content/copy/product";
+import { fill, pieces } from "@/content/copy/schema";
 import type { ProductVariant } from "@/content/products";
 import { cn } from "@/lib/cn";
-import { formatLKR } from "@/lib/format";
-
-const waterFit: Record<ProductVariant["filtration"], string> = {
-  UF: "For treated city water",
-  RO: "For well water and higher TDS",
-};
+import { formatLKR, formatLKRCents } from "@/lib/format";
 
 const rentalSolution: Record<ProductVariant["filtration"], string> = { UF: "pureflow-uf", RO: "pureflow-ro" };
 
 /**
- * Buy UF, buy RO or rent, without the confusion (client request): each purification option is a card carrying its
- * own buy price and its rental-from price, so all of them can be compared at a glance. Picking one points the Buy
- * and Rent buttons at it. A product with one option shows that option on its own.
+ * Buy UF, buy RO or rent, without the confusion (client request): each purification option is a card, and picking
+ * one points the Buy and Rent buttons at it. Both ask for a quote. While LUSAKO hides its prices (client, October
+ * 2026) that is all the card shows; once a price of the product is shown (Prices & quotes), every option carries its
+ * buy price and its rental-from price, so they can be compared at a glance. The Buy side carries KOKO's pay-in-3 badge
+ * while it is switched on. A product with one option shows that option on its own. The wording is the product.options
+ * block, passed in by the product page.
  */
-export function PriceSelector({
+export function PurchaseOptions({
   slug,
   name,
   variants,
+  copy,
+  koko,
   initialPayment,
 }: {
   slug: string;
   name: string;
+  /** Each carries its price and rent only while the admin shows them. */
   variants: ProductVariant[];
-  initialPayment: number;
+  copy: typeof productOptions.defaults;
+  /** KOKO's badge on the Buy side. */
+  koko: boolean;
+  /** The rental's one-time initial payment per unit, while it is shown. */
+  initialPayment: number | null;
 }) {
   const [index, setIndex] = useState(0);
   const groupId = useId();
@@ -48,17 +56,31 @@ export function PriceSelector({
   const several = variants.length > 1;
   if (!chosen) return null;
 
+  // Any shown price brings back the price rows (and the VAT note); otherwise the card is exactly the quote-only one.
+  const priced = variants.some((variant) => variant.price || variant.rent);
+  const option = several ? chosen.label : name;
+  const waterFit: Record<ProductVariant["filtration"], string> = { UF: copy.ufFit, RO: copy.roFit };
+
   const buyHref = `/contact?${new URLSearchParams({ type: "buy", model: slug, purification: chosen.filtration })}#quote`;
   const rentHref = `/contact?${new URLSearchParams({ type: "rental", preferredMachine: slug, preferredSolution: rentalSolution[chosen.filtration] })}#quote`;
+
+  // The rent price and the initial payment are shown separately, so the rent side has a wording for each case.
+  const rentText = chosen.rent
+    ? initialPayment
+      ? pieces(copy.rentTextWithPrices, { price: `${formatLKR(chosen.rent)}/month + VAT`, initial: formatLKR(initialPayment) })
+      : pieces(copy.rentTextWithPrice, { price: `${formatLKR(chosen.rent)}/month + VAT` })
+    : initialPayment
+      ? pieces(copy.rentTextWithInitial, { initial: formatLKR(initialPayment) })
+      : copy.rentText;
 
   return (
     <div className="card-line overflow-hidden rounded-card-xl">
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 id={groupId} className="font-display text-xl font-bold text-ink">
-            {several ? "Choose your purification" : `${name} prices`}
+            {several ? copy.titleSeveral : priced ? fill(copy.titleOneWithPrice, { name }) : copy.titleOne}
           </h2>
-          <p className="text-sm text-muted">All prices exclude VAT</p>
+          <p className="text-sm text-muted">{priced ? "All prices exclude VAT" : several ? copy.subtitleSeveral : copy.subtitleOne}</p>
         </div>
 
         <div
@@ -76,7 +98,7 @@ export function PriceSelector({
                   <span>
                     <span className="block font-display text-lg leading-tight font-bold text-ink">{variant.label}</span>
                     <span className="mt-0.5 block text-[13px] text-muted">{waterFit[variant.filtration]}</span>
-                    {variant.code && <span className="block text-xs text-muted">Model {variant.code}</span>}
+                    {variant.code && <span className="block text-xs text-muted">{pieces(copy.model, { code: variant.code })}</span>}
                   </span>
                   {several && (
                     <span
@@ -90,27 +112,29 @@ export function PriceSelector({
                     </span>
                   )}
                 </span>
-                <span className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-                  <span>
-                    <span className="block text-xs text-muted">Buy</span>
-                    <span className="block font-display text-[15px] font-bold text-ink">
-                      {variant.price ? formatLKR(variant.price) : "Price on request"}
+                {priced && (
+                  <span className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
+                    <span>
+                      <span className="block text-xs text-muted">{copy.buyLabel}</span>
+                      <span className="block font-display text-[15px] font-bold text-ink">
+                        {variant.price ? formatLKR(variant.price) : copy.buyOnRequest}
+                      </span>
+                    </span>
+                    <span>
+                      <span className="block text-xs text-muted">{variant.rent ? copy.rentFromLabel : copy.rentLabel}</span>
+                      <span className="block font-display text-[15px] font-bold text-deep">
+                        {variant.rent ? (
+                          <>
+                            {formatLKR(variant.rent)}
+                            <span className="font-sans text-xs font-normal text-muted">/month</span>
+                          </>
+                        ) : (
+                          copy.rentOnRequest
+                        )}
+                      </span>
                     </span>
                   </span>
-                  <span>
-                    <span className="block text-xs text-muted">{variant.rent ? "Rent from" : "Rent"}</span>
-                    <span className="block font-display text-[15px] font-bold text-deep">
-                      {variant.rent ? (
-                        <>
-                          {formatLKR(variant.rent)}
-                          <span className="font-sans text-xs font-normal text-muted">/month</span>
-                        </>
-                      ) : (
-                        "On request"
-                      )}
-                    </span>
-                  </span>
-                </span>
+                )}
               </>
             );
             return several ? (
@@ -141,20 +165,25 @@ export function PriceSelector({
         <WaveLines lines={3} className="absolute inset-x-0 bottom-0 h-2/3 w-full text-white/15" />
         <div className="relative flex flex-col gap-3">
           <p className="text-sm text-white/85">
-            Own the {several ? chosen.label : name}
-            {chosen.price ? ` for ${formatLKR(chosen.price)} + VAT` : ""}
+            {chosen.price
+              ? pieces(copy.buyTextWithPrice, { option, price: `${formatLKR(chosen.price)} + VAT` })
+              : pieces(copy.buyText, { option })}
           </p>
+          {koko && (
+            <KokoBadge className="self-start">
+              {chosen.price ? pieces(copy.kokoWithPrice, { amount: formatLKRCents(chosen.price / 3) }) : copy.koko}
+            </KokoBadge>
+          )}
           <ButtonLink href={buyHref} variant="white" arrow className="mt-auto w-full">
-            {several ? `Buy the ${chosen.filtration} model` : "Buy now"}
+            {copy.buyButton}
+            <span className="sr-only"> to buy the {several ? `${chosen.filtration} model` : name}</span>
           </ButtonLink>
         </div>
         <div className="relative flex flex-col gap-3">
-          <p className="text-sm text-white/85">
-            {chosen.rent ? `Rent from ${formatLKR(chosen.rent)}/month + VAT` : "Rent it for one monthly payment"}, plus a one-time{" "}
-            {formatLKR(initialPayment)} initial payment
-          </p>
+          <p className="text-sm text-white/85">{rentText}</p>
           <ButtonLink href={rentHref} variant="glass" arrow className="mt-auto w-full">
-            {chosen.rent ? `Rent from ${formatLKR(chosen.rent)}/mo` : "Ask about rental"}
+            {copy.rentButton}
+            <span className="sr-only"> to rent the {several ? `${chosen.filtration} model` : name}</span>
           </ButtonLink>
         </div>
       </div>

@@ -9,21 +9,20 @@ import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getPhotos } from "@/lib/cms/content";
+import { hydrationCare, hydrationHero, hydrationModels, hydrationSeo } from "@/content/copy/hydration";
+import { fill } from "@/content/copy/schema";
 import { planFor } from "@/content/pricing";
-import { services } from "@/content/services";
+import { getCopy, getPhotos, getRentalPrices, getServices } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Hydration Solutions",
-  description:
-    "LUSAKO Hydration Solutions: buy a water purifier for your home, rent for your office, or let LUSAKO manage drinking water across your whole organisation.",
-  path: "/hydration-solutions",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(hydrationSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/hydration-solutions" });
+}
 
 type Model = {
   id: "buy" | "rent" | "corporate";
@@ -35,65 +34,56 @@ type Model = {
   href: string;
 };
 
+/** Where each model card leads, by position (the cards' wording is the hydration.models block). */
+const modelLinks = [
+  { id: "buy", href: "/water-purifiers" },
+  { id: "rent", href: "/rental" },
+  { id: "corporate", href: "/hydration-solutions/corporate" },
+] as const;
+
 export default async function HydrationSolutionsPage() {
-  const photos = await getPhotos();
-  const rentFrom = planFor("UF").fromMonthly;
+  const [photos, services, rentalPrices, hero, modelsCopy, care] = await Promise.all([
+    getPhotos(),
+    getServices(),
+    getRentalPrices(),
+    getCopy(hydrationHero),
+    getCopy(hydrationModels),
+    getCopy(hydrationCare),
+  ]);
+  const rentFrom = rentalPrices.plans[planFor("UF").id];
 
   /** BUY | RENT | CORPORATE: how you pay and use the equipment (brief Doc 2 §8). */
-  const models: Model[] = [
-    {
-      id: "buy",
-      label: "Buy",
-      audience: "For homes",
-      promise: "Own your water purification system.",
+  const models: Model[] = modelLinks.map(({ id, href }, i) => {
+    const card = modelsCopy.cards[i];
+    // The Rent card says what a month costs while the PureFlow UF price is shown.
+    const pay = id === "rent" && typeof rentFrom === "number" ? fill(modelsCopy.rentPayWithPrice, { price: formatLKR(rentFrom) }) : card.pay;
+    return {
+      id,
+      label: card.label,
+      audience: card.audience,
+      promise: card.promise,
       rows: [
-        { term: "How you pay", value: "A one-time purchase" },
-        { term: "Best for", value: "Homes and long-term ownership" },
-        { term: "Looking after it", value: "Product warranty, with LUSAKO Care service plans and AMC available" },
+        { term: modelsCopy.terms[0], value: pay },
+        { term: modelsCopy.terms[1], value: card.bestFor },
+        { term: modelsCopy.terms[2], value: card.care },
       ],
-      cta: "Explore purifiers",
-      href: "/water-purifiers",
-    },
-    {
-      id: "rent",
-      label: "Rent",
-      audience: "For offices",
-      promise: "Complete hydration for one predictable monthly payment.",
-      rows: [
-        { term: "How you pay", value: rentFrom ? `Monthly, from ${formatLKR(rentFrom)}/month + VAT` : "One predictable monthly payment" },
-        { term: "Best for", value: "Offices and companies" },
-        { term: "Looking after it", value: "Installation, maintenance and support according to your rental agreement" },
-      ],
-      cta: "Explore rental",
-      href: "/rental",
-    },
-    {
-      id: "corporate",
-      label: "Corporate",
-      audience: "For organisations",
-      promise: "One partner for your organisation’s drinking water.",
-      rows: [
-        { term: "How you pay", value: "A custom quotation for multiple units" },
-        { term: "Best for", value: "Organisations with one site or many" },
-        { term: "Looking after it", value: "Maintenance and support according to contract, with centralised account management" },
-      ],
-      cta: "Talk to our team",
-      href: "/hydration-solutions/corporate",
-    },
-  ];
+      cta: card.cta,
+      href,
+    };
+  });
 
   return (
     <>
       <PageHero
         crumbs={[{ label: "Hydration solutions", href: "/hydration-solutions" }]}
-        eyebrow="LUSAKO Hydration Solutions"
-        title={["Better water,", <Highlight key="suits">the way that suits you</Highlight>]}
-        description="Buy a purifier for your home, rent for your office, or let LUSAKO manage drinking water across your whole organisation."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Help me choose", href: "/find-my-solution" },
-          { label: "Get a quote", href: "/contact" },
+          { label: hero.chooseButton, href: "/find-my-solution" },
+          { label: hero.quoteButton, href: "/contact" },
         ]}
-        image={{ src: heroImages.hydration, position: "object-right" }}
+        image={{ src: photos.pageHydration.src, position: "object-right" }}
       />
 
       <h2 className="sr-only">Hydration solutions for homes, offices and companies</h2>
@@ -103,13 +93,9 @@ export default async function HydrationSolutionsPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Buy | Rent | Corporate"
-            title={
-              <>
-                Rental is how you pay. <Highlight className="inline-block">Hydration is what we deliver.</Highlight>
-              </>
-            }
-            description="Buying, renting and corporate contracts describe how you pay for and use the equipment. A hydration solution is the complete service and outcome LUSAKO provides."
+            eyebrow={modelsCopy.eyebrow}
+            title={marked(modelsCopy.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}
+            description={modelsCopy.description}
           />
 
           <ul className="mt-12 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-5">
@@ -132,8 +118,8 @@ export default async function HydrationSolutionsPage() {
                   </div>
                   <p className="relative mt-6 font-display text-xl leading-snug font-semibold">{model.promise}</p>
                   <dl className="relative mt-6 grid gap-4">
-                    {model.rows.map((row) => (
-                      <div key={row.term} className={cn("border-t pt-4", dark ? "border-white/20" : "border-line")}>
+                    {model.rows.map((row, i) => (
+                      <div key={i} className={cn("border-t pt-4", dark ? "border-white/20" : "border-line")}>
                         <dt className={cn("font-display text-xs font-bold tracking-[0.14em] uppercase", dark ? "text-white" : "text-deep")}>
                           {row.term}
                         </dt>
@@ -166,21 +152,13 @@ export default async function HydrationSolutionsPage() {
               className="object-cover object-[40%_50%]"
             />
             <span className="absolute bottom-4 left-4 rounded-card-sm bg-white px-5 py-4 pr-6 shadow-float">
-              <span className="block font-display text-[15px] leading-tight font-bold text-ink">LUSAKO Care</span>
-              <span className="block text-xs text-muted">Installation, maintenance & support</span>
+              <span className="block font-display text-[15px] leading-tight font-bold text-ink">{care.captionTitle}</span>
+              <span className="block text-xs text-muted">{care.captionText}</span>
             </span>
           </div>
 
           <div className="lg:col-span-6">
-            <SectionHeading
-              eyebrow="LUSAKO Care"
-              title={
-                <>
-                  Looked after, <Highlight>long after installation</Highlight>
-                </>
-              }
-              description="Service is what makes LUSAKO a hydration partner rather than an appliance retailer. Whether you buy, rent or run a corporate contract, LUSAKO Care keeps your system performing."
-            />
+            <SectionHeading eyebrow={care.eyebrow} title={marked(care.title)} description={care.description} />
             <ul className="mt-8 flex flex-wrap gap-2">
               {services.map(({ id, title, icon: Icon }) => (
                 <li key={id} className="inline-flex h-10 items-center gap-2 rounded-full border border-line px-4 text-sm font-medium text-ink">
@@ -189,13 +167,13 @@ export default async function HydrationSolutionsPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-sm text-muted">Provided according to your warranty, service plan or rental agreement.</p>
+            <p className="mt-4 text-sm text-muted">{care.note}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/service-support" variant="primary" arrow>
-                Explore LUSAKO Care
+                {care.careButton}
               </ButtonLink>
               <ButtonLink href="/contact?type=service" variant="outline" arrow>
-                Request a service
+                {care.serviceButton}
               </ButtonLink>
             </div>
           </div>

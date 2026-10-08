@@ -1,0 +1,8 @@
+# Netlify builds the site with its Next.js runtime (server rendering, image optimisation, on-demand revalidation).
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"

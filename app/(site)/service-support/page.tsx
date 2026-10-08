@@ -13,29 +13,30 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { faqs } from "@/content/faqs";
-import { getAmc, getPhotos, getSiteSettings } from "@/lib/cms/content";
+import { chromeContactLabels } from "@/content/copy/chrome";
+import {
+  serviceAmc,
+  serviceFaq,
+  serviceHero,
+  serviceParts,
+  serviceRental,
+  serviceRequest,
+  serviceSeo,
+  serviceServices,
+  serviceStrip,
+} from "@/content/copy/service";
+import { getAmc, getCopy, getFaqs, getPhotos, getServices, getSiteSettings } from "@/lib/cms/content";
 import { telHref, whatsappHref } from "@/lib/contact";
-import { services } from "@/content/services";
 import { cn } from "@/lib/cn";
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Service & Support",
-  description:
-    "LUSAKO Care: installation, preventive maintenance, filter replacement, repairs, AMC plans and rental support for your purifier. Request a service online.",
-  path: "/service-support",
-});
-
-const rentalIncludes = [
-  "Professional installation",
-  "Scheduled preventive maintenance",
-  "Filter replacement, according to your agreement",
-  "Technical support throughout the rental period",
-];
-
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(serviceSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/service-support" });
+}
 
 function Checklist({ items, dark = false }: { items: string[]; dark?: boolean }) {
   return (
@@ -58,40 +59,49 @@ function Checklist({ items, dark = false }: { items: string[]; dark?: boolean })
 const cardTitle = "font-display text-[clamp(1.75rem,1.4rem+1.3vw,2.5rem)] leading-tight font-bold tracking-[-0.025em]";
 
 export default async function ServiceSupportPage() {
-  const [photos, { contact }, amc] = await Promise.all([getPhotos(), getSiteSettings(), getAmc()]);
-  // Service visitors are usually reporting a problem: the breakdown lines come first.
-  const channels = contactChannels(contact, ["hotline", "whatsapp-emergency", "operations-email", "phone"]);
+  const [photos, { contact }, amc, services, faqs, hero, strip, servicesHeading, amcCopy, partsCard, rental, request, faqHeading, contactLabels] =
+    await Promise.all([
+      getPhotos(),
+      getSiteSettings(),
+      getAmc(),
+      getServices(),
+      getFaqs(),
+      getCopy(serviceHero),
+      getCopy(serviceStrip),
+      getCopy(serviceServices),
+      getCopy(serviceAmc),
+      getCopy(serviceParts),
+      getCopy(serviceRental),
+      getCopy(serviceRequest),
+      getCopy(serviceFaq),
+      getCopy(chromeContactLabels),
+    ]);
+  // Service visitors are usually reporting a problem: the breakdown lines come first, under the names the rest of the
+  // site gives them (Page text › Header, footer & contact panels › Contact details: names).
+  const channels = contactChannels(contact, ["hotline", "whatsapp-emergency", "operations-email", "phone"], contactLabels.labels);
   const phone = contact.phones[0];
   return (
     <>
       <PageHero
         crumbs={[{ label: "Service & support", href: "/service-support" }]}
-        eyebrow="LUSAKO Care"
-        title={["Keep your system", <Highlight key="best">performing at its best</Highlight>]}
-        description="Professional installation, preventive maintenance, filter replacement and technical support from one LUSAKO team, for systems you own and systems you rent."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Request a service", href: "#request" },
-          { label: "WhatsApp us", href: whatsappHref(contact.whatsappEmergency || contact.whatsappSales), icon: MessageCircle, external: true, srLabel: "(opens WhatsApp)" },
+          { label: hero.requestButton, href: "#request" },
+          { label: hero.whatsappButton, href: whatsappHref(contact.whatsappEmergency || contact.whatsappSales), icon: MessageCircle, external: true, srLabel: "(opens WhatsApp)" },
         ]}
         image={{ src: photos.careTechnician.src, position: "object-[50%_35%]" }}
       />
-      <HeroStrip
-        title="Care that comes with every system"
-        description="Trained LUSAKO technicians, scheduled visits and genuine spare parts."
-        pills={["Installation", "Maintenance", "Support"]}
-      />
+      <HeroStrip title={strip.title} description={strip.description} pills={strip.pills} />
 
       <section className="py-16 md:py-20 lg:py-28">
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="What LUSAKO Care covers"
-            title={
-              <>
-                Everything your system needs, <Highlight className="inline-block">from one team</Highlight>
-              </>
-            }
-            description="From installation day to every scheduled visit after it, LUSAKO looks after your drinking water."
+            eyebrow={servicesHeading.eyebrow}
+            title={marked(servicesHeading.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}
+            description={servicesHeading.description}
           />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
             {services.map(({ id, title, body, icon: Icon, href }) => {
@@ -134,16 +144,14 @@ export default async function ServiceSupportPage() {
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="AMC & service plans"
+            eyebrow={amcCopy.eyebrow}
             title={
-              <span id="amc-title">
-                Annual care for <Highlight className="inline-block">a purchased system</Highlight>
-              </span>
+              <span id="amc-title">{marked(amcCopy.title, { mark: (phrase) => <Highlight className="inline-block">{phrase}</Highlight> })}</span>
             }
-            description="Planned visits, tank sanitation and breakdown support, with discounts on filters and spare parts. Prefer to pay per visit? On-call service is always available."
+            description={amcCopy.description}
             action={
               <ButtonLink href="/service-support/amc#compare" variant="outline" arrow>
-                Compare the plans
+                {amcCopy.button}
               </ButtonLink>
             }
           />
@@ -157,18 +165,16 @@ export default async function ServiceSupportPage() {
             <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-brand/35" />
             <Pill variant="white" className="relative">
               <Package aria-hidden className="text-deep" />
-              Genuine parts
+              {partsCard.pill}
             </Pill>
             <div className="relative mt-auto pt-16">
-              <h2 className={cardTitle}>Filters, parts &amp; accessories</h2>
-              <p className="mt-3 max-w-md text-muted">
-                Genuine filter cartridges, spare parts and accessories for your LUSAKO purifier, fitted by our technicians if you need us.
-              </p>
+              <h2 className={cardTitle}>{partsCard.title}</h2>
+              <p className="mt-3 max-w-md text-muted">{partsCard.body}</p>
               <div className="mt-6">
-                <Checklist items={["Water filter cartridges", "Water purifier spare parts", "Water purifier accessories"]} />
+                <Checklist items={partsCard.checklist} />
               </div>
               <ButtonLink href="/service-support/parts" variant="primary" arrow className="mt-8 w-full sm:w-auto">
-                Browse parts
+                {partsCard.button}
               </ButtonLink>
             </div>
           </article>
@@ -177,21 +183,18 @@ export default async function ServiceSupportPage() {
             <WaveLines lines={4} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-white/15" />
             <Pill variant="glass" className="relative">
               <Headset aria-hidden />
-              Rental customers
+              {rental.pill}
             </Pill>
             <div className="relative mt-auto pt-16">
-              <h2 className={cardTitle}>Renting? We look after it</h2>
-              <p className="mt-3 max-w-md text-white">
-                Rental systems are maintained by LUSAKO throughout the rental period, according to your agreement. If something needs
-                attention, tell us and we’ll take care of it.
-              </p>
+              <h2 className={cardTitle}>{rental.title}</h2>
+              <p className="mt-3 max-w-md text-white">{rental.body}</p>
               <div className="mt-6">
-                <Checklist items={rentalIncludes} dark />
+                <Checklist items={rental.checklist} dark />
               </div>
               <p className="mt-6 text-sm text-white/85">Exact inclusions are confirmed in your rental agreement.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <ButtonLink href="#request" variant="white" arrow>
-                  Request a service
+                  {rental.button}
                 </ButtonLink>
                 {phone && (
                   <a href={telHref(phone)} className={buttonClasses({ variant: "glass" })}>
@@ -208,15 +211,7 @@ export default async function ServiceSupportPage() {
       <section id="request" className="py-16 md:py-20 lg:py-28">
         <Container className="grid gap-10 lg:grid-cols-12 lg:gap-12" data-no-reveal>
           <div className="lg:col-span-5">
-            <SectionHeading
-              eyebrow="Request a service"
-              title={
-                <>
-                  Tell us what’s <Highlight>happening</Highlight>
-                </>
-              }
-              description="Existing LUSAKO customers can raise a request here. Our service team will contact you to confirm a visit time."
-            />
+            <SectionHeading eyebrow={request.eyebrow} title={marked(request.title)} description={request.description} />
             <ul data-stagger className="mt-10 grid gap-1">
               {channels.map((channel) => (
                 <li key={channel.id}>
@@ -225,8 +220,7 @@ export default async function ServiceSupportPage() {
               ))}
             </ul>
             <p data-reveal="up" className="mt-8 rounded-card-sm border border-line bg-tint p-5 text-sm leading-relaxed text-muted">
-              <strong className="font-semibold text-deep">Tip:</strong> have your model and serial or asset number handy if you can. It
-              helps our technicians prepare for the visit.
+              {marked(request.tip, { mark: (word) => <strong className="font-semibold text-deep">{word}</strong> })}
             </p>
           </div>
           <div data-reveal="up" className="card-line rounded-card-xl p-6 sm:p-8 lg:col-span-7 lg:p-10">
@@ -235,7 +229,7 @@ export default async function ServiceSupportPage() {
         </Container>
       </section>
 
-      <FaqSection faqs={faqs.filter((faq) => faq.topic === "service")} title="Service questions, answered" />
+      <FaqSection faqs={faqs.filter((faq) => faq.topic === "service")} title={faqHeading.title} />
       <CtaBand />
     </>
   );

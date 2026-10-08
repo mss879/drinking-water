@@ -3,14 +3,25 @@
 import { useRef } from "react";
 import { CarouselArrows } from "@/components/ui/snap-row";
 import type { Product } from "@/content/products";
-import { ProductCard } from "./product-card";
+import { ProductCard, type ProductCardCopy } from "./product-card";
 
 /**
  * The purifier carousel. Phones (and reduced motion) swipe it with the StomDent arrows; on large screens with
  * motion it becomes the track of a `[data-hscroll]` section, sliding sideways as the page scrolls
- * (components/motion/motion-root.tsx), with a progress line underneath.
+ * (components/motion/motion-root.tsx), with a progress line underneath. `cardCopy` is the cards' tile wording from
+ * Page text, passed in by the server parent (ProductCard's defaults until it does).
  */
-export function ProductRail({ products, label, showPrices = true }: { products: Product[]; label: string; showPrices?: boolean }) {
+export function ProductRail({
+  products,
+  label,
+  showPrices = true,
+  cardCopy,
+}: {
+  products: Product[];
+  label: string;
+  showPrices?: boolean;
+  cardCopy?: ProductCardCopy;
+}) {
   const listRef = useRef<HTMLUListElement>(null);
 
   const scroll = (direction: 1 | -1) => {
@@ -31,7 +42,7 @@ export function ProductRail({ products, label, showPrices = true }: { products: 
       >
         {products.map((product) => (
           <li key={product.slug} className="w-[80vw] shrink-0 snap-start sm:w-[340px] xl:w-[360px]">
-            <ProductCard product={product} showPrices={showPrices} />
+            <ProductCard product={product} showPrices={showPrices} copy={cardCopy} />
           </li>
         ))}
       </ul>

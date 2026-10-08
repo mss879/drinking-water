@@ -1,4 +1,5 @@
 import { Clock, Mail, MapPin, MessageCircle, Phone, Siren, Wrench, type LucideIcon } from "lucide-react";
+import { chromeContactLabels } from "@/content/copy/chrome-labels";
 import type { SiteContact } from "@/content/site";
 import { addressLines, telHref, whatsappHref } from "@/lib/contact";
 import { cn } from "@/lib/cn";
@@ -6,39 +7,48 @@ import { cn } from "@/lib/cn";
 export type ContactValue = { text: string; href?: string; external?: boolean };
 export type ContactRow = { id: string; icon: LucideIcon; label: string; values: ContactValue[] };
 
-/** Every way to reach LUSAKO, in the order people look for them. Empty details are left out. */
-export function contactRows(contact: SiteContact): ContactRow[] {
+/** The names over the contact details, in contactRows' order (Page text › Contact details: names). */
+export type ContactLabels = readonly string[];
+
+/**
+ * Every way to reach LUSAKO, in the order people look for them, each under its name from `labels`. Empty details are
+ * left out. The sales WhatsApp opens with the admin's greeting, when there is one; the emergency line opens blank.
+ */
+export function contactRows(contact: SiteContact, labels: ContactLabels = chromeContactLabels.defaults.labels): ContactRow[] {
+  const [call, hotline, whatsapp, whatsappEmergency, sales, operations, hours, visit] = labels;
   const rows: ContactRow[] = [
-    { id: "phone", icon: Phone, label: "Call us", values: contact.phones.map((number) => ({ text: number, href: telHref(number) })) },
+    { id: "phone", icon: Phone, label: call, values: contact.phones.map((number) => ({ text: number, href: telHref(number) })) },
     {
       id: "hotline",
       icon: Siren,
-      label: "Emergency breakdown hotline",
+      label: hotline,
       values: contact.hotline ? [{ text: contact.hotline, href: telHref(contact.hotline) }] : [],
     },
     {
       id: "whatsapp",
       icon: MessageCircle,
-      label: "WhatsApp sales",
-      values: contact.whatsappSales ? [{ text: contact.whatsappSales, href: whatsappHref(contact.whatsappSales), external: true }] : [],
+      label: whatsapp,
+      values: contact.whatsappSales
+        ? [{ text: contact.whatsappSales, href: whatsappHref(contact.whatsappSales, contact.whatsappGreeting), external: true }]
+        : [],
     },
     {
       id: "whatsapp-emergency",
       icon: MessageCircle,
-      label: "WhatsApp emergency breakdown",
+      label: whatsappEmergency,
       values: contact.whatsappEmergency
         ? [{ text: contact.whatsappEmergency, href: whatsappHref(contact.whatsappEmergency), external: true }]
         : [],
     },
-    { id: "sales-email", icon: Mail, label: "Sales", values: contact.salesEmail ? [{ text: contact.salesEmail, href: `mailto:${contact.salesEmail}` }] : [] },
+    { id: "sales-email", icon: Mail, label: sales, values: contact.salesEmail ? [{ text: contact.salesEmail, href: `mailto:${contact.salesEmail}` }] : [] },
     {
       id: "operations-email",
       icon: Wrench,
-      label: "Technical & operations",
+      label: operations,
       values: contact.operationsEmail ? [{ text: contact.operationsEmail, href: `mailto:${contact.operationsEmail}` }] : [],
     },
-    { id: "hours", icon: Clock, label: "Hours", values: contact.hours ? [{ text: contact.hours }] : [] },
-    { id: "address", icon: MapPin, label: "Visit us", values: contact.address ? [{ text: addressLines(contact.address).join(", ") }] : [] },
+    { id: "hours", icon: Clock, label: hours, values: contact.hours ? [{ text: contact.hours }] : [] },
+    { id: "address", icon: MapPin, label: visit, values: contact.address ? [{ text: addressLines(contact.address).join(", ") }] : [] },
   ];
   return rows.filter((row) => row.values.length > 0);
 }
@@ -74,8 +84,18 @@ export function ContactLink({ value, className }: { value: ContactValue; classNa
  * The contact details as a compact list, for the navigation's contact panel and the phone contact sheet: one row
  * per channel, icon first, every number and address tappable.
  */
-export function ContactList({ contact, only, className }: { contact: SiteContact; only?: string[]; className?: string }) {
-  const rows = contactRows(contact).filter((row) => !only || only.includes(row.id));
+export function ContactList({
+  contact,
+  labels,
+  only,
+  className,
+}: {
+  contact: SiteContact;
+  labels?: ContactLabels;
+  only?: string[];
+  className?: string;
+}) {
+  const rows = contactRows(contact, labels).filter((row) => !only || only.includes(row.id));
   return (
     <ul className={cn("grid gap-0.5", className)}>
       {rows.map(({ id, icon: Icon, label, values }) => (

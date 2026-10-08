@@ -6,7 +6,7 @@ import { photoKeys, photoSlots, photos } from "@/content/images";
 import { isMissingSchema, requireAdmin } from "@/lib/admin/auth";
 import { photosFrom } from "@/lib/cms/map";
 
-export const metadata: Metadata = { title: "Photos" };
+export const metadata: Metadata = { title: "Website images" };
 
 export default async function PhotosAdminPage() {
   const { supabase } = await requireAdmin();
@@ -14,7 +14,7 @@ export default async function PhotosAdminPage() {
   if (error && isMissingSchema(error)) {
     return (
       <>
-        <PageHeader title="Photos" />
+        <PageHeader title="Website images" />
         <MigrationNotice />
       </>
     );
@@ -33,10 +33,23 @@ export default async function PhotosAdminPage() {
   return (
     <>
       <PageHeader
-        title="Photos"
-        description="The lifestyle photos around the website, numbered as in your change list. A replacement appears everywhere that photo is used, in black & white like the rest of the site."
+        title="Website images"
+        description="Every photo on the website outside the products, parts, client logos and blog: the image at the top of each page and the lifestyle photos. A replacement appears everywhere that image is used, in black & white like the rest of the site."
       />
-      <PhotosManager slots={slots} />
+      <PhotosManager
+        groups={[
+          {
+            title: "Page headers",
+            description: "The image behind the title at the top of each page. The left side sits behind the text, so photos with the subject on the right work best.",
+            slots: slots.filter((slot) => slot.group === "page"),
+          },
+          {
+            title: "Lifestyle photos",
+            description: "Numbered as in your change list. Some also open a page: the list under each photo says where.",
+            slots: slots.filter((slot) => slot.group === "lifestyle"),
+          },
+        ]}
+      />
     </>
   );
 }

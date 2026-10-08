@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,55 +23,61 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { Pill } from "@/components/ui/pill";
 import type { BrandIconName } from "@/content/brand-icons";
-import { planFor } from "@/content/pricing";
+import type { FinderCopy } from "@/content/copy/finder";
 import type { Product } from "@/content/products";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
-import { recommend, type Need, type Recommendation, type Region, type WaterSource } from "@/lib/recommend";
+import { recommend, type FinderPicks, type FinderPlans, type Need, type Recommendation, type Region, type WaterSource } from "@/lib/recommend";
 
 type Option<T extends string> = { value: T; label: string; hint: string; icon: LucideIcon; brand?: BrandIconName };
 type Step = 0 | 1 | 2 | 3;
 type Answers = { region?: Region; source?: WaterSource; need?: Need };
+type Options = { region: Option<Region>[]; source: Option<WaterSource>[]; need: Option<Need>[] };
 
-const regionOptions: Option<Region>[] = [
-  { value: "western", label: "Western Province", hint: "Colombo, Gampaha or Kalutara district", icon: MapPin },
-  { value: "other", label: "Other province", hint: "Anywhere else in Sri Lanka", icon: MapIcon },
+/** What each answer stands for and its icon, in the order the questions' wording lists them (content/copy/finder.ts). */
+const regionOptions: Omit<Option<Region>, "label" | "hint">[] = [
+  { value: "western", icon: MapPin },
+  { value: "other", icon: MapIcon },
 ];
 
-const sourceOptions: Option<WaterSource>[] = [
-  { value: "city", label: "City water", hint: "Treated pipe-borne (mains) supply", icon: Building2, brand: "tap" },
-  { value: "well", label: "Well water", hint: "A dug or tube well on the property", icon: Droplets, brand: "well" },
-  { value: "other", label: "Other or not sure", hint: "Mixed supply, or you’d like us to check", icon: CircleHelp },
+const sourceOptions: Omit<Option<WaterSource>, "label" | "hint">[] = [
+  { value: "city", icon: Building2, brand: "tap" },
+  { value: "well", icon: Droplets, brand: "well" },
+  { value: "other", icon: CircleHelp },
 ];
 
-const needOptions: Option<Need>[] = [
-  { value: "home", label: "Home", hint: "Pure water for your family", icon: House },
-  { value: "office", label: "Office", hint: "Hydration for your team at work", icon: Briefcase },
-  { value: "commercial", label: "Commercial", hint: "Factories, hotels, schools or several sites", icon: Factory },
+const needOptions: Omit<Option<Need>, "label" | "hint">[] = [
+  { value: "home", icon: House },
+  { value: "office", icon: Briefcase },
+  { value: "commercial", icon: Factory },
 ];
 
-const questions = [
-  { title: "Where do you live?", help: "Choose the area where the system will be installed.", short: "Location" },
-  { title: "What is your water source?", help: "Pick the supply the system will connect to.", short: "Water source" },
-  { title: "What do you need?", help: "Tell us who the water is for.", short: "Your space" },
-];
-
-const pathLabels: Record<Recommendation["path"], string> = {
-  buy: "Buy · own your system",
-  rent: "Rent · one monthly payment",
-  corporate: "Corporate hydration proposal",
-};
+/** The answers with their wording, matched by position. */
+function worded<T extends string>(options: Omit<Option<T>, "label" | "hint">[], words: { label: string; hint: string }[]): Option<T>[] {
+  return options.map((option, i) => ({ ...option, label: words[i].label, hint: words[i].hint }));
+}
 
 function labelOf<T extends string>(options: Option<T>[], value?: T) {
   return options.find((option) => option.value === value)?.label;
 }
 
+/** Fills {tokens} in as text nodes of their own, the way JSX interpolation renders them. */
+function fillNodes(text: string, values: Record<string, ReactNode>) {
+  return text
+    .split(/(\{[a-zA-Z]+\})/)
+    .filter(Boolean)
+    .map((part, i) => {
+      const name = part.slice(1, -1);
+      return <Fragment key={i}>{part.startsWith("{") && name in values ? values[name] : part}</Fragment>;
+    });
+}
+
 /** The quote link for each path, prefilled so the visitor never types an answer twice. */
-function quoteAction(rec: Recommendation, region: Region, source: WaterSource) {
+function quoteAction(rec: Recommendation, region: Region, source: WaterSource, copy: FinderCopy["result"]) {
   if (rec.path === "buy") {
     const query = new URLSearchParams({ type: "buy", model: rec.productSlug, waterSource: source });
-    return { label: "Get a quote for this system", href: `/contact?${query.toString()}` };
+    return { label: copy.buyButton, href: `/contact?${query.toString()}` };
   }
   if (rec.path === "rent") {
     const query = new URLSearchParams({
@@ -81,22 +87,23 @@ function quoteAction(rec: Recommendation, region: Region, source: WaterSource) {
       waterSource: source,
     });
     if (region === "western") query.set("province", "western");
-    return { label: "Get my rental quote", href: `/contact?${query.toString()}` };
+    return { label: copy.rentButton, href: `/contact?${query.toString()}` };
   }
-  return { label: "Request a business quote", href: "/contact?type=corporate" };
+  return { label: copy.corporateButton, href: "/contact?type=corporate" };
 }
 
-function Progress({ step }: { step: Step }) {
+function Progress({ step, copy }: { step: Step; copy: FinderCopy }) {
   const done = step === 3;
+  const { questions } = copy.questions;
   return (
     <div>
       <div className="flex items-center justify-between gap-4 text-sm">
-        <p className="font-medium text-ink">{done ? "Your recommendation" : `Step ${step + 1} of 3`}</p>
-        <p className="hidden text-muted sm:block">{done ? "Based on your answers" : questions[step].short}</p>
+        <p className="font-medium text-ink">{done ? copy.result.progress : `Step ${step + 1} of 3`}</p>
+        <p className="hidden text-muted sm:block">{done ? copy.result.progressNote : questions[step].short}</p>
       </div>
       <div aria-hidden className="mt-3 grid grid-cols-3 gap-1.5">
         {questions.map((question, i) => (
-          <span key={question.short} className="h-1.5 overflow-hidden rounded-full bg-white">
+          <span key={i} className="h-1.5 overflow-hidden rounded-full bg-white">
             <span
               className={cn(
                 "block h-full origin-left rounded-full transition-transform duration-500 ease-emph motion-reduce:transition-none",
@@ -175,17 +182,17 @@ function OptionList<T extends string>({
   );
 }
 
-function AnswerChips({ answers, label }: { answers: Answers; label: string }) {
+function AnswerChips({ answers, options, label }: { answers: Answers; options: Options; label: string }) {
   const chosen = [
-    labelOf(regionOptions, answers.region),
-    labelOf(sourceOptions, answers.source),
-    labelOf(needOptions, answers.need),
+    labelOf(options.region, answers.region),
+    labelOf(options.source, answers.source),
+    labelOf(options.need, answers.need),
   ].filter((value): value is string => Boolean(value));
   if (chosen.length === 0) return null;
   return (
     <ul aria-label={label} className="flex flex-wrap gap-2">
-      {chosen.map((value) => (
-        <li key={value}>
+      {chosen.map((value, i) => (
+        <li key={i}>
           <Pill>
             <Check aria-hidden className="text-brand" />
             {value}
@@ -202,6 +209,9 @@ export type FinderProduct = Pick<Product, "slug" | "name" | "tagline" | "image">
 function Result({
   rec,
   products,
+  plans,
+  copy,
+  options,
   region,
   source,
   answers,
@@ -212,6 +222,9 @@ function Result({
 }: {
   rec: Recommendation;
   products: FinderProduct[];
+  plans: FinderPlans;
+  copy: FinderCopy["result"];
+  options: Options;
   region: Region;
   source: WaterSource;
   answers: Answers;
@@ -221,32 +234,39 @@ function Result({
   onRestart: () => void;
 }) {
   const product = products.find((item) => item.slug === rec.productSlug);
-  const from = planFor(rec.filtration).fromMonthly;
-  const action = quoteAction(rec, region, source);
+  const from = plans[rec.filtration].from;
+  const action = quoteAction(rec, region, source, copy);
+  const tags: Record<Recommendation["path"], string> = { buy: copy.buyTag, rent: copy.rentTag, corporate: copy.corporateTag };
 
   return (
     <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
       <div className="lg:col-span-7">
         <Pill variant="white">
           <Sparkles aria-hidden className="text-brand" />
-          Recommended solution
+          {copy.pill}
         </Pill>
         <h2 id={headingId} ref={headingRef} tabIndex={-1} className="mt-5 text-h2 font-semibold text-ink focus:outline-none">
           {rec.headline}
         </h2>
         <div className="mt-5 flex flex-wrap gap-2">
           <Pill variant="tint">{rec.plan}</Pill>
-          <Pill>{pathLabels[rec.path]}</Pill>
+          <Pill>{tags[rec.path]}</Pill>
         </div>
         {rec.path === "rent" && from !== null && (
           <p className="mt-4 text-[15px] text-muted">
-            Rental from <span className="font-medium text-ink">{formatLKR(from)}</span>/month + VAT
+            {fillNodes(copy.rentWithPrice, {
+              price: (
+                <>
+                  <span className="font-medium text-ink">{formatLKR(from)}</span>/month + VAT
+                </>
+              ),
+            })}
           </p>
         )}
 
         <ul className="mt-7 grid gap-3">
-          {rec.reasons.map((reason) => (
-            <li key={reason} className="flex gap-3 text-[15px] leading-relaxed text-ink">
+          {rec.reasons.map((reason, i) => (
+            <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-ink">
               <span aria-hidden className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-brand text-white">
                 <Check className="size-3.5" strokeWidth={2.5} />
               </span>
@@ -261,8 +281,8 @@ function Result({
               <FlaskConical />
             </IconBadge>
             <p className="text-sm leading-relaxed text-muted">
-              <span className="block font-medium text-ink">We’ll check your water first</span>
-              When you request a quote, our team confirms UF or RO with a water check, where offered, before anything is installed.
+              <span className="block font-medium text-ink">{copy.waterCheckTitle}</span>
+              {copy.waterCheckText}
             </p>
           </div>
         )}
@@ -273,7 +293,7 @@ function Result({
           </ButtonLink>
           {product && (
             <ButtonLink href={`/water-purifiers/${product.slug}`} variant="outline" size="lg">
-              View {product.name}
+              {fillNodes(copy.viewButton, { name: product.name })}
             </ButtonLink>
           )}
         </div>
@@ -297,7 +317,7 @@ function Result({
       )}
 
       <div className="flex flex-col gap-5 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between lg:col-span-12">
-        <AnswerChips answers={answers} label="Your answers" />
+        <AnswerChips answers={answers} options={options} label="Your answers" />
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft aria-hidden className="size-4" />
@@ -313,14 +333,36 @@ function Result({
   );
 }
 
-/** The brief's lead-generation engine: three questions, one per screen, then a UF / RO recommendation (Doc 1 §14). */
-export function FindMySolution({ products, className }: { products: FinderProduct[]; className?: string }) {
+/**
+ * The brief's lead-generation engine: three questions, one per screen, then a UF / RO recommendation (Doc 1 §14). Its
+ * wording, the picked purifiers and the plans' names and shown prices are read on the page and passed in.
+ */
+export function FindMySolution({
+  products,
+  picks,
+  plans,
+  copy,
+  className,
+}: {
+  products: FinderProduct[];
+  picks: FinderPicks;
+  plans: FinderPlans;
+  copy: FinderCopy;
+  className?: string;
+}) {
   const [step, setStep] = useState<Step>(0);
   const [answers, setAnswers] = useState<Answers>({});
   const headingRef = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
   const uid = useId();
   const headingId = `${uid}-heading`;
+  // The answers' wording and what the recommendation names, from the admin.
+  const options: Options = {
+    region: worded(regionOptions, copy.questions.regions),
+    source: worded(sourceOptions, copy.questions.sources),
+    need: worded(needOptions, copy.questions.needs),
+  };
+  const context = { picks, plans, words: copy.recommendation };
 
   // After every step change, move focus to the new question or the result. Never on first load.
   useEffect(() => {
@@ -348,7 +390,7 @@ export function FindMySolution({ products, className }: { products: FinderProduc
       go(0);
       return;
     }
-    const rec = recommend({ region, source, need });
+    const rec = recommend({ region, source, need }, context);
     track("find_solution_completed", {
       region,
       water_source: source,
@@ -369,18 +411,21 @@ export function FindMySolution({ products, className }: { products: FinderProduc
   };
 
   const { region, source, need } = answers;
-  const rec = step === 3 && region && source && need ? recommend({ region, source, need }) : null;
-  const question = questions[Math.min(step, 2)];
+  const rec = step === 3 && region && source && need ? recommend({ region, source, need }, context) : null;
+  const question = copy.questions.questions[Math.min(step, 2)];
 
   return (
     <div className={cn("relative overflow-hidden rounded-card-xl bg-tint p-5 sm:p-8 lg:p-12", className)}>
-      <Progress step={step} />
+      <Progress step={step} copy={copy} />
 
       <div key={step} className="mt-8 animate-fade-up motion-reduce:animate-none sm:mt-10">
         {rec && region && source ? (
           <Result
             rec={rec}
             products={products}
+            plans={plans}
+            copy={copy.result}
+            options={options}
             region={region}
             source={source}
             answers={answers}
@@ -399,20 +444,24 @@ export function FindMySolution({ products, className }: { products: FinderProduc
             </div>
 
             <div className="lg:col-span-7 lg:row-span-2">
-              {step === 0 && <OptionList options={regionOptions} selected={region} onChoose={chooseRegion} labelledBy={headingId} />}
-              {step === 1 && <OptionList options={sourceOptions} selected={source} onChoose={chooseSource} labelledBy={headingId} />}
-              {step === 2 && <OptionList options={needOptions} selected={need} onChoose={chooseNeed} labelledBy={headingId} />}
+              {step === 0 && <OptionList options={options.region} selected={region} onChoose={chooseRegion} labelledBy={headingId} />}
+              {step === 1 && <OptionList options={options.source} selected={source} onChoose={chooseSource} labelledBy={headingId} />}
+              {step === 2 && <OptionList options={options.need} selected={need} onChoose={chooseNeed} labelledBy={headingId} />}
             </div>
 
             <div className="flex flex-col items-start gap-5 lg:col-span-5 lg:self-end">
-              <AnswerChips answers={step === 1 ? { region } : step === 2 ? { region, source } : {}} label="Your answers so far" />
+              <AnswerChips
+                answers={step === 1 ? { region } : step === 2 ? { region, source } : {}}
+                options={options}
+                label="Your answers so far"
+              />
               {step > 0 ? (
                 <Button variant="outline" onClick={back}>
                   <ArrowLeft aria-hidden className="size-4" />
                   Back
                 </Button>
               ) : (
-                <p className="text-sm text-muted">Three quick questions. No sign-up needed.</p>
+                <p className="text-sm text-muted">{copy.questions.note}</p>
               )}
             </div>
           </div>

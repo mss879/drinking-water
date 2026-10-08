@@ -3,7 +3,7 @@
 import { Check, ChevronDown, CircleAlert } from "lucide-react";
 import { Fragment, useActionState, useEffect, useId, useRef, useState } from "react";
 import { submitLead, type LeadState } from "@/app/actions/leads";
-import { useCatalogOptions } from "@/components/forms/catalog-context";
+import { useCatalogOptions, useOptionLabels } from "@/components/forms/catalog-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { leadForms, resolveFields, type FormField, type LeadFormType } from "@/content/forms";
@@ -122,7 +122,8 @@ export function LeadForm(props: LeadFormProps) {
 function LeadFormInner({ type, prefill, className, onReset }: LeadFormProps & { onReset: () => void }) {
   const config = leadForms[type];
   const catalogue = useCatalogOptions();
-  const groups = groupFields(resolveFields(type, catalogue));
+  const labels = useOptionLabels();
+  const groups = groupFields(resolveFields(type, catalogue, labels));
   const [state, formAction, pending] = useActionState(submitLead, initialState);
   const uid = useId();
   const tracked = useRef<string | null>(null);

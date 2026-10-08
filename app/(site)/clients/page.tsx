@@ -23,52 +23,57 @@ import { PageHero } from "@/components/sections/page-hero";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { Pill } from "@/components/ui/pill";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { caseStudies, sectors, type CaseStudy } from "@/content/clients";
-import { getClientLogos } from "@/lib/cms/content";
+import { sectors, type CaseStudy } from "@/content/clients";
+import { clientsCorporate, clientsHero, clientsLogos, clientsSectors, clientsSeo, clientsStories } from "@/content/copy/clients";
+import { getCaseStudies, getClientLogos, getCopy, getPhotos } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Our Clients & Success Stories",
-  description:
-    "How LUSAKO looks after drinking water for offices, factories, hotels, schools and hospitals, from the first challenge to ongoing support.",
-  path: "/clients",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(clientsSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/clients" });
+}
 
-const sectorDetails: Record<string, { icon: LucideIcon; hint: string }> = {
-  "Corporate offices": { icon: Building2, hint: "Pantries, meeting floors and reception areas." },
-  Factories: { icon: Factory, hint: "Canteens and production floors with shift teams." },
-  Hotels: { icon: Hotel, hint: "Restaurants, lounges and staff areas." },
-  Schools: { icon: School, hint: "Pure water for students, staff and visitors." },
-  Hospitals: { icon: Hospital, hint: "Clinics and waiting areas that need water all day." },
-  "Commercial organisations": { icon: Store, hint: "Branches, showrooms and customer areas." },
+/** Each sector's icon, by its exact name (its line is the clients.sectors block); other names get the office icon. */
+const sectorIcons: Record<string, LucideIcon> = {
+  "Corporate offices": Building2,
+  Factories: Factory,
+  Hotels: Hotel,
+  Schools: School,
+  Hospitals: Hospital,
+  "Commercial organisations": Store,
 };
 
 type StoryKey = "challenge" | "requirement" | "solution" | "implementation" | "support" | "result";
 
-/** Case study template, brief Doc 2 §11: Challenge → Requirement → Solution → Implementation → Support → Result. */
-const storySteps: { key: StoryKey; label: string; icon: LucideIcon }[] = [
-  { key: "challenge", label: "Challenge", icon: CircleAlert },
-  { key: "requirement", label: "Requirement", icon: ClipboardList },
-  { key: "solution", label: "LUSAKO solution", icon: Droplets },
-  { key: "implementation", label: "Implementation", icon: Wrench },
-  { key: "support", label: "Ongoing support", icon: Headset },
-  { key: "result", label: "Result", icon: Sparkles },
+/**
+ * Case study template, brief Doc 2 §11: Challenge → Requirement → Solution → Implementation → Support → Result. The
+ * step names are the clients.stories block's, by position.
+ */
+const storySteps: { key: StoryKey; icon: LucideIcon }[] = [
+  { key: "challenge", icon: CircleAlert },
+  { key: "requirement", icon: ClipboardList },
+  { key: "solution", icon: Droplets },
+  { key: "implementation", icon: Wrench },
+  { key: "support", icon: Headset },
+  { key: "result", icon: Sparkles },
 ];
 
-function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
-  const model = study.solution.split(" · ")[0];
+type StoriesCopy = typeof clientsStories.defaults;
+
+function CaseStudyCard({ study, index, copy }: { study: CaseStudy; index: number; copy: StoriesCopy }) {
+  // The model pill: the story's own, else the solution's first part ("Rental · PureFlow UF …" → "Rental").
+  const model = study.model || study.solution.split(" · ")[0];
   const titleId = `${study.slug}-title`;
   return (
     <article aria-labelledby={titleId} className="card-line grid gap-8 rounded-card-xl p-6 sm:p-8 lg:grid-cols-12 lg:gap-12 lg:p-10">
       <div className="lg:col-span-4">
         <div className="flex flex-wrap gap-2">
-          {study.sample && <Pill variant="tint">Sample story</Pill>}
+          {study.sample && <Pill variant="tint">{copy.samplePill}</Pill>}
           <Pill>{model}</Pill>
         </div>
         <p
@@ -88,7 +93,7 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
       </div>
 
       <ol className="lg:col-span-8">
-        {storySteps.map(({ key, label, icon: Icon }, i) => {
+        {storySteps.map(({ key, icon: Icon }, i) => {
           const last = i === storySteps.length - 1;
           return (
             <li key={key} className="relative flex gap-4 pb-6 last:pb-0 sm:gap-5">
@@ -97,7 +102,7 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
                 <Icon />
               </IconBadge>
               <div className={cn("min-w-0 flex-1", last ? "rounded-card-sm bg-tint-2 px-4 py-3" : "pt-1")}>
-                <p className="font-display text-xs font-bold tracking-[0.16em] text-deep uppercase">{label}</p>
+                <p className="font-display text-xs font-bold tracking-[0.16em] text-deep uppercase">{copy.steps[i]}</p>
                 <p className="mt-1 text-[15px] leading-relaxed text-ink">{study[key]}</p>
               </div>
             </li>
@@ -109,35 +114,40 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
 }
 
 export default async function ClientsPage() {
-  const clientLogos = await getClientLogos();
+  const [clientLogos, photos, caseStudies, hero, sectorsCopy, logos, stories, corporate] = await Promise.all([
+    getClientLogos(),
+    getPhotos(),
+    getCaseStudies(),
+    getCopy(clientsHero),
+    getCopy(clientsSectors),
+    getCopy(clientsLogos),
+    getCopy(clientsStories),
+    getCopy(clientsCorporate),
+  ]);
   const hasSamples = caseStudies.some((study) => study.sample);
 
   return (
     <>
       <PageHero
         crumbs={[{ label: "Our clients", href: "/clients" }]}
-        eyebrow="Our clients"
-        title={["Our clients &", <Highlight key="stories">success stories</Highlight>]}
-        description="From single offices to multi-site organisations, LUSAKO plans, installs and looks after drinking water. Here’s how that work comes together."
-        image={{ src: heroImages.clients, position: "object-right" }}
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
+        image={{ src: photos.pageClients.src, position: "object-right" }}
       />
 
       <section className="pt-12 pb-16 md:pt-16 md:pb-20 lg:pt-20 lg:pb-28">
         <Container>
           <SectionHeading
             layout="split"
-            eyebrow="Sectors we serve"
-            title={
-              <>
-                From corporate offices <Highlight>to hospitals</Highlight>
-              </>
-            }
-            description="Every sector uses water differently. We match machines, placement and service to how your people drink."
+            eyebrow={sectorsCopy.eyebrow}
+            title={marked(sectorsCopy.title)}
+            description={sectorsCopy.description}
           />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
-            {sectors.map((sector) => {
-              const detail = sectorDetails[sector];
-              const Icon = detail?.icon ?? Building2;
+            {sectors.map((sector, i) => {
+              const hint = sectorsCopy.hints[i];
+              const Icon = sectorIcons[sector] ?? Building2;
               return (
                 <li
                   key={sector}
@@ -150,7 +160,7 @@ export default async function ClientsPage() {
                   </span>
                   <div>
                     <h3 className="font-display text-lg leading-snug font-bold text-ink sm:text-xl">{sector}</h3>
-                    {detail && <p className="mt-1.5 text-sm leading-relaxed text-muted">{detail.hint}</p>}
+                    {hint && <p className="mt-1.5 text-sm leading-relaxed text-muted">{hint}</p>}
                   </div>
                 </li>
               );
@@ -162,12 +172,8 @@ export default async function ClientsPage() {
       <section className="pb-16 md:pb-20 lg:pb-28">
         <Container>
           <SectionHeading
-            eyebrow="Client logos"
-            title={
-              <>
-                The organisations <Highlight>we work with</Highlight>
-              </>
-            }
+            eyebrow={logos.eyebrow}
+            title={marked(logos.title)}
           />
           {clientLogos.length > 0 ? (
             // Any number of logos: the grid simply grows, row by row. Shown in greyscale, so the page keeps to the brand colours.
@@ -209,10 +215,8 @@ export default async function ClientsPage() {
                   <IconBadge size="lg">
                     <ShieldCheck />
                   </IconBadge>
-                  <h3 className="mt-4 font-display text-xl font-bold text-ink">Published with permission</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">
-                    We show a client’s name or logo only with their written approval. Approved logos will appear here.
-                  </p>
+                  <h3 className="mt-4 font-display text-xl font-bold text-ink">{logos.emptyTitle}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{logos.emptyText}</p>
                 </div>
               </div>
             </div>
@@ -220,49 +224,45 @@ export default async function ClientsPage() {
         </Container>
       </section>
 
-      <section className="pb-16 md:pb-20 lg:pb-28">
-        <Container>
-          <SectionHeading
-            layout="split"
-            eyebrow="Success stories"
-            title={
-              <>
-                From challenge <Highlight>to result</Highlight>
-              </>
-            }
-            description="Every LUSAKO project follows the same path: understand the challenge, match the solution, install it properly and keep it performing."
-          />
-          {hasSamples && (
-            <p className="mt-10 flex items-start gap-3 rounded-card-sm border border-line bg-tint p-4 text-sm leading-relaxed text-ink sm:items-center sm:px-5">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-deep sm:mt-0" />
-              Stories marked “Sample story” show how a typical LUSAKO project runs. They will be replaced with approved client stories.
-            </p>
-          )}
-          <div data-stagger className="mt-6 grid gap-4 lg:gap-5">
-            {caseStudies.map((study, i) => (
-              <CaseStudyCard key={study.slug} study={study} index={i} />
-            ))}
-          </div>
-        </Container>
-      </section>
+      {/* Left out while no story is published (Client stories), so the heading never sits over nothing. */}
+      {caseStudies.length > 0 && (
+        <section className="pb-16 md:pb-20 lg:pb-28">
+          <Container>
+            <SectionHeading
+              layout="split"
+              eyebrow={stories.eyebrow}
+              title={marked(stories.title)}
+              description={stories.description}
+            />
+            {hasSamples && (
+              <p className="mt-10 flex items-start gap-3 rounded-card-sm border border-line bg-tint p-4 text-sm leading-relaxed text-ink sm:items-center sm:px-5">
+                <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-deep sm:mt-0" />
+                {stories.sampleNote}
+              </p>
+            )}
+            <div data-stagger className="mt-6 grid gap-4 lg:gap-5">
+              {caseStudies.map((study, i) => (
+                <CaseStudyCard key={study.slug} study={study} index={i} copy={stories} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
 
       <section className="pb-4">
         <Container>
           <div data-expand className="relative isolate overflow-hidden rounded-card-xl bg-deep p-7 text-white sm:p-10 lg:p-14">
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative max-w-2xl">
-              <Pill variant="glass">Corporate hydration</Pill>
-              <h2 className="mt-5 text-h2 font-bold">Planning water for a whole organisation?</h2>
-              <p className="mt-4 text-lead text-white">
-                One partner for your workplace hydration: site assessment, the right mix of machines, installation and ongoing service,
-                across one site or many.
-              </p>
+              <Pill variant="glass">{corporate.tag}</Pill>
+              <h2 className="mt-5 text-h2 font-bold">{corporate.title}</h2>
+              <p className="mt-4 text-lead text-white">{corporate.description}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <ButtonLink href="/hydration-solutions/corporate" variant="white" size="lg" arrow>
-                  Explore corporate hydration
+                  {corporate.exploreButton}
                 </ButtonLink>
                 <ButtonLink href="/contact?type=corporate" variant="glass" size="lg">
-                  Request a business quote
+                  {corporate.quoteButton}
                 </ButtonLink>
               </div>
             </div>

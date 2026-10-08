@@ -6,52 +6,64 @@ import { PageHero } from "@/components/sections/page-hero";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { getPhotos, getProducts, getSiteSettings } from "@/lib/cms/content";
+import { marked } from "@/components/ui/marked";
+import {
+  finderHero,
+  finderQuestions,
+  finderRecommendation,
+  finderResult,
+  finderSeo,
+  finderTalk,
+  finderWhy,
+} from "@/content/copy/finder";
+import { getCopy, getPhotos, getPicks, getProducts, getRentalPlans, getRentalPrices, getSiteSettings } from "@/lib/cms/content";
 import { telHref, whatsappHref } from "@/lib/contact";
+import { finderPicks, finderPlans } from "@/lib/recommend";
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Find My Solution: UF or RO Water Purifier",
-  description:
-    "Answer three quick questions about where you live, your water source and what you need. LUSAKO recommends UF or RO and the right water purification system.",
-  path: "/find-my-solution",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(finderSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/find-my-solution" });
+}
 
-const reasons = [
-  {
-    icon: MapPin,
-    title: "Where you live",
-    body: "Outside the Western Province, rentals include a Regional Hydration Service for regional support, always shown as its own line.",
-  },
-  {
-    icon: Droplets,
-    title: "Your water source",
-    body: "Treated city water suits UF. Well water and water with higher dissolved solids (TDS) usually need RO.",
-  },
-  {
-    icon: Users,
-    title: "What you need",
-    body: "Homes are best served by owning a system, offices by rental, and larger organisations by a corporate proposal.",
-  },
-];
+/** The "Why we ask" cards' icons, by position (their wording is the finder.why block). */
+const reasonIcons = [MapPin, Droplets, Users];
 
 export default async function FindMySolutionPage() {
-  const [photos, { contact }, products] = await Promise.all([getPhotos(), getSiteSettings(), getProducts()]);
+  const [photos, { contact }, products, picks, plans, prices, hero, questions, recommendation, result, why, talk] = await Promise.all([
+    getPhotos(),
+    getSiteSettings(),
+    getProducts(),
+    getPicks(),
+    getRentalPlans(),
+    getRentalPrices(),
+    getCopy(finderHero),
+    getCopy(finderQuestions),
+    getCopy(finderRecommendation),
+    getCopy(finderResult),
+    getCopy(finderWhy),
+    getCopy(finderTalk),
+  ]);
+  const reasons = why.cards.map((card, i) => ({ ...card, icon: reasonIcons[i] }));
   return (
     <>
       <PageHero
         crumbs={[{ label: "Find my solution", href: "/find-my-solution" }]}
-        eyebrow="Find my solution"
-        title={["The right system in", <Highlight key="three">three questions</Highlight>]}
-        description="Tell us where you live, your water source and what you need. We’ll recommend UF or RO and the right LUSAKO system."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         image={{ src: photos.waterTest.src, position: "object-[50%_40%]" }}
       />
 
       <div className="pt-10 pb-16 md:pt-14 lg:pt-16 lg:pb-24">
         <Container>
-          <FindMySolution products={products.map(({ slug, name, tagline, image }) => ({ slug, name, tagline, image }))} />
+          <FindMySolution
+            products={products.map(({ slug, name, tagline, image }) => ({ slug, name, tagline, image }))}
+            picks={finderPicks(picks.finder, products)}
+            plans={finderPlans(plans, prices)}
+            copy={{ questions, recommendation, result }}
+          />
         </Container>
       </div>
 
@@ -59,12 +71,12 @@ export default async function FindMySolutionPage() {
         <Container>
           <div data-no-reveal className="grid gap-10 border-t border-line pt-12 lg:grid-cols-12 lg:gap-12 lg:pt-16">
             <div data-reveal="up" className="lg:col-span-4">
-              <span className="label">Why we ask</span>
-              <h2 className="mt-5 max-w-sm font-display text-h3 font-bold text-ink">Three answers are all it takes to recommend the right system.</h2>
+              <span className="label">{why.eyebrow}</span>
+              <h2 className="mt-5 max-w-sm font-display text-h3 font-bold text-ink">{why.title}</h2>
             </div>
             <ul data-stagger className="grid gap-4 sm:grid-cols-3 lg:col-span-8">
-              {reasons.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="card-line p-6">
+              {reasons.map(({ icon: Icon, title, body }, i) => (
+                <li key={i} className="card-line p-6">
                   <span className="grid size-14 place-items-center rounded-card-sm bg-tint">
                     <IconBadge size="sm">
                       <Icon />
@@ -84,13 +96,15 @@ export default async function FindMySolutionPage() {
           <div data-expand className="relative isolate flex flex-col gap-8 overflow-hidden rounded-card-xl bg-deep p-7 text-white sm:p-10 lg:flex-row lg:items-center lg:justify-between lg:p-12">
             <WaveLines lines={5} className="absolute inset-x-0 bottom-0 -z-10 h-2/3 w-full text-white/15" />
             <div className="relative max-w-xl">
-              <h2 className="font-display text-h3 font-bold">Prefer to talk it through?</h2>
+              <h2 className="font-display text-h3 font-bold">{talk.title}</h2>
               <p className="mt-3 text-white">
-                Our team can recommend a system by phone or on WhatsApp, or you can{" "}
-                <Link href="/contact" className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:text-mist">
-                  send us an enquiry
-                </Link>
-                .
+                {marked(talk.text, {
+                  mark: (words) => (
+                    <Link href="/contact" className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors hover:text-mist">
+                      {words}
+                    </Link>
+                  ),
+                })}
               </p>
               <p className="mt-4 flex items-center gap-2 text-sm text-white">
                 <Clock aria-hidden className="size-4 shrink-0 text-mist" />
@@ -103,13 +117,13 @@ export default async function FindMySolutionPage() {
                 {contact.phones[0] ?? contact.hotline}
               </a>
               <a
-                href={whatsappHref(contact.whatsappSales)}
+                href={whatsappHref(contact.whatsappSales, contact.whatsappGreeting)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={buttonClasses({ variant: "glass", size: "lg" })}
               >
                 <MessageCircle aria-hidden className="size-4" />
-                WhatsApp us
+                {talk.whatsappButton}
                 <span className="sr-only"> (opens WhatsApp)</span>
               </a>
             </div>

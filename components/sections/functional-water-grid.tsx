@@ -2,14 +2,16 @@ import Link from "next/link";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { WaveLines } from "@/components/ui/decor";
-import { functionalWaters } from "@/content/functional-water";
+import { getFunctionalWaters } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 
 /**
  * Sparkling, hydrogen, alkaline and other functional water as four cards: three outlined with their 3D icon, the
- * last a solid deep-blue card. Each opens its section on the Functional water page.
+ * last a solid deep-blue card. Each opens its section on the Functional water page. Names and lines are the
+ * shared block (Functional water types in the admin).
  */
-export function FunctionalWaterGrid({ className }: { className?: string }) {
+export async function FunctionalWaterGrid({ className }: { className?: string }) {
+  const functionalWaters = await getFunctionalWaters();
   return (
     <ul className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5", className)}>
       {functionalWaters.map((water, i) => {

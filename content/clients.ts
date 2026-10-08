@@ -23,6 +23,8 @@ export type CaseStudy = {
   sample: boolean;
   industry: string;
   location: string;
+  /** The model pill; empty takes it from the solution ("Rental · PureFlow UF …"). */
+  model?: string;
   challenge: string;
   requirement: string;
   solution: string;

@@ -105,10 +105,11 @@ export const standaloneValue = (plan: AmcPlanTerms, fees: AmcFees) => plan.visit
 
 export const discounted = (price: number, percent: number) => Math.round(price * (100 - percent)) / 100;
 
+/** "once", "twice", "3 times". */
+const times = (count: number) => (count === 1 ? "once" : count === 2 ? "twice" : `${count} times`);
+
 export function timesAYear(count: number) {
-  if (count === 1) return "once a year";
-  if (count === 2) return "twice a year";
-  return `${count} times a year`;
+  return `${times(count)} a year`;
 }
 
 export const visitsLabel = (count: number) => `${count} ${count === 1 ? "visit" : "visits"}`;
@@ -156,6 +157,8 @@ const sanitationPhrase = (amc: AmcSettings) => {
 };
 
 // --------------------------------------------------------------------- copy --
+// The AMC page's wording as designed: the defaults of its editable text (content/copy/amc.ts). The page shows what
+// the admin saved, so read these through getCopy() rather than directly.
 
 /** The proposal's three reasons for an AMC. */
 export const amcReasons = [
@@ -184,28 +187,37 @@ export const visitChecks = [
 ];
 
 /** "A practical annual maintenance routine": how a contract runs, from activation to breakdowns. */
-export function amcRoutine(amc: AmcSettings) {
+export const routineSteps = [
+  {
+    title: "Activation",
+    body: "We confirm your purifier’s eligibility, the covered installation and the service schedule. A preliminary inspection may be needed, and existing faults may need correcting before cover begins.",
+  },
+  {
+    title: "Preventive visits",
+    body: "Your scheduled visits are booked with LUSAKO during the annual term, and each one is recorded in your service history.",
+  },
+  {
+    title: "Annual tank service",
+    body: "Cleaning, sanitation, chlorination and a connection inspection of the applicable storage system, followed by operating checks.",
+  },
+  {
+    title: "Breakdown support",
+    body: "When a fault occurs, contact LUSAKO for diagnosis and assistance: technician attendance, troubleshooting and covered labour.",
+  },
+];
+
+/** "Essential", "Complete and Maximum", "Essential, Complete and Maximum". */
+const andList = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : (items[0] ?? ""));
+
+/**
+ * The routine's steps (the page passes its editable wording), the breakdown step ending with the plans that include
+ * priority service, worked out from the plans.
+ */
+export function amcRoutine(amc: AmcSettings, steps: { title: string; body: string }[] = routineSteps) {
   const priority = amc.plans.filter((plan) => plan.priority).map((plan) => plan.short);
-  return [
-    {
-      title: "Activation",
-      body: "We confirm your purifier’s eligibility, the covered installation and the service schedule. A preliminary inspection may be needed, and existing faults may need correcting before cover begins.",
-    },
-    {
-      title: "Preventive visits",
-      body: "Your scheduled visits are booked with LUSAKO during the annual term, and each one is recorded in your service history.",
-    },
-    {
-      title: "Annual tank service",
-      body: "Cleaning, sanitation, chlorination and a connection inspection of the applicable storage system, followed by operating checks.",
-    },
-    {
-      title: "Breakdown support",
-      body: `When a fault occurs, contact LUSAKO for diagnosis and assistance: technician attendance, troubleshooting and covered labour.${
-        priority.length ? ` ${priority.join(" and ")} ${priority.length === 1 ? "includes" : "include"} priority service.` : ""
-      }`,
-    },
-  ];
+  const prioritySentence = priority.length ? ` ${andList(priority)} ${priority.length === 1 ? "includes" : "include"} priority service.` : "";
+  // The breakdown step is the fourth; the admin keeps the steps in their places.
+  return steps.map((step, i) => (i === 3 ? { ...step, body: `${step.body}${prioritySentence}` } : step));
 }
 
 /** On-call service, for customers without an AMC. */
@@ -232,14 +244,35 @@ export const amcTerms = [
     body: "Misuse, physical damage, unauthorised modification, abnormal electrical conditions, pests, external causes and improper operation may be excluded. Relocation, installation, additional piping, transport and non-maintenance work are not automatically covered, and visits outside the standard service area may attract charges. Additional charges are always explained before work goes ahead.",
   },
   {
+    // amcKeyTerms() opens it with how often tank sanitation is provided.
     title: "Visits and benefits",
-    body: "Tank sanitation is provided once per annual term. Unused preventive visits can’t normally be exchanged for cash or transferred to other services, and discounts can’t be redeemed for cash or deducted from the AMC fee. The contract is non-transferable unless LUSAKO approves.",
+    body: "Unused preventive visits can’t normally be exchanged for cash or transferred to other services, and discounts can’t be redeemed for cash or deducted from the AMC fee. The contract is non-transferable unless LUSAKO approves.",
   },
   {
     title: "Renewal",
     body: "LUSAKO may revise prices, benefits and terms for future renewals, with appropriate notice.",
   },
 ];
+
+/** How often the plans include tank sanitation, as the key terms put it ("once per annual term"). Empty when none do. */
+export function sanitationTerm(amc: AmcSettings) {
+  const counts = amc.plans.map((plan) => plan.sanitations);
+  const most = Math.max(...counts);
+  if (most === 0) return "";
+  if (counts.every((count) => count === most)) return `Tank sanitation is provided ${times(most)} per annual term.`;
+  if (most === 1) return "Where the plan includes it, tank sanitation is provided once per annual term.";
+  return `Tank sanitation is provided up to ${times(most)} per annual term, depending on the plan.`;
+}
+
+/**
+ * The key terms (the page passes its editable wording), "Visits and benefits" opening with how often tank sanitation
+ * is provided, worked out from the plans.
+ */
+export function amcKeyTerms(amc: AmcSettings, terms: { title: string; body: string }[] = amcTerms) {
+  const sanitation = sanitationTerm(amc);
+  // "Visits and benefits" is the fourth term; the admin keeps the terms in their places.
+  return terms.map((term, i) => (i === 3 && sanitation ? { ...term, body: `${sanitation} ${term.body}` } : term));
+}
 
 // ---------------------------------------------------------- warranty vs AMC --
 
@@ -254,39 +287,92 @@ export const coverColumns: { id: CoverId; name: string; detail: string }[] = [
   { id: "on-call", name: "On-call", detail: "Pay per visit, no contract" },
 ];
 
-export function coverRows(amc: AmcSettings): { label: string; cells: Record<CoverId, CoverCell> }[] {
+/**
+ * The table's wording: its row names, in order, and the cells that aren't a tick, a dash or worked out from the
+ * plans (the AMC column's visits and discounts and the on-call visit price).
+ */
+export type CoverText = {
+  rows: string[];
+  breakdownWarranty: string;
+  breakdownOnCall: string;
+  labourWarranty: string;
+  labourOnCall: string;
+  filtersWarranty: string;
+  filtersRental: string;
+  filtersOnCall: string;
+  partsWarranty: string;
+  partsOnCall: string;
+  contractWarranty: string;
+  contractRental: string;
+  contractAmc: string;
+  contractOnCall: string;
+  bestForWarranty: string;
+  bestForRental: string;
+  bestForAmc: string;
+  bestForOnCall: string;
+};
+
+export const coverText: CoverText = {
+  rows: ["Preventive maintenance", "Breakdown support", "Technician labour", "Filters", "Spare parts", "Contract", "Best for"],
+  breakdownWarranty: "Covered defects",
+  breakdownOnCall: "Call-out fee first",
+  labourWarranty: "Covered defects",
+  labourOnCall: "Quoted after inspection",
+  filtersWarranty: "Charged",
+  filtersRental: "Per agreement",
+  filtersOnCall: "Charged",
+  partsWarranty: "Covered defects",
+  partsOnCall: "Charged",
+  contractWarranty: "Warranty period",
+  contractRental: "Rental agreement",
+  contractAmc: "Annual",
+  contractOnCall: "None",
+  bestForWarranty: "New purchases",
+  bestForRental: "One monthly payment",
+  bestForAmc: "Planned care for owners",
+  bestForOnCall: "Occasional needs",
+};
+
+/** The table's rows: the page passes its editable wording; the AMC figures are worked out from the plans. */
+export function coverRows(amc: AmcSettings, text: CoverText = coverText): { label: string; cells: Record<CoverId, CoverCell> }[] {
   const visits = [...new Set(amc.plans.map((plan) => plan.visits))].sort((a, b) => a - b);
   const visitText = visits.length > 1 ? `${visits[0]}–${visits.at(-1)} visits a year` : `${visitsLabel(visits[0])} a year`;
   const filterOff = Math.max(...amc.plans.map((plan) => plan.filterDiscount));
   const partsOff = Math.max(...amc.plans.map((plan) => plan.partsDiscount));
+  const [maintenance, breakdown, labour, filters, parts, contract, bestFor] = text.rows;
   return [
     {
-      label: "Preventive maintenance",
+      label: maintenance,
       cells: { warranty: false, rental: true, amc: visitText, "on-call": `${formatLKR(amc.fees.visit)} a visit` },
     },
     {
-      label: "Breakdown support",
-      cells: { warranty: "Covered defects", rental: true, amc: true, "on-call": "Call-out fee first" },
+      label: breakdown,
+      cells: { warranty: text.breakdownWarranty, rental: true, amc: true, "on-call": text.breakdownOnCall },
     },
     {
-      label: "Technician labour",
-      cells: { warranty: "Covered defects", rental: true, amc: true, "on-call": "Quoted after inspection" },
+      label: labour,
+      cells: { warranty: text.labourWarranty, rental: true, amc: true, "on-call": text.labourOnCall },
     },
     {
-      label: "Filters",
-      cells: { warranty: "Charged", rental: "Per agreement", amc: filterOff > 0 ? `Up to ${filterOff}% off` : "Charged", "on-call": "Charged" },
+      label: filters,
+      cells: {
+        warranty: text.filtersWarranty,
+        rental: text.filtersRental,
+        amc: filterOff > 0 ? `Up to ${filterOff}% off` : "Charged",
+        "on-call": text.filtersOnCall,
+      },
     },
     {
-      label: "Spare parts",
-      cells: { warranty: "Covered defects", rental: true, amc: partsOff > 0 ? `Up to ${partsOff}% off` : "Charged", "on-call": "Charged" },
+      label: parts,
+      cells: { warranty: text.partsWarranty, rental: true, amc: partsOff > 0 ? `Up to ${partsOff}% off` : "Charged", "on-call": text.partsOnCall },
     },
     {
-      label: "Contract",
-      cells: { warranty: "Warranty period", rental: "Rental agreement", amc: "Annual", "on-call": "None" },
+      label: contract,
+      cells: { warranty: text.contractWarranty, rental: text.contractRental, amc: text.contractAmc, "on-call": text.contractOnCall },
     },
     {
-      label: "Best for",
-      cells: { warranty: "New purchases", rental: "One monthly payment", amc: "Planned care for owners", "on-call": "Occasional needs" },
+      label: bestFor,
+      cells: { warranty: text.bestForWarranty, rental: text.bestForRental, amc: text.bestForAmc, "on-call": text.bestForOnCall },
     },
   ];
 }
@@ -303,6 +389,13 @@ export function amcFaqs(amc: AmcSettings): Faq[] {
   const value = recommendedValue(amc);
   const breakEven = breakEvenSentence(amc);
   const visitGroups = amc.plans.map((plan) => `${visitsLabel(plan.visits)} a year with ${plan.name}`);
+  const [essential, complete, maximum] = [byId("essential"), byId("complete"), byId("maximum")];
+  // What Essential is for and how Maximum compares, following their visits and sanitations.
+  const essentialWants = [
+    essential.visits > 0 && (essential.visits === 1 ? "one planned visit" : `${essential.visits} planned visits`),
+    essential.sanitations > 0 && (essential.sanitations === 1 ? "annual sanitation" : `sanitation ${timesAYear(essential.sanitations)}`),
+  ].filter(Boolean);
+  const sameVisits = maximum.visits === complete.visits && maximum.sanitations === complete.sanitations;
 
   const faqs: Faq[] = [
     {
@@ -320,7 +413,9 @@ export function amcFaqs(amc: AmcSettings): Faq[] {
     {
       topic: "amc",
       q: "Which AMC plan should I choose?",
-      a: `${byId("essential").name} suits customers who want one planned visit and annual sanitation. ${byId("complete").name} is our recommended balance of regular servicing and cost. ${byId("maximum").name} has the same scheduled visits as ${byId("complete").short}, with larger replacement discounts.${breakEven ? ` ${breakEven}` : ""}`,
+      a: `${essential.name} suits customers who want ${essentialWants.length ? essentialWants.join(" and ") : "breakdown support"}. ${complete.name} is our recommended balance of regular servicing and cost. ${maximum.name} has ${
+        sameVisits ? `the same scheduled visits as ${complete.short}` : `${visitsLabel(maximum.visits)} a year`
+      }, with larger replacement discounts.${breakEven ? ` ${breakEven}` : ""}`,
     },
     {
       topic: "amc",

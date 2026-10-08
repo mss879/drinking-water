@@ -242,8 +242,8 @@ export function HeroStrip({
         </div>
         {(pills.length > 0 || highlight) && (
           <ul data-stagger className="flex flex-wrap gap-2 lg:max-w-md lg:justify-end">
-            {pills.map((pill) => (
-              <li key={pill}>
+            {pills.map((pill, i) => (
+              <li key={`${i}-${pill}`}>
                 <Pill variant="tint">{pill}</Pill>
               </li>
             ))}

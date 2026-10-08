@@ -5,16 +5,19 @@ import { Container } from "@/components/ui/container";
 import { Rule } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import type { BrandIconName } from "@/content/brand-icons";
-import { rentalInclusions } from "@/content/services";
+import { sharedRentalInclusions } from "@/content/copy/shared";
+import { getCopy } from "@/lib/cms/content";
 
-/** One 3D icon per inclusion, in the order of `rentalInclusions`. */
+/** One 3D icon per inclusion, in the order of the block's inclusions (content/copy/shared.ts). */
 const icons: BrandIconName[] = ["countertop", "wrench", "calendar", "filter", "headset", "shield"];
 
 /**
  * "One monthly payment. Complete water care." as the GrowSphere capabilities list: the heading holds still on
  * the left while the six inclusions scroll past on the right, each with its 3D icon; dividers draw as they come in.
+ * Its wording is the shared block; the closing qualifier stays as the brief words it.
  */
-export function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
+export async function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
+  const copy = await getCopy(sharedRentalInclusions);
   return (
     <section id="included" className="py-16 md:py-20 lg:py-28">
       <Container className="grid gap-12 lg:grid-cols-12 lg:gap-10" data-no-reveal>
@@ -27,19 +30,18 @@ export function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
             >
               {splitWords(
                 <>
-                  <span className="block whitespace-nowrap">One monthly payment.</span>{" "}
-                  <Highlight className="block whitespace-nowrap">Complete water care.</Highlight>
+                  <span className="block whitespace-nowrap">{copy.title[0]}</span>{" "}
+                  <Highlight className="block whitespace-nowrap">{copy.title[1]}</Highlight>
                 </>,
               )}
             </h2>
             <p data-reveal="up" className="mt-6 max-w-sm leading-relaxed text-muted">
-              Rental is a service, not just a machine lease: equipment, installation, preventive maintenance and support according to your
-              agreed plan.
+              {copy.intro}
             </p>
             {showCta && (
               <div data-reveal="up" className="mt-8">
                 <ButtonLink href="/rental" arrow>
-                  Explore rental
+                  {copy.button}
                 </ButtonLink>
               </div>
             )}
@@ -49,8 +51,8 @@ export function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
         <div className="lg:col-span-7">
           <Rule />
           <ol data-stagger>
-            {rentalInclusions.map((item, i) => (
-              <li key={item.title} className="group">
+            {copy.items.map((item, i) => (
+              <li key={i} className="group">
                 <div className="grid grid-cols-[auto_1fr] gap-5 py-7 sm:gap-8 sm:py-9">
                   <div className="flex items-start gap-5 sm:gap-8">
                     <span className="grid size-16 place-items-center rounded-card-sm bg-tint sm:size-20">

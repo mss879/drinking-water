@@ -1,33 +1,19 @@
-import type { ReactNode } from "react";
 import { splitWords } from "@/components/motion/split-words";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
+import { sharedCta, type CtaCopy } from "@/content/copy/shared";
+import { getCopy } from "@/lib/cms/content";
 
 /**
  * Closing call to action, after GrowSphere's full-width blue statement band: the big statement sits on the main
  * blue, the smaller text on the deep blue it fades into, and the band opens out to the full width on scroll.
- * Place it last on a page, just above the footer.
+ * Place it last on a page, just above the footer. Its text is the shared block (content/copy/shared.ts) unless the
+ * page passes its own (a ctaBlock of its own); the button's destination stays in the code.
  */
-export function CtaBand({
-  eyebrow = "Find my solution",
-  title = (
-    <>
-      Need help choosing?
-      <br className="hidden sm:block" /> We’ll recommend the right system.
-    </>
-  ),
-  description = "Tell us your location, water source, customer type and preferred solution. LUSAKO recommends the appropriate system.",
-  href = "/find-my-solution",
-  buttonLabel = "Find my solution",
-}: {
-  eyebrow?: ReactNode;
-  title?: ReactNode;
-  description?: ReactNode;
-  href?: string;
-  buttonLabel?: string;
-}) {
+export async function CtaBand({ copy, href = "/find-my-solution" }: { copy?: CtaCopy; href?: string }) {
+  const { eyebrow, title, description, button } = copy ?? (await getCopy(sharedCta));
   return (
     <section className="pt-6 lg:pt-8">
       <div
@@ -45,13 +31,18 @@ export function CtaBand({
               {eyebrow}
             </p>
             <h2 data-split className="split mt-5 font-display text-[length:clamp(2rem,1.3rem+2.2vw,2.75rem)] leading-[1.1] font-bold tracking-[-0.025em]">
-              {splitWords(title)}
+              {splitWords(
+                <>
+                  {title[0]}
+                  <br className="hidden sm:block" /> {title[1]}
+                </>,
+              )}
             </h2>
           </div>
           <div data-reveal="up" className="flex flex-col gap-8 lg:col-span-4 lg:pb-2">
             <p className="max-w-md text-lead text-white">{description}</p>
             <ButtonLink href={href} variant="white" size="lg" arrow className="w-full sm:w-fit">
-              {buttonLabel}
+              {button}
             </ButtonLink>
           </div>
         </Container>

@@ -2,28 +2,36 @@ import Image from "next/image";
 import Link from "next/link";
 import { WaveLines } from "@/components/ui/decor";
 import { Pill } from "@/components/ui/pill";
+import { purifiersCard } from "@/content/copy/purifiers-card";
 import { productPriceFrom, productRentalFrom, productTypeLabel, type Product } from "@/content/products";
 import { cn } from "@/lib/cn";
 import { formatLKR } from "@/lib/format";
 
+/** The card's tile wording (content/copy/purifiers.ts). */
+export type ProductCardCopy = typeof purifiersCard.defaults;
+
 /**
  * Catalogue card in the StomDent "doctor card" style: outlined, the product on a pale-blue panel, then Buy and
- * Rent side by side (brief §5). The whole card links to the product. `showPrices={false}` keeps prices off the
- * home page (client request); the catalogue and product pages show them.
+ * Rent side by side (brief §5). Each tile shows its from-price once the admin switches one on, and asks for a quote
+ * until then (client, October 2026). The whole card links to the product.
  */
 export function ProductCard({
   product,
   className,
   sizes = "(min-width: 1024px) 340px, 80vw",
   showPrices = true,
+  copy = purifiersCard.defaults,
 }: {
   product: Product;
   className?: string;
   sizes?: string;
+  /** false keeps "Get a quote" even when the product has shown prices (the home page, unless the admin allows it). */
   showPrices?: boolean;
+  /** The tiles' wording from Page text; server parents pass it in, the defaults stand in elsewhere. */
+  copy?: ProductCardCopy;
 }) {
-  const price = productPriceFrom(product);
-  const rent = productRentalFrom(product);
+  const price = showPrices ? productPriceFrom(product) : null;
+  const rent = showPrices ? productRentalFrom(product) : null;
   const several = product.variants.length > 1;
 
   return (
@@ -61,27 +69,39 @@ export function ProductCard({
             href={`/contact?type=buy&model=${product.slug}#quote`}
             className="rounded-card-sm bg-deep px-4 py-3 text-white transition-colors hover:bg-deep-hover"
           >
-            <span className="block text-xs text-white">{showPrices && price && several ? "Buy from" : "Buy"}</span>
-            <span className="block text-sm font-semibold">
-              {!showPrices ? "Own this system" : price ? `${formatLKR(price)} + VAT` : "Get a price"}
-            </span>
+            {price !== null ? (
+              <>
+                <span className="block text-xs text-white">{several ? copy.buyFrom : copy.buy}</span>
+                <span className="block text-sm font-semibold">{`${formatLKR(price)} + VAT`}</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden className="block text-xs text-white">{copy.buy}</span>
+                <span className="block text-sm font-semibold">
+                  {copy.quote}<span className="sr-only"> to buy the {product.name}</span>
+                </span>
+              </>
+            )}
           </Link>
           <Link
             href={`/contact?type=rental&preferredMachine=${product.slug}#quote`}
             className="rounded-card-sm border border-line px-4 py-3 transition-colors hover:border-deep hover:bg-tint"
           >
-            <span className="block text-xs text-muted">{showPrices && rent ? "Rent from" : "Rent"}</span>
-            <span className="block text-sm font-semibold text-deep">
-              {!showPrices ? (
-                "Monthly plan"
-              ) : rent ? (
-                <>
+            {rent !== null ? (
+              <>
+                <span className="block text-xs text-muted">{copy.rentFrom}</span>
+                <span className="block text-sm font-semibold text-deep">
                   {formatLKR(rent)}/mo <span className="text-xs font-normal whitespace-nowrap text-muted">+ VAT</span>
-                </>
-              ) : (
-                "Ask about rental"
-              )}
-            </span>
+                </span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden className="block text-xs text-muted">{copy.rent}</span>
+                <span className="block text-sm font-semibold text-deep">
+                  {copy.quote}<span className="sr-only"> to rent the {product.name}</span>
+                </span>
+              </>
+            )}
           </Link>
         </div>
       </div>

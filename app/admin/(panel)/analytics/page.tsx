@@ -41,7 +41,7 @@ const eventLabels: Record<string, string> = {
   cta_click: "Call-to-action clicks",
   file_download: "Downloads",
   product_view: "Product page views",
-  rental_quote_calculated: "Rental calculator used",
+  rental_quote_calculated: "Rental quote builder used",
   find_solution_completed: "Find my solution completed",
 };
 

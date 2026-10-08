@@ -294,9 +294,21 @@ export function productOptions(list: Pick<Product, "slug" | "name">[] = defaultP
   return [...list.map((product) => ({ value: product.slug, label: product.name })), { value: "not-sure", label: "Not sure yet" }];
 }
 
-/** A form's fields with the catalogue filled into the product pickers. */
-export function resolveFields(type: LeadFormType, catalogue: FieldOption[] = productOptions()): FormField[] {
-  return leadForms[type].fields.map((field) => (field.optionsFrom === "products" ? { ...field, options: catalogue } : field));
+/** The service form's AMC choices named after the current plans, by option value (the values never change). */
+export function amcOptionLabels(plans: { serviceType: string; name: string }[]): Record<string, string> {
+  return Object.fromEntries(plans.map((plan) => [plan.serviceType, `AMC: ${plan.name}`]));
+}
+
+/**
+ * A form's fields with the catalogue filled into the product pickers, and any option renamed in the admin (the AMC
+ * plans) relabelled. Option values stay as they are, so the server's checks and saved inquiries are unaffected.
+ */
+export function resolveFields(type: LeadFormType, catalogue: FieldOption[] = productOptions(), labels: Record<string, string> = {}): FormField[] {
+  return leadForms[type].fields.map((field) => {
+    if (field.optionsFrom === "products") return { ...field, options: catalogue };
+    if (!field.options?.some((option) => option.value in labels)) return field;
+    return { ...field, options: field.options.map((option) => (option.value in labels ? { ...option, label: labels[option.value] } : option)) };
+  });
 }
 
 /**

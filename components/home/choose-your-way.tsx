@@ -1,19 +1,42 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import { ArrowCircle } from "@/components/ui/arrow-circle";
 import { ButtonArrow } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { homeChooseYourWay } from "@/content/copy/home";
+import { runs } from "@/content/copy/schema";
 import type { Product } from "@/content/products";
+import { getCopy } from "@/lib/cms/content";
 
-/** "Find my solution" set round a ring (StomDent's round "find out prices" cell); the ring turns slowly. */
-function SolutionCircle() {
+/**
+ * The heading with each run of words kept together on one line (`inline-block`): the *marked* run in brand blue,
+ * the words around it plain, the spaces between them left free to wrap.
+ */
+function heading(text: string) {
+  return runs(text).map((run, i) => {
+    if (run.marked) return <Highlight key={i} className="inline-block">{run.text}</Highlight>;
+    const [, before, words, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(run.text)!;
+    if (!words) return run.text;
+    return (
+      <Fragment key={i}>
+        {before}
+        <span className="inline-block">{words}</span>
+        {after}
+      </Fragment>
+    );
+  });
+}
+
+/** The label set round a ring (StomDent's round "find out prices" cell); the ring turns slowly. */
+function SolutionCircle({ label }: { label: string }) {
   return (
     <Link
       href="/find-my-solution"
-      aria-label="Find my solution"
+      aria-label={label}
       className="group/circle relative mx-auto grid aspect-square w-full max-w-[19rem] place-items-center overflow-hidden rounded-full bg-brand text-white transition-transform duration-500 ease-emph hover:scale-[1.03] md:max-w-none lg:w-[88%]"
     >
       <svg viewBox="0 0 200 200" aria-hidden className="absolute inset-[6%] animate-spin-slow motion-reduce:animate-none">
@@ -21,7 +44,7 @@ function SolutionCircle() {
           <path id="solution-ring" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" />
         </defs>
         <text className="fill-white font-display text-[15.5px] font-bold tracking-[0.2em] uppercase">
-          <textPath href="#solution-ring">Find my solution • Find my solution •</textPath>
+          <textPath href="#solution-ring">{`${label} • ${label} •`}</textPath>
         </text>
       </svg>
       <span className="grid size-20 place-items-center rounded-full bg-white text-deep transition-transform duration-500 ease-emph group-hover/circle:rotate-45 sm:size-24">
@@ -35,20 +58,18 @@ function SolutionCircle() {
 
 /**
  * BUY | RENT | CARE (+ CORPORATE) as the StomDent service grid: outlined cards, one solid feature, one circle. No
- * prices here: the client keeps rental prices to the product and rental pages.
+ * prices here: the client keeps them to the product and rental pages. Its text is the home.chooseYourWay block; where
+ * each card leads stays here.
  */
-export function ChooseYourWay({ featured }: { featured?: Product }) {
+export async function ChooseYourWay({ featured }: { featured?: Product }) {
+  const copy = await getCopy(homeChooseYourWay);
 
   return (
     <section className="py-16 md:py-20 lg:py-28">
       <Container>
         <SectionHeading
-          eyebrow="Choose your way"
-          title={
-            <>
-              <span className="inline-block">Buy it. Rent it.</span> <Highlight className="inline-block">We take care of it.</Highlight>
-            </>
-          }
+          eyebrow={copy.eyebrow}
+          title={heading(copy.title)}
         />
 
         <ul className="mt-12 grid gap-4 md:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5">
@@ -58,14 +79,12 @@ export function ChooseYourWay({ featured }: { featured?: Product }) {
               className="group/card card-line grid h-full gap-6 p-6 transition-colors duration-300 hover:border-brand hover:bg-tint sm:grid-cols-[1.1fr_1fr] sm:p-8 lg:min-h-[24rem]"
             >
               <div className="flex flex-col">
-                <h3 className="font-display text-[2rem] leading-none font-bold text-brand">Buy</h3>
-                <p className="mt-4 font-display text-xl font-semibold text-ink">Own your water purification system.</p>
-                <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-muted">
-                  Invest once in a LUSAKO purification system and enjoy reliable purified water for years.
-                </p>
+                <h3 className="font-display text-[2rem] leading-none font-bold text-brand">{copy.buyTitle}</h3>
+                <p className="mt-4 font-display text-xl font-semibold text-ink">{copy.buyLine}</p>
+                <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-muted">{copy.buyText}</p>
                 <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold text-deep">
                   <ArrowCircle variant="deep" className="size-10" />
-                  Explore purifiers
+                  {copy.buyLink}
                 </span>
               </div>
               <div className="relative min-h-60 overflow-hidden rounded-card bg-tint-2">
@@ -89,13 +108,11 @@ export function ChooseYourWay({ featured }: { featured?: Product }) {
               className="group/card relative flex h-full min-h-[19rem] flex-col overflow-hidden rounded-card bg-brand p-6 text-white sm:p-8 md:min-h-[22rem]"
             >
               <WaveLines lines={4} className="absolute inset-x-0 -bottom-6 h-1/2 w-full text-white/35" />
-              <h3 className="relative font-display text-[2rem] leading-none font-bold">Rent</h3>
-              <p className="relative mt-4 font-display text-xl leading-snug font-bold">Complete hydration for one predictable monthly payment.</p>
-              <p className="relative mt-5 w-fit rounded-full bg-white px-3.5 py-1.5 text-[13px] font-semibold text-deep">
-                Equipment and service included
-              </p>
+              <h3 className="relative font-display text-[2rem] leading-none font-bold">{copy.rentTitle}</h3>
+              <p className="relative mt-4 font-display text-xl leading-snug font-bold">{copy.rentLine}</p>
+              <p className="relative mt-5 w-fit rounded-full bg-white px-3.5 py-1.5 text-[13px] font-semibold text-deep">{copy.rentPill}</p>
               <span className="relative mt-auto flex w-fit items-center gap-3 rounded-full bg-white py-1.5 pr-1.5 pl-5 text-sm font-semibold text-deep">
-                Explore rental
+                {copy.rentLink}
                 <ButtonArrow variant="white" size="sm" />
               </span>
             </Link>
@@ -106,14 +123,12 @@ export function ChooseYourWay({ featured }: { featured?: Product }) {
               href="/service-support"
               className="group/card card-line flex h-full flex-col p-6 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-8 md:min-h-[22rem]"
             >
-              <h3 className="font-display text-[2rem] leading-none font-bold text-brand">Care</h3>
-              <p className="mt-4 font-display text-xl leading-snug font-semibold text-ink">
-                Professional installation, maintenance and technical support.
-              </p>
-              <p className="mt-3 text-sm font-medium text-muted">LUSAKO Care</p>
+              <h3 className="font-display text-[2rem] leading-none font-bold text-brand">{copy.careTitle}</h3>
+              <p className="mt-4 font-display text-xl leading-snug font-semibold text-ink">{copy.careLine}</p>
+              <p className="mt-3 text-sm font-medium text-muted">{copy.careNote}</p>
               <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold text-deep">
                 <ArrowCircle variant="deep" className="size-10" />
-                Service &amp; support
+                {copy.careLink}
               </span>
             </Link>
           </li>
@@ -123,18 +138,18 @@ export function ChooseYourWay({ featured }: { featured?: Product }) {
               href="/hydration-solutions/corporate"
               className="group/card relative flex h-full flex-col overflow-hidden rounded-card bg-ink p-6 text-white transition-colors duration-300 hover:bg-deep sm:p-8 md:min-h-[22rem]"
             >
-              <h3 className="font-display text-[2rem] leading-none font-bold">Corporate</h3>
-              <p className="mt-4 font-display text-xl leading-snug font-semibold">One partner for your workplace hydration, across one site or many.</p>
-              <p className="mt-3 text-sm font-medium text-mist">Corporate Hydration Solutions</p>
+              <h3 className="font-display text-[2rem] leading-none font-bold">{copy.corporateTitle}</h3>
+              <p className="mt-4 font-display text-xl leading-snug font-semibold">{copy.corporateLine}</p>
+              <p className="mt-3 text-sm font-medium text-mist">{copy.corporateNote}</p>
               <span className="mt-auto flex items-center gap-3 pt-8 text-sm font-semibold">
                 <ArrowCircle variant="white" className="size-10" />
-                Talk to our team
+                {copy.corporateLink}
               </span>
             </Link>
           </li>
 
           <li className="flex items-center justify-center py-4 md:py-0">
-            <SolutionCircle />
+            <SolutionCircle label={copy.ring} />
           </li>
         </ul>
       </Container>

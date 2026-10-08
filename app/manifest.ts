@@ -1,12 +1,18 @@
 import type { MetadataRoute } from "next";
+import { chromeSite } from "@/content/copy/chrome";
 import { site } from "@/content/site";
+import { getCopy } from "@/lib/cms/content";
 
-/** Lets phones save the site to the home screen with the LUSAKO mark and colours. */
-export default function manifest(): MetadataRoute.Manifest {
+/**
+ * Lets phones save the site to the home screen with the LUSAKO mark and colours. The description is the website
+ * description from Page text; the read is cached, so the manifest stays static.
+ */
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const { description } = await getCopy(chromeSite);
   return {
     name: `${site.name} | ${site.descriptor}`,
     short_name: site.name,
-    description: site.description,
+    description,
     start_url: "/",
     display: "browser",
     background_color: "#f6fafe",

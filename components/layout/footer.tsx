@@ -7,8 +7,9 @@ import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
 import { Logo } from "@/components/ui/logo";
 import { SocialIcons } from "@/components/ui/social-icons";
+import { chromeContactLabels, chromeFooter } from "@/content/copy/chrome";
 import { footerNav, site, type NavLink } from "@/content/site";
-import { getProducts, getSiteSettings } from "@/lib/cms/content";
+import { getCopy, getProducts, getSiteSettings } from "@/lib/cms/content";
 import { whatsappHref } from "@/lib/contact";
 import { cn } from "@/lib/cn";
 
@@ -30,9 +31,15 @@ function FooterColumn({ title, links }: { title: string; links: NavLink[] }) {
   );
 }
 
+/** The footer. Its wording is the footer block (content/copy/chrome.ts); the links, tagline and company name stay here. */
 export async function Footer() {
-  const [{ contact, social }, products] = await Promise.all([getSiteSettings(), getProducts()]);
-  const rows = contactRows(contact);
+  const [{ contact, social }, products, copy, { labels }] = await Promise.all([
+    getSiteSettings(),
+    getProducts(),
+    getCopy(chromeFooter),
+    getCopy(chromeContactLabels),
+  ]);
+  const rows = contactRows(contact, labels);
 
   return (
     <footer data-surface="dark" className="relative z-10 overflow-hidden bg-ink text-white">
@@ -49,21 +56,20 @@ export async function Footer() {
               className="h-auto w-[210px]"
             />
             <p className="mt-8 font-display text-2xl leading-snug font-semibold">Better water. Better way.</p>
-            <p className="mt-3 max-w-sm text-mist">
-              Water purification and hydration solutions for homes, offices and organisations across Sri Lanka.
-            </p>
+            <p className="mt-3 max-w-sm text-mist">{copy.text}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/contact" variant="white" arrow>
-                Contact / Get a quote
+                {copy.contactButton}
               </ButtonLink>
               {contact.whatsappSales && (
                 <a
-                  href={whatsappHref(contact.whatsappSales)}
+                  href={whatsappHref(contact.whatsappSales, contact.whatsappGreeting)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 px-6 text-sm font-semibold transition-colors hover:border-brand hover:text-brand"
                 >
-                  <MessageCircle aria-hidden className="size-4" /> WhatsApp
+                  <MessageCircle aria-hidden className="size-4" />
+                  {` ${copy.whatsappButton}`}
                 </a>
               )}
             </div>
@@ -71,11 +77,11 @@ export async function Footer() {
           </div>
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:col-span-8">
             <FooterColumn
-              title="Water purifiers"
+              title={copy.columns[0]}
               links={products.map((product) => ({ label: product.name, href: `/water-purifiers/${product.slug}` }))}
             />
-            {footerNav.map((column) => (
-              <FooterColumn key={column.title} {...column} />
+            {footerNav.map((column, i) => (
+              <FooterColumn key={column.title} title={copy.columns[i + 1]} links={column.links} />
             ))}
           </div>
         </div>
@@ -109,7 +115,7 @@ export async function Footer() {
           <p>
             © {new Date().getFullYear()} {site.legalName}. All rights reserved.
           </p>
-          <p className="tracking-[0.22em]">BUY • RENT • HYDRATE • CARE</p>
+          <p className="tracking-[0.22em]">{copy.closing}</p>
         </div>
       </Container>
     </footer>

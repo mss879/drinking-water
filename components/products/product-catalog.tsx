@@ -2,9 +2,11 @@
 
 import { MessageCircle, SearchX } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
-import { ProductCard } from "@/components/products/product-card";
+import { ProductCard, type ProductCardCopy } from "@/components/products/product-card";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/icon-badge";
+import type { purifiersCatalogueMessages } from "@/content/copy/purifiers";
+import { fill } from "@/content/copy/schema";
 import type { Filtration } from "@/content/pricing";
 import { isProductType, productFiltrations, productTypes, type Product, type ProductType } from "@/content/products";
 import { cn } from "@/lib/cn";
@@ -12,6 +14,8 @@ import { cn } from "@/lib/cn";
 type TypeFilter = ProductType | "all";
 type PurificationFilter = Filtration | "all";
 type Option<T extends string> = { value: T; label: string };
+/** The catalogue's link and messages from Page text (content/copy/purifiers.ts). */
+type CatalogueCopy = typeof purifiersCatalogueMessages.defaults;
 
 const typeOptions: Option<TypeFilter>[] = [
   { value: "all", label: "All" },
@@ -35,15 +39,15 @@ function matches(product: Product, type: TypeFilter, purification: PurificationF
 }
 
 /** Explains an empty combination using the catalogue itself, e.g. "Sparkling purifiers are available with UF purification." */
-function emptyReason(products: Product[], type: TypeFilter) {
+function emptyReason(products: Product[], type: TypeFilter, copy: CatalogueCopy) {
   const group = productTypes.find((t) => t.id === type);
-  if (!group) return "Try another type or purification.";
+  if (!group) return copy.noMatchAny;
   const available = Array.from(
     new Set(products.filter((product) => product.types.includes(group.id)).flatMap((product) => productFiltrations(product))),
   );
   return available.length
-    ? `${group.plural} are available with ${available.join(" or ")} purification.`
-    : `${group.plural} don’t use UF or RO purification.`;
+    ? fill(copy.noMatchReason, { types: group.plural, options: available.join(" or ") })
+    : fill(copy.noMatchNoPurification, { types: group.plural });
 }
 
 function FilterGroup<T extends string>({
@@ -95,16 +99,21 @@ function FilterGroup<T extends string>({
 /**
  * The Direct Sales catalogue: filter by type and UF / RO (brief Doc 2 §15), every product with Buy and Rent side by
  * side. `?type=under-sink` (the navigation's category links) opens on that category. A category with nothing listed
- * yet offers a conversation instead of an empty grid.
+ * yet offers a conversation instead of an empty grid. Its wording comes in from the page (Page text).
  */
 export function ProductCatalog({
   products,
   className,
   purificationHelpHref,
+  copy,
+  cardCopy,
 }: {
   products: Product[];
   className?: string;
   purificationHelpHref?: string;
+  copy: CatalogueCopy;
+  /** The cards' tile wording. */
+  cardCopy?: ProductCardCopy;
 }) {
   const [type, setType] = useState<TypeFilter>("all");
   const [purification, setPurification] = useState<PurificationFilter>("all");
@@ -130,12 +139,12 @@ export function ProductCatalog({
 
   const status =
     onRequest
-      ? `${group.plural} are available on request`
+      ? fill(copy.statusOnRequest, { types: group.plural })
       : visible.length === 0
-      ? "No products match these filters"
+      ? copy.statusNone
       : visible.length === total
-        ? `Showing all ${total} products`
-        : `Showing ${visible.length} of ${total} products`;
+        ? fill(copy.statusAll, { total })
+        : fill(copy.statusSome, { count: visible.length, total });
 
   const chooseType = (value: TypeFilter) => {
     setType(value);
@@ -180,7 +189,7 @@ export function ProductCatalog({
               href={purificationHelpHref}
               className="inline-flex h-11 items-center px-2 text-sm font-medium text-ink underline decoration-brand underline-offset-4 transition-colors hover:decoration-deep"
             >
-              What’s the difference?
+              {copy.helpLink}
             </a>
           )}
         </FilterGroup>
@@ -195,20 +204,18 @@ export function ProductCatalog({
           <IconBadge variant="white" size="lg" framed>
             <MessageCircle />
           </IconBadge>
-          <h3 className="mt-6 font-display text-h3 font-bold text-ink">{group.plural}, on request</h3>
-          <p className="mt-2 max-w-md text-muted">
-            Tell us about your space and your water, and our team will recommend the right {group.label.toLowerCase()} model and price.
-          </p>
+          <h3 className="mt-6 font-display text-h3 font-bold text-ink">{fill(copy.onRequestTitle, { types: group.plural })}</h3>
+          <p className="mt-2 max-w-md text-muted">{fill(copy.onRequestBody, { type: group.label.toLowerCase() })}</p>
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
             <ButtonLink
               href={`/contact?${new URLSearchParams({ type: "buy", message: `I’m interested in ${group.plural.toLowerCase()}.` })}#quote`}
               variant="primary"
               arrow
             >
-              Ask about {group.plural.toLowerCase()}
+              {fill(copy.onRequestButton, { types: group.plural.toLowerCase() })}
             </ButtonLink>
             <Button type="button" variant="outline" onClick={clearFilters}>
-              See all purifiers
+              {copy.onRequestAllButton}
             </Button>
           </div>
         </div>
@@ -220,7 +227,7 @@ export function ProductCatalog({
               className={cn(changed && "animate-fade-up motion-reduce:animate-none")}
               style={changed ? { animationDelay: `${i * 60}ms` } : undefined}
             >
-              <ProductCard product={product} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" />
+              <ProductCard product={product} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" copy={cardCopy} />
             </li>
           ))}
         </ul>
@@ -229,15 +236,15 @@ export function ProductCatalog({
           <IconBadge variant="tint" size="lg">
             <SearchX />
           </IconBadge>
-          <h3 className="mt-6 font-display text-h3 font-bold text-ink">No matches for that combination</h3>
-          <p className="mt-2 max-w-md text-muted">{emptyReason(products, type)}</p>
+          <h3 className="mt-6 font-display text-h3 font-bold text-ink">{copy.noMatchTitle}</h3>
+          <p className="mt-2 max-w-md text-muted">{emptyReason(products, type, copy)}</p>
           <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
             <Button type="button" variant="primary" onClick={clearFilters}>
-              Clear filters
+              {copy.clearButton}
             </Button>
             {group && (
               <Button type="button" variant="outline" onClick={showWholeType}>
-                Show all {group.plural.toLowerCase()}
+                {fill(copy.showTypeButton, { types: group.plural.toLowerCase() })}
               </Button>
             )}
           </div>

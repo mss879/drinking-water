@@ -1,7 +1,7 @@
 # Supabase — the website's backend
 
 The admin at **/admin** (dashboard, inquiries, CRM pipeline, web analytics, and the Website section: products, parts,
-client logos, photos, contact details and the blog) runs on Supabase: its database, sign-in and file storage. The public
+client logos, website images, contact details and the blog) runs on Supabase: its database, sign-in and file storage. The public
 website keeps working without it; forms then go to `LEAD_WEBHOOK_URL` (or the server log), the blog shows an empty
 state and every page shows the built-in content from `content/`.
 
@@ -21,6 +21,8 @@ state and every page shows the built-in content from `content/`.
    | `20261001120400_blog.sql` | blog posts and the public `blog-images` storage bucket |
    | `20261001120500_dashboard.sql` | the dashboard's summary function |
    | `20261003120000_website_content.sql` | the Website section: products, parts, client logos, settings (contact, social, photos, AMC prices) and the public `site-media` bucket, starting from what the website shows |
+   | `20261008120000_final_changes.sql` | the client's final changes: LUSAKO's Facebook, Instagram, LinkedIn and TikTok links (unless links were already added in the admin), buy and rental prices taken out of the product catalogue (the website now asks for a quote), and a rate limit on the website's forms |
+   | `20261009120000_editable_website.sql` | everything editable: every price with its own show switch (hidden prices can't be read by the public; all start hidden, with the old amounts kept), page text, FAQs and client stories (starting from today's), extra product fields, and the KOKO / recommended-products settings |
 
    Each file can safely be run again. If you use the Supabase CLI instead, `supabase db push` applies them in order.
 3. **Create the admin account.** Authentication → Users → **Add user** → email and password, tick

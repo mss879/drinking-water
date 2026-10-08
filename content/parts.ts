@@ -8,6 +8,10 @@ import type { BrandIconName } from "./brand-icons";
  */
 export type PartCategory = "filters" | "spare-parts" | "accessories";
 
+/**
+ * The three groups. Their ids, order and icons are fixed; the title, short name and body here are the defaults the
+ * parts page shows until the admin's Page text changes them (content/copy/parts.ts, "parts.categories").
+ */
 export const partCategories: { id: PartCategory; title: string; short: string; body: string; icon: BrandIconName }[] = [
   {
     id: "filters",
@@ -39,7 +43,7 @@ export type Part = {
   description: string;
   /** A path under /public or an uploaded image's address. */
   image: string | null;
-  /** Standard price in LKR, excluding applicable taxes; null shows "Ask for a price". */
+  /** Standard price in LKR, excluding applicable taxes; null shows "Ask for a price" (Page text › Filters, parts & accessories › Part lists). */
   price: number | null;
   /** Typical life in months (filters); intervals vary with water quality, usage and operating conditions. */
   life: number | null;

@@ -3,42 +3,63 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, MessageCircle, ScanSearch } from "lucide-react";
 import { CtaBand } from "@/components/sections/cta-band";
+import { partsCategories, partsCta, partsHelp, partsHero, partsList, partsSeo, partsStrip } from "@/content/copy/parts";
 import { HeroStrip, PageHero } from "@/components/sections/page-hero";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { WaveLines } from "@/components/ui/decor";
-import { Highlight } from "@/components/ui/highlight";
 import { IconBadge } from "@/components/ui/icon-badge";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { fill } from "@/content/copy/schema";
 import { partCategories, type Part } from "@/content/parts";
-import { getAmc, getParts, getSiteSettings } from "@/lib/cms/content";
+import { getAmc, getCopy, getParts, getPhotos, getSiteSettings } from "@/lib/cms/content";
 import { whatsappHref } from "@/lib/contact";
 import { formatLKR, keepLastWords } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Filters, Parts & Accessories",
-  description:
-    "Genuine LUSAKO water filter cartridges with prices: sediment, carbon, UF, RO and mineral filters, plus purifier spare parts and accessories, fitted for you.",
-  path: "/service-support/parts",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(partsSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/service-support/parts" });
+}
 
-/** The service form, set to "Filters, spare parts or accessories", with the part named in the message. */
-function partHref(part?: Pick<Part, "name">) {
+/** The service form, set to "Filters, spare parts or accessories", with `issue` (the part asked about) as its message. */
+function partHref(issue?: string) {
   const query = new URLSearchParams({ type: "service", serviceType: "parts" });
-  if (part) query.set("issue", `I’d like a price for: ${part.name}.`);
+  if (issue) query.set("issue", issue);
   return `/contact?${query}#quote`;
 }
 
+/** Fills {tokens} in as separate runs of text, the way a value written into JSX renders. */
+function withValues(text: string, values: Record<string, string | number>): string[] {
+  return text
+    .split(/(\{[a-zA-Z]+\})/)
+    .filter(Boolean)
+    .map((run) => (/^\{[a-zA-Z]+\}$/.test(run) ? fill(run, values) : run));
+}
+
 export default async function PartsPage() {
-  const [parts, { contact }, amc] = await Promise.all([getParts(), getSiteSettings(), getAmc()]);
+  const [parts, { contact }, amc, photos, hero, strip, groups, list, help, cta] = await Promise.all([
+    getParts(),
+    getSiteSettings(),
+    getAmc(),
+    getPhotos(),
+    getCopy(partsHero),
+    getCopy(partsStrip),
+    getCopy(partsCategories),
+    getCopy(partsList),
+    getCopy(partsHelp),
+    getCopy(partsCta),
+  ]);
+  // The groups stay fixed (ids, order, icons); their names and descriptions come from Page text.
+  const categories = partCategories.map((category, i) => ({ ...category, ...groups.categories[i] }));
+  const enquiryHref = (name: string) => partHref(fill(list.enquiry, { part: name }));
   const filterOff = Math.max(...amc.plans.map((plan) => plan.filterDiscount));
   const partsOff = Math.max(...amc.plans.map((plan) => plan.partsDiscount));
   const discountNote = (category: Part["category"]) => {
-    if (category === "filters" && filterOff > 0) return ` AMC customers save up to ${filterOff}% on eligible filters.`;
-    if (category === "spare-parts" && partsOff > 0) return ` AMC customers save up to ${partsOff}% on eligible spare parts.`;
+    if (category === "filters" && filterOff > 0) return ` ${fill(list.filterDiscount, { percent: filterOff })}`;
+    if (category === "spare-parts" && partsOff > 0) return ` ${fill(list.partsDiscount, { percent: partsOff })}`;
     return "";
   };
 
@@ -49,27 +70,23 @@ export default async function PartsPage() {
           { label: "Service & support", href: "/service-support" },
           { label: "Filters, parts & accessories", href: "/service-support/parts" },
         ]}
-        eyebrow="Genuine LUSAKO parts"
-        title={["Filters, parts", <>&amp; <Highlight>accessories</Highlight></>]}
-        description="Genuine filter cartridges, spare parts and accessories that keep your purifier performing, fitted by LUSAKO technicians if you need us."
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
         actions={[
-          { label: "Ask for a part", href: partHref() },
+          { label: hero.askButton, href: partHref() },
           ...(contact.whatsappSales
-            ? [{ label: "WhatsApp us", href: whatsappHref(contact.whatsappSales, "Hi LUSAKO, I’m looking for a filter or spare part."), icon: MessageCircle, external: true, srLabel: "(opens WhatsApp)" }]
+            ? [{ label: hero.whatsappButton, href: whatsappHref(contact.whatsappSales, hero.whatsappMessage), icon: MessageCircle, external: true, srLabel: "(opens WhatsApp)" }]
             : []),
         ]}
-        image={{ src: heroImages.parts, position: "object-right" }}
+        image={{ src: photos.pageParts.src, position: "object-right" }}
       />
-      <HeroStrip
-        title="The right part for your model"
-        description="Tell us your model and serial number and we’ll match the part, or fit it for you."
-        pills={partCategories.map((category) => category.short)}
-      />
+      <HeroStrip title={strip.title} description={strip.description} pills={categories.map((category) => category.short)} />
 
       <section aria-label="Categories" className="pt-12 md:pt-16 lg:pt-20">
         <Container>
           <ul className="grid gap-4 md:grid-cols-3 lg:gap-5">
-            {partCategories.map((category) => (
+            {categories.map((category) => (
               <li key={category.id}>
                 <Link
                   href={`#${category.id}`}
@@ -92,7 +109,7 @@ export default async function PartsPage() {
         </Container>
       </section>
 
-      {partCategories.map((category) => {
+      {categories.map((category) => {
         const items = parts.filter((part) => part.category === category.id);
         return (
           <section key={category.id} id={category.id} aria-labelledby={`${category.id}-title`} className="scroll-mt-24 py-16 md:py-20 lg:py-24">
@@ -103,8 +120,8 @@ export default async function PartsPage() {
                 title={<span id={`${category.id}-title`}>{category.title}</span>}
                 description={category.body}
                 action={
-                  <ButtonLink href={partHref({ name: category.title.toLowerCase() })} variant="outline" arrow>
-                    Ask about {category.short.toLowerCase()}
+                  <ButtonLink href={enquiryHref(category.title.toLowerCase())} variant="outline" arrow>
+                    {withValues(list.askAbout, { category: category.short.toLowerCase() })}
                   </ButtonLink>
                 }
               />
@@ -113,7 +130,7 @@ export default async function PartsPage() {
                   {items.map((part) => (
                     <li key={part.id}>
                       <Link
-                        href={partHref(part)}
+                        href={enquiryHref(part.name)}
                         className="group/card card-line flex h-full items-center gap-5 p-4 pr-5 transition-colors duration-300 hover:border-brand hover:bg-tint sm:p-5"
                       >
                         <span className="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-card-sm bg-tint-2">
@@ -127,8 +144,8 @@ export default async function PartsPage() {
                           <span className="block font-display text-lg leading-snug font-bold text-ink">{keepLastWords(part.name)}</span>
                           <span className="mt-1 block text-sm leading-relaxed text-muted">{keepLastWords(part.description)}</span>
                           <span className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
-                            <span className="font-semibold text-deep">{part.price ? formatLKR(part.price) : "Ask for a price"}</span>
-                            {part.life && <span className="text-[13px] text-muted">Typical life about {part.life} months</span>}
+                            <span className="font-semibold text-deep">{part.price ? formatLKR(part.price) : list.noPrice}</span>
+                            {part.life && <span className="text-[13px] text-muted">{withValues(list.life, { months: part.life })}</span>}
                           </span>
                         </span>
                       </Link>
@@ -137,17 +154,17 @@ export default async function PartsPage() {
                 </ul>
               ) : (
                 <p className="mt-10 rounded-card-sm border border-dashed border-line p-6 text-muted">
-                  Ask our team for the {category.short.toLowerCase()} that fit your purifier.
+                  {withValues(list.empty, { category: category.short.toLowerCase() })}
                 </p>
               )}
               {items.some((part) => part.price || part.life) && (
                 <p className="mt-5 text-sm leading-relaxed text-muted">
-                  {items.some((part) => part.price) && "Standard prices, excluding applicable taxes."}
-                  {items.some((part) => part.life) && " Replacement intervals vary with water quality, usage and operating conditions."}
+                  {items.some((part) => part.price) && list.pricesNote}
+                  {items.some((part) => part.life) && ` ${list.lifeNote}`}
                   {discountNote(category.id)}{" "}
                   {discountNote(category.id) && (
                     <Link href="/service-support/amc#plans" className="font-semibold text-deep underline-offset-4 hover:underline">
-                      See AMC plans
+                      {list.amcLink}
                     </Link>
                   )}
                 </p>
@@ -166,32 +183,18 @@ export default async function PartsPage() {
                 <ScanSearch />
               </IconBadge>
               <div>
-                <h2 className="text-h2 font-semibold text-ink">Not sure which part you need?</h2>
-                <p className="mt-3 text-lead text-muted">
-                  Send us the model and serial number from your purifier. Our technicians will identify the right part, and fit it for you if
-                  you like.
-                </p>
+                <h2 className="text-h2 font-semibold text-ink">{help.title}</h2>
+                <p className="mt-3 text-lead text-muted">{help.body}</p>
               </div>
             </div>
             <ButtonLink href={partHref()} size="lg" arrow className="relative w-full sm:w-auto">
-              Ask for a part
+              {help.button}
             </ButtonLink>
           </div>
         </Container>
       </section>
 
-      <CtaBand
-        eyebrow="LUSAKO Care"
-        title={
-          <>
-            Filters due for a change?
-            <br className="hidden sm:block" /> Let us take care of it.
-          </>
-        }
-        description="An AMC plans filter changes and maintenance for the year ahead, so your purifier keeps performing."
-        href="/service-support/amc"
-        buttonLabel="See AMC plans"
-      />
+      <CtaBand copy={cta} href="/service-support/amc" />
     </>
   );
 }

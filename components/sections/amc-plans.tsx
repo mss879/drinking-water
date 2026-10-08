@@ -3,8 +3,19 @@ import { ButtonLink } from "@/components/ui/button";
 import { WaveLines } from "@/components/ui/decor";
 import { Pill } from "@/components/ui/pill";
 import { annualFee, dailyCost, recommendedPlan, timesAYear, visitsLabel, type AmcPlan } from "@/content/amc";
+import { amcPlanCards } from "@/content/copy/amc";
+import { fill } from "@/content/copy/schema";
+import { getCopy } from "@/lib/cms/content";
 import { cn } from "@/lib/cn";
 import { formatLKR, formatLKRCents, keepLastWords } from "@/lib/format";
+
+/** Fills {tokens} in as runs of text of their own, the way a value written into JSX renders between words. */
+export function withValues(text: string, values: Record<string, string | number>): string[] {
+  return text
+    .split(/(\{[a-zA-Z]+\})/)
+    .filter(Boolean)
+    .map((run) => (/^\{[a-zA-Z]+\}$/.test(run) ? fill(run, values) : run));
+}
 
 /** The service form, set to this plan, with the request already written. */
 export function amcEnquiryHref(plan: Pick<AmcPlan, "serviceType" | "name">) {
@@ -38,9 +49,21 @@ export function planFeatures(plan: AmcPlan) {
 
 /**
  * The three AMC plans (LUSAKO's AMC proposal) as StomDent cards: the recommended plan is the solid deep-blue feature,
- * the others are outlined. `compact` keeps the price and summary and leaves the full list to the AMC page.
+ * the others are outlined. `compact` keeps the price and summary and leaves the full list to the AMC page. The words
+ * around the figures are the "amc.planCards" block (content/copy/amc.ts), read here unless the page passes them.
  */
-export function AmcPlans({ plans, className, compact = false }: { plans: AmcPlan[]; className?: string; compact?: boolean }) {
+export async function AmcPlans({
+  plans,
+  copy,
+  className,
+  compact = false,
+}: {
+  plans: AmcPlan[];
+  copy?: typeof amcPlanCards.defaults;
+  className?: string;
+  compact?: boolean;
+}) {
+  const text = copy ?? (await getCopy(amcPlanCards));
   return (
     <ul className={cn("grid gap-4 lg:grid-cols-3 lg:gap-5", className)}>
       {plans.map((plan) => {
@@ -64,12 +87,12 @@ export function AmcPlans({ plans, className, compact = false }: { plans: AmcPlan
               <span className="font-display text-[clamp(2.25rem,1.8rem+1.4vw,2.75rem)] leading-none font-bold tracking-[-0.03em]">
                 {formatLKR(plan.monthly)}
               </span>
-              <span className={cn("text-sm font-semibold", featured ? "text-white/85" : "text-muted")}>/ month</span>
+              <span className={cn("text-sm font-semibold", featured ? "text-white/85" : "text-muted")}>{text.perMonth}</span>
             </p>
             <p className={cn("relative mt-2 text-sm leading-relaxed", featured ? "text-white/85" : "text-muted")}>
-              Annual fee {formatLKR(annualFee(plan))}
+              {withValues(text.annualFee, { price: formatLKR(annualFee(plan)) })}
               <br />
-              About {formatLKRCents(dailyCost(plan))} a day
+              {withValues(text.daily, { price: formatLKRCents(dailyCost(plan)) })}
             </p>
             <p className={cn("relative mt-5 text-[15px] leading-relaxed", featured ? "text-white" : "text-muted")}>{plan.summary}</p>
             {!compact && (
@@ -106,7 +129,7 @@ export function AmcPlans({ plans, className, compact = false }: { plans: AmcPlan
             )}
             <div className="relative mt-auto pt-8">
               <ButtonLink href={amcEnquiryHref(plan)} variant={featured ? "white" : "primary"} arrow className="w-full sm:w-auto">
-                Choose {plan.short}
+                {withValues(text.button, { plan: plan.short })}
               </ButtonLink>
             </div>
           </li>

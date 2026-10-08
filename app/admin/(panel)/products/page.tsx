@@ -4,33 +4,38 @@ import Link from "next/link";
 import { ArrowUpRight, Droplets, Plus } from "lucide-react";
 import { createProduct, moveProduct, setProductPublished } from "@/app/actions/admin/website";
 import { Badge } from "@/components/admin/ui/badge";
-import { EmptyState, PageHeader } from "@/components/admin/ui/panel";
+import { EmptyState, PageHeader, Panel } from "@/components/admin/ui/panel";
 import { MigrationNotice } from "@/components/admin/website/migration-notice";
+import { PicksForm } from "@/components/admin/website/picks-form";
 import { RowActions } from "@/components/admin/website/row-actions";
 import { Button } from "@/components/ui/button";
 import { productTypeLabel } from "@/content/products";
 import { isMissingSchema, requireAdmin } from "@/lib/admin/auth";
-import { parseVariants, PRODUCT_PLACEHOLDER } from "@/lib/cms/map";
+import { parseVariants, picksFrom, PRODUCT_PLACEHOLDER } from "@/lib/cms/map";
 import { isSiteImage } from "@/lib/cms/media";
-import { formatLKR } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Products" };
 
-/** "UF LKR 85,000 · RO on request" — the buy prices at a glance. */
-function priceLine(variants: ReturnType<typeof parseVariants>, key: "price" | "rent") {
-  if (!variants.length) return "No options yet";
-  return variants.map((variant) => `${variant.filtration} ${variant[key] ? formatLKR(variant[key]) : "on request"}`).join(" · ");
+/** "4-Stage UF (W2905-3CF) · 4-Stage RO (W2905-3CR)": the options at a glance. */
+function optionsLine(variants: ReturnType<typeof parseVariants>) {
+  if (!variants.length) return "No purification options yet";
+  return variants.map((variant) => (variant.code ? `${variant.label} (${variant.code})` : variant.label)).join(" · ");
 }
 
 export default async function ProductsAdminPage() {
   const { supabase } = await requireAdmin();
-  const { data: products, error } = await supabase.from("cms_products").select("*").order("position").order("name");
+  const [{ data: products, error }, picks, prices] = await Promise.all([
+    supabase.from("cms_products").select("*").order("position").order("name"),
+    supabase.from("cms_settings").select("value").eq("key", "picks").maybeSingle(),
+    // The recommended products are saved with the October 9 migration's settings; this shows whether it has run.
+    supabase.from("cms_prices").select("id").limit(1),
+  ]);
 
   return (
     <>
       <PageHeader
         title="Products"
-        description="The water purifiers on the website. Change the order with the arrows, hide a product with the eye, or open one to change its photo, prices and text."
+        description="The water purifiers on the website. Change the order with the arrows, hide a product with the eye, or open one to change its photo, options and text. Below the list, choose the products the website recommends."
         actions={
           !error && (
             <form action={createProduct}>
@@ -75,7 +80,7 @@ export default async function ProductsAdminPage() {
                       {product.tagline && ` · ${product.tagline}`}
                     </span>
                     <span className="mt-1 block text-[13px] text-ink">
-                      Buy: {priceLine(variants, "price")} <span className="text-muted">|</span> Rent: {priceLine(variants, "rent")}
+                      {optionsLine(variants)}
                     </span>
                   </span>
                   <ArrowUpRight aria-hidden className="hidden size-4 shrink-0 text-deep sm:block" />
@@ -93,6 +98,24 @@ export default async function ProductsAdminPage() {
             );
           })}
         </ul>
+      )}
+
+      {!error && products.length > 0 && (
+        <div className="mt-6">
+          {prices.error && isMissingSchema(prices.error) ? (
+            <Panel title="Recommended products">
+              <p className="text-sm text-muted">
+                Run <code className="rounded bg-tint px-1.5 py-0.5 text-[13px] text-deep">supabase/migrations/20261009120000_editable_website.sql</code> in the
+                Supabase SQL editor to choose which products Find my solution recommends and the home page features.
+              </p>
+            </Panel>
+          ) : (
+            <PicksForm
+              picks={picksFrom(picks.data?.value)}
+              products={products.map((product) => ({ slug: product.slug, name: product.name, published: product.published }))}
+            />
+          )}
+        </div>
       )}
     </>
   );

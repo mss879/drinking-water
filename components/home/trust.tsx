@@ -4,9 +4,11 @@ import { BrandIcon } from "@/components/ui/brand-icon";
 import { ButtonLink } from "@/components/ui/button";
 import type { BrandIconName } from "@/content/brand-icons";
 import { Container } from "@/components/ui/container";
-import { Highlight } from "@/components/ui/highlight";
+import { marked } from "@/components/ui/marked";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { sectors, type ClientLogo } from "@/content/clients";
+import { homeTrust } from "@/content/copy/home";
+import { getCopy } from "@/lib/cms/content";
 
 const sectorIcons: Record<string, BrandIconName> = {
   "Corporate offices": "office",
@@ -17,32 +19,23 @@ const sectorIcons: Record<string, BrandIconName> = {
   "Commercial organisations": "store",
 };
 
-const trust = [
-  "Warranty on purchases",
-  "Professional installation",
-  "Preventive maintenance",
-  "Technical support",
-  "Transparent rental terms",
-  "Contactable local support",
-];
-
-/** Client success / trust. Approved client logos (added in the admin) appear as a strip once there are any (brief §10). */
-export function Trust({ logos = [] }: { logos?: ClientLogo[] }) {
+/**
+ * Client success / trust. Approved client logos (added in the admin) appear as a strip once there are any (brief §10).
+ * Its heading and ticked list are the home.trust block; the sectors keep their names, since their icons follow them.
+ */
+export async function Trust({ logos = [] }: { logos?: ClientLogo[] }) {
+  const copy = await getCopy(homeTrust);
   return (
     <section className="py-16 md:py-20 lg:py-28">
       <Container>
         <SectionHeading
           layout="split"
-          eyebrow="Our clients"
-          title={
-            <>
-              Real installations. <Highlight>Real relationships.</Highlight>
-            </>
-          }
-          description="LUSAKO looks after drinking water for homes, offices and organisations. These are the places we serve every day."
+          eyebrow={copy.eyebrow}
+          title={marked(copy.title)}
+          description={copy.description}
           action={
             <ButtonLink href="/clients" variant="outline" arrow>
-              Client success stories
+              {copy.button}
             </ButtonLink>
           }
         />
@@ -69,8 +62,8 @@ export function Trust({ logos = [] }: { logos?: ClientLogo[] }) {
           ))}
         </ul>
         <ul data-stagger className="mt-10 grid gap-2.5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3">
-          {trust.map((label) => (
-            <li key={label} className="flex items-center gap-2.5 rounded-full border border-line py-1.5 pr-4 pl-1.5 text-sm font-medium text-ink">
+          {copy.checklist.map((label, i) => (
+            <li key={i} className="flex items-center gap-2.5 rounded-full border border-line py-1.5 pr-4 pl-1.5 text-sm font-medium text-ink">
               <span className="grid size-6 shrink-0 place-items-center rounded-full bg-deep text-white">
                 <Check aria-hidden className="size-3.5" strokeWidth={3} />
               </span>

@@ -1,33 +1,51 @@
 import type { Metadata } from "next";
+import { Fragment, type ReactNode } from "react";
 import { MessageCircle } from "lucide-react";
 import { CtaBand } from "@/components/sections/cta-band";
 import { PageHero } from "@/components/sections/page-hero";
 import { Accordion } from "@/components/ui/accordion";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Highlight } from "@/components/ui/highlight";
+import { marked } from "@/components/ui/marked";
 import { amcFaqs } from "@/content/amc";
-import { faqTopics, faqs } from "@/content/faqs";
-import { getAmc, getSiteSettings } from "@/lib/cms/content";
+import { faqHelp, faqHero, faqSeo, faqTopicsCopy } from "@/content/copy/faq";
+import { faqTopics } from "@/content/faqs";
+import { getAmc, getCopy, getFaqs, getPhotos, getSiteSettings } from "@/lib/cms/content";
 import { whatsappHref } from "@/lib/contact";
 import { cn } from "@/lib/cn";
 import { JsonLd } from "@/lib/jsonld";
 import { pageMetadata } from "@/lib/seo";
-import { heroImages } from "@/content/images";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Water Purifier FAQs – UF vs RO, Rental & AMC",
-  description:
-    "Answers about LUSAKO water purifiers: UF vs RO, city and well water, buying or renting, rental charges, installation, service, warranty and AMC plans.",
-  path: "/faq",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getCopy(faqSeo);
+  return pageMetadata({ title: seo.title, description: seo.description, path: "/faq" });
+}
+
+/** Fills {tokens} in as text nodes of their own, the way JSX interpolation renders them. */
+function fillNodes(text: string, values: Record<string, ReactNode>) {
+  return text
+    .split(/(\{[a-zA-Z]+\})/)
+    .filter(Boolean)
+    .map((part, i) => {
+      const name = part.slice(1, -1);
+      return <Fragment key={i}>{part.startsWith("{") && name in values ? values[name] : part}</Fragment>;
+    });
+}
 
 export default async function FaqPage() {
-  const [{ contact }, amc] = await Promise.all([getSiteSettings(), getAmc()]);
+  const [{ contact }, amc, photos, faqs, hero, topics, help] = await Promise.all([
+    getSiteSettings(),
+    getAmc(),
+    getPhotos(),
+    getFaqs(),
+    getCopy(faqHero),
+    getCopy(faqTopicsCopy),
+    getCopy(faqHelp),
+  ]);
   // The AMC answers carry the current plan prices, so they're worked out from what the admin saved.
   const all = [...faqs, ...amcFaqs(amc)];
   const groups = faqTopics
-    .map((topic) => ({ ...topic, items: all.filter((faq) => faq.topic === topic.id) }))
+    .map((topic, i) => ({ ...topic, label: topics.topics[i] ?? topic.label, items: all.filter((faq) => faq.topic === topic.id) }))
     .filter((group) => group.items.length > 0);
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -43,10 +61,10 @@ export default async function FaqPage() {
       <JsonLd data={faqJsonLd} />
       <PageHero
         crumbs={[{ label: "FAQs", href: "/faq" }]}
-        eyebrow="FAQs"
-        title={["Questions,", <Highlight key="answered">answered</Highlight>]}
-        description="UF or RO, buying or renting, installation and service: straight answers to the questions we hear most."
-        image={{ src: heroImages.faq, position: "object-right" }}
+        eyebrow={hero.eyebrow}
+        title={hero.title.map((line) => marked(line))}
+        description={hero.description}
+        image={{ src: photos.pageFaq.src, position: "object-right" }}
       />
 
       <div className="border-b border-line">
@@ -101,21 +119,21 @@ export default async function FaqPage() {
         <Container>
           <div data-reveal="up" className="card-line flex flex-col gap-6 rounded-card-xl p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="font-display text-h3 font-bold text-ink">Still have a question?</h2>
-              <p className="mt-2 text-muted">Our team is happy to help. {contact.hours}.</p>
+              <h2 className="font-display text-h3 font-bold text-ink">{help.title}</h2>
+              <p className="mt-2 text-muted">{fillNodes(help.text, { hours: contact.hours })}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/contact" variant="primary" arrow>
-                Ask our team
+                {help.askButton}
               </ButtonLink>
               <a
-                href={whatsappHref(contact.whatsappSales)}
+                href={whatsappHref(contact.whatsappSales, contact.whatsappGreeting)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={buttonClasses({ variant: "outline" })}
               >
                 <MessageCircle aria-hidden className="size-4" />
-                WhatsApp us
+                {help.whatsappButton}
                 <span className="sr-only"> (opens WhatsApp)</span>
               </a>
             </div>

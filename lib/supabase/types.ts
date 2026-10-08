@@ -16,7 +16,8 @@ export type ActivityKind = "created" | "note" | "stage_change" | "call" | "email
 export type AnalyticsChannel = "direct" | "organic" | "social" | "referral" | "email" | "paid" | "ai";
 export type PostStatus = "draft" | "published";
 export type PartCategoryId = "filters" | "spare-parts" | "accessories";
-export type SettingsKey = "contact" | "social" | "photos" | "amc";
+export type SettingsKey = "contact" | "social" | "photos" | "amc" | "pricing" | "picks";
+export type FaqTopicId = "purification" | "buying" | "rental" | "service";
 
 export type Database = {
   public: {
@@ -294,6 +295,10 @@ export type Database = {
           filtration_note: string;
           installation_note: string;
           maintenance_note: string | null;
+          specs: Json;
+          faqs: Json;
+          seo_title: string | null;
+          seo_description: string | null;
           published: boolean;
           position: number;
           created_at: Timestamp;
@@ -319,12 +324,114 @@ export type Database = {
           filtration_note?: string;
           installation_note?: string;
           maintenance_note?: string | null;
+          specs?: Json;
+          faqs?: Json;
+          seo_title?: string | null;
+          seo_description?: string | null;
           published?: boolean;
           position?: number;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["cms_products"]["Insert"]>;
+        Relationships: [];
+      };
+      cms_prices: {
+        Row: {
+          id: string;
+          product_id: string | null;
+          item: string;
+          amount: number | null;
+          visible: boolean;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          product_id?: string | null;
+          item: string;
+          amount?: number | null;
+          visible?: boolean;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["cms_prices"]["Insert"]>;
+        Relationships: [];
+      };
+      cms_copy: {
+        Row: { key: string; value: Json; updated_at: Timestamp };
+        Insert: { key: string; value: Json; updated_at?: Timestamp };
+        Update: { key?: string; value?: Json; updated_at?: Timestamp };
+        Relationships: [];
+      };
+      cms_faqs: {
+        Row: {
+          id: string;
+          key: string | null;
+          topic: FaqTopicId;
+          question: string;
+          answer: string;
+          on_home: boolean;
+          on_corporate: boolean;
+          published: boolean;
+          position: number;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          key?: string | null;
+          topic: FaqTopicId;
+          question: string;
+          answer: string;
+          on_home?: boolean;
+          on_corporate?: boolean;
+          published?: boolean;
+          position?: number;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["cms_faqs"]["Insert"]>;
+        Relationships: [];
+      };
+      cms_case_studies: {
+        Row: {
+          id: string;
+          slug: string;
+          sample: boolean;
+          industry: string;
+          location: string;
+          model: string;
+          challenge: string;
+          requirement: string;
+          solution: string;
+          implementation: string;
+          support: string;
+          result: string;
+          published: boolean;
+          position: number;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          sample?: boolean;
+          industry: string;
+          location?: string;
+          model?: string;
+          challenge?: string;
+          requirement?: string;
+          solution?: string;
+          implementation?: string;
+          support?: string;
+          result?: string;
+          published?: boolean;
+          position?: number;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["cms_case_studies"]["Insert"]>;
         Relationships: [];
       };
       cms_parts: {
@@ -429,6 +536,7 @@ export type Database = {
       analytics_live: { Args: Record<PropertyKey, never>; Returns: Json };
       analytics_purge: { Args: { p_before: Timestamp }; Returns: number };
       dashboard_summary: { Args: { p_from: Timestamp; p_to: Timestamp; p_tz?: string }; Returns: Json };
+      rate_limit_hit: { Args: { p_bucket: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
@@ -445,3 +553,6 @@ export type AnalyticsSession = Tables["analytics_sessions"]["Row"];
 export type ProductRow = Tables["cms_products"]["Row"];
 export type PartRow = Tables["cms_parts"]["Row"];
 export type ClientLogoRow = Tables["cms_client_logos"]["Row"];
+export type PriceRow = Tables["cms_prices"]["Row"];
+export type FaqRow = Tables["cms_faqs"]["Row"];
+export type CaseStudyRow = Tables["cms_case_studies"]["Row"];

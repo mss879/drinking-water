@@ -24,6 +24,10 @@ export type SiteContact = {
   hours: string;
   /** One line per row. */
   address: string;
+  /** The message WhatsApp opens with; empty starts a blank chat. */
+  whatsappGreeting: string;
+  /** The round WhatsApp button in the corner of every page. */
+  showWhatsappButton: boolean;
 };
 
 export const socialNetworks = ["linkedin", "facebook", "instagram", "youtube", "tiktok"] as const;
@@ -40,7 +44,10 @@ export const socialLabels: Record<SocialNetwork, string> = {
 
 export type SiteSettings = { contact: SiteContact; social: SocialLink[] };
 
-/** The client's official details (LUSAKO website changes, October 2026). The admin can change them in Site settings. */
+/**
+ * The client's official details and social profiles ("LUSAKO website changes" and "Final website changes", October
+ * 2026). The admin can change them in Contact & social.
+ */
 export const defaultSettings: SiteSettings = {
   contact: {
     phones: ["011 433 4885", "011 433 4886"],
@@ -51,9 +58,15 @@ export const defaultSettings: SiteSettings = {
     operationsEmail: "operations@drinkingwater.lk",
     hours: "Monday to Friday, 8.30 AM – 5.30 PM",
     address: "19A, 1st Lane, Gothami Road\nColombo 08\nSri Lanka",
+    whatsappGreeting: "",
+    showWhatsappButton: true,
   },
-  // TODO(client): the LinkedIn, Facebook and other profile addresses. Each icon appears once its link is added.
-  social: [],
+  social: [
+    { network: "facebook", url: "https://www.facebook.com/LusakoHoldings/" },
+    { network: "instagram", url: "https://www.instagram.com/lusako.holdings/" },
+    { network: "linkedin", url: "https://www.linkedin.com/company/lusako/" },
+    { network: "tiktok", url: "https://www.tiktok.com/@lusakoholdings" },
+  ],
 };
 
 export type NavLink = { label: string; href: string; description?: string };
