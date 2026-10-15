@@ -48,16 +48,13 @@ export const getPublishedPosts = cache(async (limit = 60): Promise<PostSummary[]
 export const getPostBySlug = cache(async (slug: string): Promise<{ post: BlogPost | null; movedTo: string | null }> => {
   const supabase = createPublicClient();
   if (!supabase || !/^[a-z0-9-]{1,120}$/.test(slug)) return { post: null, movedTo: null };
-  try {
-    const { data, error } = await supabase.from("blog_posts").select("*").eq("slug", slug).maybeSingle();
-    quiet(error);
-    if (data) return { post: data, movedTo: null };
-    const { data: moved } = await supabase.from("blog_posts").select("slug").contains("previous_slugs", [slug]).limit(1).maybeSingle();
-    return { post: null, movedTo: moved?.slug ?? null };
-  } catch (error) {
-    console.error("[blog] couldn't load a post", error);
-    return { post: null, movedTo: null };
-  }
+  // A failed read throws rather than answering "no such post": the error page isn't cached, and a page being
+  // refreshed in the background keeps its last good version, where a 404 would stick for the hour.
+  const { data, error } = await supabase.from("blog_posts").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(`[blog] couldn't load a post: ${error.message}`);
+  if (data) return { post: data, movedTo: null };
+  const { data: moved } = await supabase.from("blog_posts").select("slug").contains("previous_slugs", [slug]).limit(1).maybeSingle();
+  return { post: null, movedTo: moved?.slug ?? null };
 });
 
 /** Up to three more posts: same category first, then the latest. */

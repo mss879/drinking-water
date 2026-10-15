@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CircleCheck, CircleDashed } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -23,8 +23,8 @@ const steps = [
     title: "Run the migrations",
     body: (
       <>
-        In Supabase, open the SQL editor and run the seven files in <code>supabase/migrations</code>, in order (admin access,
-        inquiries, CRM, web analytics, blog, dashboard, website content).
+        In Supabase, open the SQL editor and run the files in <code>supabase/migrations</code>, oldest first (their names
+        start with the date). <code>supabase/README.md</code> lists them.
       </>
     ),
   },
@@ -56,7 +56,8 @@ export default async function SetupPage() {
   const configured = isSupabaseConfigured();
   const hasSecret = Boolean(process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY);
   const migrated = configured && (await tablesExist());
-  const ready = configured && hasSecret && migrated;
+  // Once the live site is set up there's nothing to do here, and no reason to show anyone how it's configured.
+  if (configured && hasSecret && migrated) redirect("/admin/login");
 
   const checks = [
     { label: "Supabase URL and publishable key", ok: configured },
@@ -69,12 +70,10 @@ export default async function SetupPage() {
       <div className="w-full max-w-2xl">
         <Logo title="LUSAKO" className="h-8 w-auto" />
         <h1 className="mt-8 font-display text-3xl font-bold tracking-[-0.02em] text-ink">
-          {ready ? "Supabase is connected" : "Connect Supabase"}
+          Connect Supabase
         </h1>
         <p className="mt-2 text-[15px] text-muted">
-          {ready
-            ? "Everything the admin needs is in place."
-            : "The admin runs on Supabase. Four steps, about ten minutes; the full guide is in supabase/README.md."}
+          The admin runs on Supabase. Four steps, about ten minutes; the full guide is in supabase/README.md.
         </p>
 
         <ul className="mt-8 grid gap-2 sm:grid-cols-3">
@@ -91,25 +90,19 @@ export default async function SetupPage() {
           ))}
         </ul>
 
-        {ready ? (
-          <ButtonLink href="/admin/login" size="lg" arrow className="mt-8">
-            Sign in
-          </ButtonLink>
-        ) : (
-          <ol className="mt-8 grid gap-3">
-            {steps.map((step, i) => (
-              <li key={step.title} className="card-line flex gap-4 p-5 sm:p-6">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-deep font-display text-sm font-bold text-white">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 [&_code]:rounded-md [&_code]:bg-tint-2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px] [&_code]:text-deep">
-                  <h2 className="font-display font-bold text-ink">{step.title}</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">{step.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
+        <ol className="mt-8 grid gap-3">
+          {steps.map((step, i) => (
+            <li key={step.title} className="card-line flex gap-4 p-5 sm:p-6">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-deep font-display text-sm font-bold text-white">
+                {i + 1}
+              </span>
+              <div className="min-w-0 [&_code]:rounded-md [&_code]:bg-tint-2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px] [&_code]:text-deep">
+                <h2 className="font-display font-bold text-ink">{step.title}</h2>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
 
         <Link href="/" className="mt-10 inline-block text-sm font-medium text-deep hover:text-ink">
           Back to the website

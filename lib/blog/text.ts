@@ -50,6 +50,13 @@ export function headings(doc: JSONContent | null | undefined): TocEntry[] {
   return entries;
 }
 
+/** Text cut at a word so it's at most `max` characters long, ellipsis included. */
+export function clip(text: string, max: number) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1).replace(/\s+\S*$/, "")}…`;
+}
+
 /** The first couple of sentences, for listings when no excerpt was written. */
 export function autoExcerpt(doc: JSONContent | null | undefined, max = 180) {
   const text = plainText(doc).replace(/\s+/g, " ").trim();

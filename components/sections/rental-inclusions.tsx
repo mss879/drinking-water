@@ -1,6 +1,7 @@
 import { splitWords } from "@/components/motion/split-words";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ButtonLink } from "@/components/ui/button";
+import { CenteredSticky } from "@/components/ui/centered-sticky";
 import { Container } from "@/components/ui/container";
 import { Rule } from "@/components/ui/decor";
 import { Highlight } from "@/components/ui/highlight";
@@ -12,9 +13,9 @@ import { getCopy } from "@/lib/cms/content";
 const icons: BrandIconName[] = ["countertop", "wrench", "calendar", "filter", "headset", "shield"];
 
 /**
- * "One monthly payment. Complete water care." as the GrowSphere capabilities list: the heading holds still on
- * the left while the six inclusions scroll past on the right, each with its 3D icon; dividers draw as they come in.
- * Its wording is the shared block; the closing qualifier stays as the brief words it.
+ * "One monthly payment. Complete water care." as the GrowSphere capabilities list: the heading holds still in the
+ * middle of the screen on the left while the six inclusions scroll past on the right, each with its 3D icon; dividers
+ * draw as they come in. Its wording is the shared block; the closing qualifier stays as the brief words it.
  */
 export async function RentalInclusions({ showCta = true }: { showCta?: boolean }) {
   const copy = await getCopy(sharedRentalInclusions);
@@ -22,7 +23,7 @@ export async function RentalInclusions({ showCta = true }: { showCta?: boolean }
     <section id="included" className="py-16 md:py-20 lg:py-28">
       <Container className="grid gap-12 lg:grid-cols-12 lg:gap-10" data-no-reveal>
         <div className="lg:col-span-5">
-          <div className="lg:sticky lg:top-[calc(var(--header-h)+3rem)]">
+          <CenteredSticky>
             {/* One idea per line: each sentence gets its own line at every width. */}
             <h2
               data-split
@@ -45,7 +46,7 @@ export async function RentalInclusions({ showCta = true }: { showCta?: boolean }
                 </ButtonLink>
               </div>
             )}
-          </div>
+          </CenteredSticky>
         </div>
 
         <div className="lg:col-span-7">

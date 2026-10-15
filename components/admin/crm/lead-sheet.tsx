@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ArrowRightLeft, Inbox, Mail, MessageCircle, Phone, StickyNote, Trash2, Users } from "lucide-react";
+import { ArrowRightLeft, Inbox, Mail, MessageCircle, MessagesSquare, Phone, StickyNote, Trash2, Users } from "lucide-react";
+import { getLeadChats } from "@/app/actions/admin/chats";
 import { addActivity, deleteLead, getLeadActivities, moveLead, updateLead } from "@/app/actions/admin/crm";
 import { draftFromLead, inputFromDraft, LeadFields, type LeadDraft } from "@/components/admin/crm/lead-fields";
 import { ConfirmDialog, Dialog } from "@/components/admin/ui/dialog";
@@ -36,6 +37,7 @@ export function LeadSheet({
 }) {
   const [draft, setDraft] = useState<LeadDraft>(() => draftFromLead(lead, lead.stage_id));
   const [activities, setActivities] = useState<Activity[] | null>(null);
+  const [chats, setChats] = useState<{ id: string; created_at: string }[]>([]);
   const [note, setNote] = useState("");
   const [kind, setKind] = useState<ActivityKind>("note");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -45,6 +47,10 @@ export function LeadSheet({
     let live = true;
     void getLeadActivities(lead.id).then((result) => {
       if (live) setActivities(result.ok ? (result.data ?? []) : []);
+    });
+    // The website chats this lead came from (the conversation the assistant had with them).
+    void getLeadChats(lead.id).then((result) => {
+      if (live && result.ok) setChats(result.data ?? []);
     });
     return () => {
       live = false;
@@ -116,6 +122,12 @@ export function LeadSheet({
             <ButtonLink href={`/admin/inquiries?id=${lead.inquiry_id}`} variant="outline">
               <Inbox aria-hidden className="size-4" />
               Original inquiry
+            </ButtonLink>
+          )}
+          {chats[0] && (
+            <ButtonLink href={`/admin/chats?view=all&id=${chats[0].id}`} variant="outline">
+              <MessagesSquare aria-hidden className="size-4" />
+              {chats.length > 1 ? "Latest website chat" : "Website chat"}
             </ButtonLink>
           )}
         </div>

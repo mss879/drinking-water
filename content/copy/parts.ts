@@ -5,7 +5,7 @@ import { ctaBlock } from "./shared";
 /** Filters, parts & accessories: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const partsSeo = seoBlock("parts", {
-  title: "Filters, Parts & Accessories",
+  title: "Water Filters, Parts & Accessories",
   description:
     "Genuine LUSAKO water filter cartridges with prices: sediment, carbon, UF, RO and mineral filters, plus purifier spare parts and accessories, fitted for you.",
 });

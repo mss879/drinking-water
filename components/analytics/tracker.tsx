@@ -115,6 +115,7 @@ const FORWARDED: Record<string, { once?: boolean; props: string[] }> = {
   rental_quote_calculated: { once: true, props: ["province", "customer_type", "filtration", "units"] },
   find_solution_completed: { props: ["recommended_path", "filtration", "product"] },
   page_not_found: { props: ["path"] },
+  chat_open: { once: true, props: [] },
 };
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}) {

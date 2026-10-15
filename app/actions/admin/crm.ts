@@ -5,7 +5,7 @@ import { friendlyError, requireAdmin, type ActionResult } from "@/lib/admin/auth
 import type { Activity, ActivityKind, LeadPriority, LeadSourceKind, StageOutcome } from "@/lib/supabase/types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SOURCES: LeadSourceKind[] = ["website", "manual", "phone", "whatsapp", "referral", "walk_in", "event", "other"];
+const SOURCES: LeadSourceKind[] = ["website", "chat", "manual", "phone", "whatsapp", "referral", "walk_in", "event", "other"];
 const PRIORITIES: LeadPriority[] = ["low", "medium", "high"];
 const OUTCOMES: StageOutcome[] = ["open", "won", "lost"];
 const NOTE_KINDS: ActivityKind[] = ["note", "call", "email", "whatsapp", "meeting"];

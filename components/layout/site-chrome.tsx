@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Tracker } from "@/components/analytics/tracker";
+import { ChatLauncher } from "@/components/chat/chat-launcher";
 import { CatalogProvider } from "@/components/forms/catalog-context";
 import { Analytics } from "@/components/layout/analytics";
 import { Footer } from "@/components/layout/footer";
@@ -12,13 +13,14 @@ import { introScript } from "@/components/preloader/intro-script";
 import { Preloader } from "@/components/preloader/preloader";
 import { chromeActionBar, chromeContactLabels, chromeContactMenu, chromeMobileMenu, chromeSite, chromeWhatsappButton } from "@/content/copy/chrome";
 import { amcOptionLabels, productOptions } from "@/content/forms";
+import { getChatWidget } from "@/lib/chat/settings";
 import { getAmc, getCopy, getProducts, getSiteSettings } from "@/lib/cms/content";
 import { JsonLd } from "@/lib/jsonld";
 import { localBusinessJsonLd } from "@/lib/local-business";
 
 /**
  * Everything around a marketing page: the home intro, the floating navigation, the footer, the mobile action bar,
- * WhatsApp, the motion engine and smooth scrolling. The `(site)` layout and the root 404 both render it; the admin
+ * WhatsApp, the chat assistant, the motion engine and smooth scrolling. The `(site)` layout and the root 404 both render it; the admin
  * has its own shell. The chrome's wording is read here (content/copy/chrome.ts) and handed to the client parts.
  */
 export async function SiteChrome({ children }: { children: ReactNode }) {
@@ -33,6 +35,7 @@ export async function SiteChrome({ children }: { children: ReactNode }) {
     getCopy(chromeWhatsappButton),
     getAmc(),
   ]);
+  const chat = await getChatWidget(contact);
 
   return (
     <>
@@ -54,6 +57,7 @@ export async function SiteChrome({ children }: { children: ReactNode }) {
       <Footer />
       <MobileCtaBar contact={contact} social={social} copy={actionBar} labels={labels} />
       <WhatsAppButton contact={contact} label={whatsapp.label} />
+      {chat && <ChatLauncher config={chat} />}
       <MotionRoot />
       <SmoothScroll />
       <JsonLd data={localBusinessJsonLd(contact, social, seo.description)} />

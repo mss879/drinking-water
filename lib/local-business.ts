@@ -32,6 +32,19 @@ export function openingHours(text: string) {
   };
 }
 
+/**
+ * Whether LUSAKO is open at this moment, in Sri Lanka time, by the same hours; null when the hours can't be read (the
+ * chat then only quotes them).
+ */
+export function openNow(text: string, now = new Date()): boolean | null {
+  const hours = openingHours(text);
+  if (!hours) return null;
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Colombo", weekday: "long", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  const time = `${part("hour")}:${part("minute")}`;
+  return hours.dayOfWeek.includes(part("weekday")) && time >= hours.opens && time < hours.closes;
+}
+
 /** The address lines as a PostalAddress. Colombo's numbered districts carry their postcode ("Colombo 08" is 00800). */
 export function postalAddress(address: string) {
   const lines = addressLines(address).filter((line) => !/^sri lanka$/i.test(line));

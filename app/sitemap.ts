@@ -30,11 +30,11 @@ const absolute = (path: string) => new URL(path, site.url).toString();
 export const revalidate = 3600;
 
 // Only real change dates are given: fixed pages carry none, products and posts carry when they were last saved.
-// A date that moved on every rebuild would teach search engines to ignore them all.
+// A date that moved on every rebuild would teach search engines to ignore them all. The blog joins once it has a post.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, products] = await Promise.all([getPublishedPosts(1000), getProducts()]);
   return [
-    ...staticRoutes.map(({ path, priority, changeFrequency }) => ({
+    ...staticRoutes.filter(({ path }) => path !== "/blog" || posts.length > 0).map(({ path, priority, changeFrequency }) => ({
       url: absolute(path),
       changeFrequency,
       priority,

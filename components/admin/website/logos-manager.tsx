@@ -78,7 +78,7 @@ export function LogosManager({ logos }: { logos: ClientLogoRow[] }) {
                   alt={`${logo.name} logo`}
                   fill
                   sizes="(min-width: 1280px) 320px, (min-width: 640px) 45vw, 90vw"
-                  className="object-contain p-6 grayscale"
+                  className="object-contain p-6"
                 />
                 {!logo.published && (
                   <Badge tone="muted" className="absolute top-2 left-2">
@@ -129,7 +129,7 @@ export function LogosManager({ logos }: { logos: ClientLogoRow[] }) {
               folder="logos"
               aspect="aspect-[3/2]"
               removable={false}
-              hint="A PNG with a transparent background works best. The website shows logos in greyscale, so the page keeps to LUSAKO’s colours."
+              hint="A PNG with a transparent background works best. The website shows each logo in its own colours."
             />
             <Field label="Client name" htmlFor="logo-name" hint="Read out to screen-reader users and shown when the logo can’t load.">
               <Input id="logo-name" required value={editing.form.name} onChange={(event) => set("name", event.target.value)} />

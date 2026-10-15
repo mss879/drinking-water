@@ -226,13 +226,19 @@ export async function generateStaticParams() {
   return (await getProducts()).map((product) => ({ slug: product.slug }));
 }
 
+/** The summary, plus where and how to get the purifier when that still fits the ~160 characters search results show. */
+function withPlace(summary: string) {
+  const longer = `${summary.trim().replace(/\.?$/, ".")} Buy or rent in Sri Lanka.`;
+  return longer.length <= 160 ? longer : summary;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   // The admin's own search title and description win; otherwise they're worked out from the product.
   return pageMetadata({
     title: product.seoTitle || `${product.name} – ${product.tagline}`,
-    description: product.seoDescription || product.summary,
+    description: product.seoDescription || withPlace(product.summary),
     path: `/water-purifiers/${product.slug}`,
     image: { url: `/og/products/${product.slug}`, width: 1200, height: 630, alt: `${product.name}: ${product.tagline}` },
   });

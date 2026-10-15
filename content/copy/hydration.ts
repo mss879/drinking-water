@@ -3,7 +3,7 @@ import { defineBlock, seoBlock, type AnyBlock } from "./schema";
 /** Hydration solutions: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const hydrationSeo = seoBlock("hydration", {
-  title: "Hydration Solutions",
+  title: "Drinking Water Solutions for Homes & Offices",
   description:
     "LUSAKO Hydration Solutions: buy a water purifier for your home, rent for your office, or let LUSAKO manage drinking water across your whole organisation.",
 });

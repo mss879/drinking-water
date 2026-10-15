@@ -81,7 +81,7 @@ export const noRentalPrices: RentalPrices = { plans: {}, initial: null, regional
 
 /** The website's price switches that aren't tied to one amount (cms_settings "pricing"). */
 export type PricingSettings = {
-  /** KOKO's pay-in-3 badge on the product pages' Buy option. */
+  /** KOKO's “Pay in instalments” badge on the product pages' Buy option. */
   koko: boolean;
   /** Shown prices also appear on the home page's product cards (it never showed prices before). */
   showOnHome: boolean;

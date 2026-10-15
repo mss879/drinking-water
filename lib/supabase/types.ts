@@ -10,7 +10,7 @@ type Timestamp = string;
 export type InquiryStatus = "new" | "in_progress" | "resolved" | "spam";
 export type InquiryFormType = "buy" | "rental" | "corporate" | "service";
 export type StageOutcome = "open" | "won" | "lost";
-export type LeadSourceKind = "website" | "manual" | "phone" | "whatsapp" | "referral" | "walk_in" | "event" | "other";
+export type LeadSourceKind = "website" | "chat" | "manual" | "phone" | "whatsapp" | "referral" | "walk_in" | "event" | "other";
 export type LeadPriority = "low" | "medium" | "high";
 export type ActivityKind = "created" | "note" | "stage_change" | "call" | "email" | "whatsapp" | "meeting";
 export type AnalyticsChannel = "direct" | "organic" | "social" | "referral" | "email" | "paid" | "ai";
@@ -18,6 +18,8 @@ export type PostStatus = "draft" | "published";
 export type PartCategoryId = "filters" | "spare-parts" | "accessories";
 export type SettingsKey = "contact" | "social" | "photos" | "amc" | "pricing" | "picks";
 export type FaqTopicId = "purification" | "buying" | "rental" | "service";
+export type ChatRole = "user" | "assistant" | "agent" | "system";
+export type ChatPriceMode = "all" | "shown" | "none";
 
 export type Database = {
   public: {
@@ -494,6 +496,148 @@ export type Database = {
         Update: { key?: SettingsKey; value?: Json; updated_at?: Timestamp };
         Relationships: [];
       };
+      chat_settings: {
+        Row: {
+          id: boolean;
+          widget_enabled: boolean;
+          ai_enabled: boolean;
+          assistant_name: string;
+          greeting: string;
+          teaser: string;
+          quick_replies: string[];
+          price_mode: ChatPriceMode;
+          contact_first: boolean;
+          email_quotes: boolean;
+          instructions: string;
+          alert_email: string | null;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: boolean;
+          widget_enabled?: boolean;
+          ai_enabled?: boolean;
+          assistant_name?: string;
+          greeting?: string;
+          teaser?: string;
+          quick_replies?: string[];
+          price_mode?: ChatPriceMode;
+          contact_first?: boolean;
+          email_quotes?: boolean;
+          instructions?: string;
+          alert_email?: string | null;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      chat_sessions: {
+        Row: {
+          id: string;
+          token_hash: string;
+          status: "open" | "closed";
+          ai_enabled: boolean;
+          handover_requested_at: Timestamp | null;
+          handover_reason: string | null;
+          agent_id: string | null;
+          agent_name: string | null;
+          visitor_name: string | null;
+          phone: string | null;
+          email: string | null;
+          company: string | null;
+          location: string | null;
+          profile: Json;
+          summary: string | null;
+          qualified_at: Timestamp | null;
+          lead_id: string | null;
+          page_path: string | null;
+          referrer: string | null;
+          utm: Json | null;
+          visitor_id: string | null;
+          analytics_session_id: string | null;
+          context: Json;
+          message_count: number;
+          last_message_at: Timestamp;
+          last_message_preview: string | null;
+          last_visitor_message_at: Timestamp | null;
+          admin_unread: boolean;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          token_hash: string;
+          status?: "open" | "closed";
+          ai_enabled?: boolean;
+          handover_requested_at?: Timestamp | null;
+          handover_reason?: string | null;
+          agent_id?: string | null;
+          agent_name?: string | null;
+          visitor_name?: string | null;
+          phone?: string | null;
+          email?: string | null;
+          company?: string | null;
+          location?: string | null;
+          profile?: Json;
+          summary?: string | null;
+          qualified_at?: Timestamp | null;
+          lead_id?: string | null;
+          page_path?: string | null;
+          referrer?: string | null;
+          utm?: Json | null;
+          visitor_id?: string | null;
+          analytics_session_id?: string | null;
+          context?: Json;
+          message_count?: number;
+          last_message_at?: Timestamp;
+          last_message_preview?: string | null;
+          last_visitor_message_at?: Timestamp | null;
+          admin_unread?: boolean;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_sessions"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "crm_leads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          role: ChatRole;
+          content: string;
+          author_id: string | null;
+          author_name: string | null;
+          meta: Json;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          role: ChatRole;
+          content: string;
+          author_id?: string | null;
+          author_name?: string | null;
+          meta?: Json;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["chat_messages"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -537,6 +681,7 @@ export type Database = {
       analytics_purge: { Args: { p_before: Timestamp }; Returns: number };
       dashboard_summary: { Args: { p_from: Timestamp; p_to: Timestamp; p_tz?: string }; Returns: Json };
       rate_limit_hit: { Args: { p_bucket: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
+      chat_save_lead: { Args: { p_session_id: string; p_lead: Json; p_note?: string | null }; Returns: string };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
@@ -556,3 +701,6 @@ export type ClientLogoRow = Tables["cms_client_logos"]["Row"];
 export type PriceRow = Tables["cms_prices"]["Row"];
 export type FaqRow = Tables["cms_faqs"]["Row"];
 export type CaseStudyRow = Tables["cms_case_studies"]["Row"];
+export type ChatSettingsRow = Tables["chat_settings"]["Row"];
+export type ChatSession = Tables["chat_sessions"]["Row"];
+export type ChatMessage = Tables["chat_messages"]["Row"];

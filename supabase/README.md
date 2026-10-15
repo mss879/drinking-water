@@ -23,6 +23,7 @@ state and every page shows the built-in content from `content/`.
    | `20261003120000_website_content.sql` | the Website section: products, parts, client logos, settings (contact, social, photos, AMC prices) and the public `site-media` bucket, starting from what the website shows |
    | `20261008120000_final_changes.sql` | the client's final changes: LUSAKO's Facebook, Instagram, LinkedIn and TikTok links (unless links were already added in the admin), buy and rental prices taken out of the product catalogue (the website now asks for a quote), and a rate limit on the website's forms |
    | `20261009120000_editable_website.sql` | everything editable: every price with its own show switch (hidden prices can't be read by the public; all start hidden, with the old amounts kept), page text, FAQs and client stories (starting from today's), extra product fields, and the KOKO / recommended-products settings |
+   | `20261009180000_ai_chat_agent.sql` | the website's chat assistant: every conversation and message (admins only), the assistant's settings, "Website chat" leads in the CRM's New Leads (`chat_save_lead`), and live updates for the admin's Chats inbox |
 
    Each file can safely be run again. If you use the Supabase CLI instead, `supabase db push` applies them in order.
 3. **Create the admin account.** Authentication → Users → **Add user** → email and password, tick
@@ -71,6 +72,7 @@ months. To do it automatically, enable the `pg_cron` extension and schedule
 | What | Where |
 | --- | --- |
 | Form submissions | `app/actions/leads.ts` → `inquiries`, then `LEAD_WEBHOOK_URL` if set |
+| Website chats | `app/api/chat/route.ts` → `chat_sessions`, `chat_messages`; qualified visitors → `chat_save_lead()` → `crm_leads` (New Leads) |
 | Visits, clicks, Web Vitals | `components/analytics/tracker.tsx` → `/api/visit` → `analytics_ingest()` |
 | Blog | `lib/blog/queries.ts` (cached; refreshed when a post is saved) |
 | Products, parts, logos, photos, contact details, AMC prices | `lib/cms/content.ts` (cached under the `cms` tag; refreshed whenever the admin saves; falls back to `content/`) |

@@ -43,6 +43,7 @@ const eventLabels: Record<string, string> = {
   product_view: "Product page views",
   rental_quote_calculated: "Rental quote builder used",
   find_solution_completed: "Find my solution completed",
+  chat_open: "Chat opened",
 };
 
 /** Google's Core Web Vitals thresholds (good up to the first number, poor beyond the second). */

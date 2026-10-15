@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { ChartLine, ExternalLink, Globe, Inbox, LayoutDashboard, SquareKanban, type LucideIcon } from "lucide-react";
+import { ChartLine, ExternalLink, Globe, Inbox, LayoutDashboard, MessagesSquare, SquareKanban, type LucideIcon } from "lucide-react";
 import { AccountMenu } from "@/components/admin/shell/account-menu";
+import { LiveChats } from "@/components/admin/shell/live-chats";
 import { LiveInquiries } from "@/components/admin/shell/live-inquiries";
 import { Logo } from "@/components/ui/logo";
 import { websiteSections } from "@/lib/admin/website-sections";
@@ -16,13 +17,14 @@ type NavItem = { href: string; label: string; short: string; icon: LucideIcon; e
 const salesNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", short: "Home", icon: LayoutDashboard, exact: true },
   { href: "/admin/inquiries", label: "Inquiries", short: "Inquiries", icon: Inbox },
+  { href: "/admin/chats", label: "Chats", short: "Chats", icon: MessagesSquare },
   { href: "/admin/crm", label: "CRM pipeline", short: "CRM", icon: SquareKanban },
   { href: "/admin/analytics", label: "Web analytics", short: "Analytics", icon: ChartLine },
 ];
 
 const websiteNav: NavItem[] = websiteSections;
 
-/** Phones and tablets: the four sales sections, then one "Website" tab for everything in the Website group. */
+/** Phones and tablets: the sales sections, then one "Website" tab for everything in the Website group. */
 const tabs: NavItem[] = [
   ...salesNav,
   { href: "/admin/website", label: "Website", short: "Website", icon: Globe, also: websiteNav.map((item) => item.href) },
@@ -33,7 +35,7 @@ function isActive(pathname: string, item: NavItem) {
   return item.exact ? pathname === item.href : matches(item.href) || Boolean(item.also?.some(matches));
 }
 
-function SidebarLink({ item, pathname, unread }: { item: NavItem; pathname: string; unread: number }) {
+function SidebarLink({ item, pathname, counts }: { item: NavItem; pathname: string; counts: Record<string, number> }) {
   const active = isActive(pathname, item);
   const Icon = item.icon;
   return (
@@ -47,12 +49,12 @@ function SidebarLink({ item, pathname, unread }: { item: NavItem; pathname: stri
     >
       <Icon aria-hidden className={cn("size-[18px] shrink-0", active ? "text-deep" : "text-mist")} />
       {item.label}
-      {item.href === "/admin/inquiries" && <UnreadBadge count={unread} active={active} />}
+      <UnreadBadge count={counts[item.href] ?? 0} active={active} label={item.href === "/admin/chats" ? "waiting" : "unread"} />
     </Link>
   );
 }
 
-function UnreadBadge({ count, active }: { count: number; active: boolean }) {
+function UnreadBadge({ count, active, label }: { count: number; active: boolean; label: string }) {
   if (count <= 0) return null;
   return (
     <span
@@ -62,7 +64,7 @@ function UnreadBadge({ count, active }: { count: number; active: boolean }) {
       )}
     >
       {count > 99 ? "99+" : count}
-      <span className="sr-only"> unread</span>
+      <span className="sr-only"> {label}</span>
     </span>
   );
 }
@@ -72,12 +74,14 @@ function UnreadBadge({ count, active }: { count: number; active: boolean }) {
  * sections, the Website group and the account menu. Phones and tablets: a frosted top bar and a tab bar along the bottom, styled like
  * the website's mobile action bar.
  */
-export function AdminShell({ email, unread, children }: { email: string; unread: number; children: ReactNode }) {
+export function AdminShell({ email, unread, chats, children }: { email: string; unread: number; chats: number; children: ReactNode }) {
   const pathname = usePathname();
+  const counts: Record<string, number> = { "/admin/inquiries": unread, "/admin/chats": chats };
 
   return (
     <div className="min-h-dvh bg-canvas">
       <LiveInquiries />
+      <LiveChats />
 
       {/* Sidebar */}
       <aside
@@ -95,7 +99,7 @@ export function AdminShell({ email, unread, children }: { email: string; unread:
           <ul className="grid gap-1">
             {salesNav.map((item) => (
               <li key={item.href}>
-                <SidebarLink item={item} pathname={pathname} unread={unread} />
+                <SidebarLink item={item} pathname={pathname} counts={counts} />
               </li>
             ))}
           </ul>
@@ -103,7 +107,7 @@ export function AdminShell({ email, unread, children }: { email: string; unread:
           <ul className="grid gap-1">
             {websiteNav.map((item) => (
               <li key={item.href}>
-                <SidebarLink item={item} pathname={pathname} unread={unread} />
+                <SidebarLink item={item} pathname={pathname} counts={counts} />
               </li>
             ))}
           </ul>
@@ -143,7 +147,7 @@ export function AdminShell({ email, unread, children }: { email: string; unread:
         aria-label="Admin"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
       >
-        <ul className="mx-auto grid max-w-xl grid-cols-5 px-1">
+        <ul className="mx-auto grid max-w-xl grid-cols-6 px-1">
           {tabs.map((item) => {
             const active = isActive(pathname, item);
             const Icon = item.icon;
@@ -161,10 +165,10 @@ export function AdminShell({ email, unread, children }: { email: string; unread:
                     <Icon aria-hidden className="size-[18px]" />
                   </span>
                   {item.short}
-                  {item.href === "/admin/inquiries" && unread > 0 && (
+                  {(counts[item.href] ?? 0) > 0 && (
                     <span className="absolute top-2 left-[calc(50%+0.5rem)] grid h-4 min-w-4 place-items-center rounded-full bg-deep px-1 text-[10px] leading-none text-white tabular-nums">
-                      {unread > 99 ? "99+" : unread}
-                      <span className="sr-only"> unread</span>
+                      {counts[item.href] > 99 ? "99+" : counts[item.href]}
+                      <span className="sr-only"> {item.href === "/admin/chats" ? "waiting" : "unread"}</span>
                     </span>
                   )}
                 </Link>

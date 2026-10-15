@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: seo.description,
     applicationName: site.name,
     openGraph: { type: "website", siteName: site.name, locale: "en_LK", images: [image] },
-    twitter: { card: "summary_large_image", images: [image.url] },
+    twitter: { card: "summary_large_image", images: [image] },
     formatDetection: { telephone: false, address: false, email: false },
     // Search Console and Bing Webmaster Tools ownership tags, when their codes are set.
     verification: {

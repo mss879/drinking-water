@@ -11,9 +11,12 @@ export type OgImage = { url: string; width: number; height: number; alt: string 
 /** The Organization's id in structured data, so services, products and articles can point at one LUSAKO. */
 export const organizationId = `${new URL("/", site.url).toString()}#organization`;
 
-/** A pointer to the Organization for other structured data, with the name in case a reader doesn't follow ids. */
+/**
+ * A pointer to LUSAKO for other structured data, with the name in case a reader doesn't follow ids. It has the same
+ * type as the full entity (lib/local-business.ts), so the two read as one.
+ */
 export const organizationRef = {
-  "@type": "Organization",
+  "@type": "LocalBusiness",
   "@id": organizationId,
   name: site.name,
   url: site.url,
@@ -72,6 +75,6 @@ export async function pageMetadata({
       description,
       images: [card],
     },
-    twitter: { card: "summary_large_image", title: fullTitle, description, images: [card.url] },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [card] },
   };
 }

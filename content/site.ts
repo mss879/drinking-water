@@ -5,7 +5,7 @@ export const site = {
   legalName: "LUSAKO Holdings (Pvt) Ltd",
   tagline: "Better Water. Better Way.",
   descriptor: "Water Purification & Hydration Solutions",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://drinkingwater.lk",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://drinkingwater.lk",
   description:
     "Bottleless water purification and hydration for homes, offices and businesses in Sri Lanka: buy a LUSAKO purifier, rent for your office, or let us manage it.",
   pillars: ["Buy", "Rent", "Hydrate", "Care"] as const,

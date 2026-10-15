@@ -2,8 +2,11 @@
 
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { isLeadFormType, leadForms, productOptions, resolveFields } from "@/content/forms";
-import { getProducts } from "@/lib/cms/content";
+import { isLeadFormType, leadFieldMap, leadForms, productOptions, resolveFields, type FormField, type LeadFormType } from "@/content/forms";
+import { site } from "@/content/site";
+import { emailConfigured, sendEmail } from "@/lib/chat/email";
+import { inquiryAlertEmail } from "@/lib/chat/email-template";
+import { getProducts, getSiteSettings } from "@/lib/cms/content";
 import {
   allowSubmission,
   deliverLead,
@@ -97,21 +100,25 @@ export async function submitLead(_previous: LeadState, formData: FormData): Prom
   const saved = await saveInquiry(lead, type, attribution);
   if (saved) {
     lead.reference = saved;
-    // 2. Then the webhook and the analytics conversion, after the visitor has their answer.
+    // 2. Then the webhook, the team's email and the analytics conversion, after the visitor has their answer. Without
+    // a webhook the inquiry in the admin is the record, so nothing personal goes to the server log.
     after(async () => {
-      try {
-        await deliverLead(lead);
-      } catch (error) {
-        console.error("[lead] webhook failed (the inquiry is saved)", error);
+      if (hasLeadWebhook()) {
+        try {
+          await deliverLead(lead);
+        } catch (error) {
+          console.error("[lead] webhook failed (the inquiry is saved)", error);
+        }
       }
-      await recordLeadEvent(type, attribution);
+      await Promise.all([recordLeadEvent(type, attribution), emailTeam(type, lead, fields)]);
     });
     return { status: "success", reference: lead.reference };
   }
 
-  // No database (or it failed): the webhook or the server log is the only copy, so wait for it. With a database
-  // set up but failing and no webhook, the lead would only reach a log, so the visitor is asked to try again.
-  if (hasInquiryStore() && !hasLeadWebhook()) {
+  // No database (or it failed): the webhook or the server log is the only copy, so wait for it. With no webhook, the
+  // lead would only reach a log: in production (a database failing, or its keys missing) the visitor is asked to
+  // try again or call, rather than being told it was sent. Local development without Supabase still succeeds.
+  if (!hasLeadWebhook() && (hasInquiryStore() || process.env.NODE_ENV === "production")) {
     console.error("[lead] not saved anywhere", JSON.stringify(lead));
     return failure(values);
   }
@@ -123,6 +130,33 @@ export async function submitLead(_previous: LeadState, formData: FormData): Prom
   }
 
   return { status: "success", reference: lead.reference };
+}
+
+/**
+ * Emails the team about a saved inquiry, through Resend once it's set up (RESEND_API_KEY): service requests go to the
+ * operations email, everything else to the sales email (Contact & social).
+ */
+async function emailTeam(type: LeadFormType, lead: Lead, fields: FormField[]) {
+  if (!emailConfigured()) return;
+  const { contact } = await getSiteSettings();
+  const to = (type === "service" && contact.operationsEmail) || contact.salesEmail;
+  if (!to) return;
+  const rows = fields.flatMap((field): [string, string][] => {
+    const value = lead.values[field.name];
+    if (!value) return [];
+    return [[field.fullLabel ?? field.label, field.options?.find((option) => option.value === value)?.label ?? value]];
+  });
+  await sendEmail({
+    to,
+    ...inquiryAlertEmail({
+      form: leadForms[type].label,
+      reference: lead.reference,
+      name: lead.values[leadFieldMap[type].name] || "A website visitor",
+      rows,
+      adminUrl: new URL(`/admin/inquiries?q=${encodeURIComponent(lead.reference)}`, site.url).toString(),
+      replyTo: lead.values.email || undefined,
+    }),
+  });
 }
 
 /** The visitor's address as the host saw it: Netlify's own header first, then the usual proxy headers. */

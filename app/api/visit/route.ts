@@ -3,6 +3,7 @@ import { after, type NextRequest } from "next/server";
 import { classifyChannel } from "@/lib/analytics/channel";
 import { readGeo } from "@/lib/analytics/geo";
 import { readUserAgent } from "@/lib/analytics/ua";
+import { clientAddress, fromThisSite } from "@/lib/same-site";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Json } from "@/lib/supabase/types";
 
@@ -26,6 +27,7 @@ const EVENTS = new Set([
   "rental_quote_calculated",
   "find_solution_completed",
   "page_not_found",
+  "chat_open",
 ]);
 const VITALS = new Set(["LCP", "INP", "CLS", "FCP", "TTFB"]);
 const RATINGS = new Set(["good", "needs-improvement", "poor"]);
@@ -109,15 +111,12 @@ const done = () => new Response(null, { status: 204, headers: { "Cache-Control":
 
 export async function POST(request: NextRequest) {
   // Same-site beacons only.
-  const site = request.headers.get("sec-fetch-site");
-  if (site && site !== "same-origin") return new Response(null, { status: 403 });
-  const origin = request.headers.get("origin");
-  if (origin && hostOf(origin) !== request.nextUrl.hostname) return new Response(null, { status: 403 });
+  if (!fromThisSite(request)) return new Response(null, { status: 403 });
 
   const ua = request.headers.get("user-agent") ?? "";
   if (!ua || isbot(ua)) return done();
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+  const ip = clientAddress(request) || "unknown";
   if (limited(ip)) return new Response(null, { status: 429 });
 
   const text = await request.text();

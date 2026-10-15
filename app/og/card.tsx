@@ -7,11 +7,47 @@ const brand = { blue: "#278CF0", deep: "#0055A8", mist: "#9DC4DF", ink: "#0A0A0D
 
 export const ogSize = { width: 1200, height: 630 };
 
+type CardFont = { name: string; data: ArrayBuffer; weight: 500 | 600 | 700; style: "normal" };
+
+/**
+ * A brand font for the card (DESIGN.md › Typography: Raleway headings, Montserrat text), fetched from Google Fonts with only
+ * the letters the card uses, as next/font does for the pages. Cards are drawn at build time and when the admin saves
+ * their text; if Google Fonts can't be reached the card still draws, in the built-in font.
+ */
+async function brandFont(name: "Raleway" | "Montserrat", weight: CardFont["weight"], text: string): Promise<CardFont | null> {
+  if (!text) return null;
+  try {
+    const query = `family=${name}:wght@${weight}&text=${encodeURIComponent(text)}`;
+    const css = await (await fetch(`https://fonts.googleapis.com/css2?${query}`, { signal: AbortSignal.timeout(8000) })).text();
+    const source = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1];
+    if (!source) return null;
+    const font = await fetch(source, { signal: AbortSignal.timeout(8000) });
+    return font.ok ? { name, data: await font.arrayBuffer(), weight, style: "normal" } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Raleway draws old-style figures and the card can't switch them as the pages do (`lining-nums`), so figures in a
+ * heading take Montserrat's lining ones. The renderer drops a space where the font changes, so those stay as
+ * no-break spaces.
+ */
+function lining(text: string) {
+  if (!/\d/.test(text)) return text;
+  return text
+    .split(/(\d+)/)
+    .map((part, i) =>
+      i % 2 ? <span key={i} style={{ fontFamily: "Montserrat" }}>{part}</span> : part.replace(/^ | $/g, "\u00a0"),
+    );
+}
+const figuresIn = (text: string) => text.replace(/\D/g, "");
+
 /**
  * The social card: the wordmark, a two-part headline (blue, then ink), a line of text and a footer, over the brand
  * waves. The site-wide card and each product's card share it.
  */
-export function ogCard({
+export async function ogCard({
   lead,
   rest,
   text,
@@ -27,6 +63,17 @@ export function ogCard({
 }) {
   const product = layout === "product";
   const long = lead.length + rest.length > 34;
+  const domain = "drinkingwater.lk";
+  const fonts = (
+    await Promise.all([
+      brandFont("Raleway", 700, `${product ? lead : lead + rest}\u00a0`),
+      brandFont("Raleway", 600, product ? `${rest}\u00a0` : ""),
+      brandFont("Montserrat", 500, text + domain),
+      brandFont("Montserrat", 600, footer + figuresIn(product ? rest : "")),
+      brandFont("Montserrat", 700, figuresIn(product ? lead : lead + rest)),
+    ])
+  ).filter((font): font is CardFont => font !== null);
+  const heading = { fontFamily: "Raleway", fontWeight: 700 } as const;
   return new ImageResponse(
     (
       <div
@@ -55,33 +102,33 @@ export function ogCard({
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           {product ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1056 }}>
-              <span style={{ color: brand.blue, fontSize: lead.length > 18 ? 84 : 100, lineHeight: 1.02, letterSpacing: -3, fontWeight: 700 }}>{lead}</span>
-              <span style={{ fontSize: rest.length > 34 ? 42 : 50, lineHeight: 1.15, letterSpacing: -1 }}>{rest}</span>
+              <span style={{ ...heading, color: brand.blue, fontSize: lead.length > 18 ? 84 : 100, lineHeight: 1.02, letterSpacing: -2.5 }}>{lining(lead)}</span>
+              <span style={{ fontFamily: "Raleway", fontWeight: 600, fontSize: rest.length > 34 ? 42 : 50, lineHeight: 1.15, letterSpacing: -0.5 }}>{lining(rest)}</span>
             </div>
           ) : (
             <div
               style={{
+                ...heading,
                 display: "flex",
                 flexDirection: "column",
                 fontSize: long ? 76 : 100,
                 lineHeight: 1.04,
-                letterSpacing: long ? -2 : -3,
-                fontWeight: 700,
+                letterSpacing: long ? -1.9 : -2.5,
                 maxWidth: 1040,
               }}
             >
-              <span style={{ color: brand.blue }}>{lead}</span>
-              <span>{rest}</span>
+              <span style={{ color: brand.blue }}>{lining(lead)}</span>
+              <span>{lining(rest)}</span>
             </div>
           )}
-          <div style={{ fontSize: product ? 28 : 30, color: brand.grey, maxWidth: 1056 }}>{text}</div>
+          <div style={{ fontFamily: "Montserrat", fontWeight: 500, fontSize: product ? 27 : 29, lineHeight: 1.4, color: brand.grey, maxWidth: 1056 }}>{text}</div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, letterSpacing: 6, color: brand.deep, paddingBottom: 36 }}>
-          <span>{footer}</span>
-          <span style={{ letterSpacing: 1, color: brand.grey }}>drinkingwater.lk</span>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Montserrat", fontSize: 22, letterSpacing: 5, color: brand.deep, paddingBottom: 36 }}>
+          <span style={{ fontWeight: 600 }}>{footer}</span>
+          <span style={{ fontWeight: 500, letterSpacing: 0.5, color: brand.grey }}>{domain}</span>
         </div>
       </div>
     ),
-    ogSize,
+    { ...ogSize, ...(fonts.length ? { fonts } : {}) },
   );
 }

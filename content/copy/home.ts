@@ -3,9 +3,9 @@ import { defineBlock, seoBlock, type AnyBlock } from "./schema";
 /** Home: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const homeSeo = seoBlock("home", {
-  title: "LUSAKO | Water Purifiers & Office Water Rental, Sri Lanka",
+  title: "Drinking Water Purifiers in Sri Lanka – Buy or Rent | LUSAKO",
   description:
-    "Bottleless water purifiers for homes, offices and businesses in Sri Lanka. Buy a LUSAKO purifier, rent for your office, or get a corporate hydration solution.",
+    "Clean drinking water without the bottles: buy or rent a UF or RO water purifier for your home or office in Sri Lanka, installed and cared for by LUSAKO.",
 });
 
 export const homeHero = defineBlock({

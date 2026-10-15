@@ -149,13 +149,6 @@ export const productOptions = defineBlock({
       max: 30,
       hint: "Shown while the KOKO badge is switched on in Prices & quotes.",
     },
-    kokoWithPrice: {
-      kind: "text",
-      label: "KOKO badge: text while the option’s buy price is shown",
-      max: 24,
-      tokens: ["{amount}"],
-      hint: "{amount} is a third of the buy price, like “LKR 28,333.33”.",
-    },
     rentText: {
       kind: "text",
       label: "Rent side: text",
@@ -202,8 +195,7 @@ export const productOptions = defineBlock({
     buyText: "Buy the {option}, installed by LUSAKO",
     buyTextWithPrice: "Own the {option} for {price}",
     buyButton: "Get a quote",
-    koko: "Pay in 3 instalments with",
-    kokoWithPrice: "or 3 × {amount} with",
+    koko: "Pay in instalments with",
     rentText: "Rent it for one monthly payment, with service included",
     rentTextWithInitial: "Rent it for one monthly payment, plus a one-time {initial} initial payment",
     rentTextWithPrice: "Rent from {price}, plus a one-time initial payment",

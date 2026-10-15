@@ -15,9 +15,14 @@ import { pageMetadata } from "@/lib/seo";
 export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getCopy(blogSeo);
+  const [seo, posts] = await Promise.all([getCopy(blogSeo), getPublishedPosts()]);
   const base = await pageMetadata({ title: seo.title, description: seo.description, path: "/blog" });
-  return { ...base, alternates: { ...base.alternates, types: { "application/rss+xml": "/blog/feed.xml" } } };
+  return {
+    ...base,
+    alternates: { ...base.alternates, types: { "application/rss+xml": "/blog/feed.xml" } },
+    // Until the first post, the page is only its "coming soon" note: search engines may follow it but not list it.
+    ...(posts.length ? {} : { robots: { index: false, follow: true } }),
+  };
 }
 
 export default async function BlogPage() {

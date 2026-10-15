@@ -4,7 +4,7 @@ import { defineBlock, seoBlock, type AnyBlock } from "./schema";
 /** Rental: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const rentalSeo = seoBlock("rental", {
-  title: "Water Purifier Rental for Offices",
+  title: "Water Purifier Rental for Offices in Sri Lanka",
   description:
     "Rent a LUSAKO water purifier for your office or company: one predictable monthly payment for the equipment and ongoing service. PureFlow UF and RO plans.",
 });

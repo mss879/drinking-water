@@ -3,7 +3,7 @@ import { defineBlock, seoBlock, type AnyBlock } from "./schema";
 /** Service & support: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const serviceSeo = seoBlock("service", {
-  title: "Service & Support",
+  title: "Water Purifier Service & Repairs in Sri Lanka",
   description:
     "LUSAKO Care: installation, preventive maintenance, filter replacement, repairs, AMC plans and rental support for your purifier. Request a service online.",
 });

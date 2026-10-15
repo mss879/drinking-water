@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ArticleView } from "@/components/blog/article-view";
 import { getPostBySlug, getPublishedPosts, getRelatedPosts } from "@/lib/blog/queries";
-import { autoExcerpt } from "@/lib/blog/text";
+import { autoExcerpt, clip } from "@/lib/blog/text";
 import { pageMetadata } from "@/lib/seo";
 
 // Cached, rebuilt at most hourly (so scheduled posts appear within the hour) and refreshed when an admin saves.
@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { post } = await getPostBySlug(slug);
   if (!post) return { title: "Article not found" };
-  const description = post.seo_description ?? post.excerpt ?? autoExcerpt(post.content as JSONContent, 160);
+  // Search results show about 160 characters, so a long excerpt is cut at a word (the admin's own description stays whole).
+  const description = post.seo_description ?? (post.excerpt ? clip(post.excerpt, 160) : autoExcerpt(post.content as JSONContent, 159));
   const base = await pageMetadata({ title: post.seo_title ?? post.title, description, path: `/blog/${post.slug}` });
   const image = post.cover_url
     ? [{ url: post.cover_url, width: post.cover_width ?? undefined, height: post.cover_height ?? undefined, alt: post.cover_alt ?? post.title }]
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...(post.category ? { section: post.category } : {}),
       images: image,
     },
-    twitter: { ...base.twitter, images: post.cover_url ? [post.cover_url] : base.twitter?.images },
+    twitter: { ...base.twitter, images: post.cover_url ? image : base.twitter?.images },
   };
 }
 

@@ -42,8 +42,8 @@ export async function Trust({ logos = [] }: { logos?: ClientLogo[] }) {
         {logos.length > 0 && (
           <ul aria-label="Some of the organisations we work with" className="mt-12 grid grid-cols-3 items-center gap-x-6 gap-y-4 sm:grid-cols-4 lg:mt-14 lg:grid-cols-6">
             {logos.slice(0, 12).map((logo) => (
-              <li key={logo.id} className="relative h-14 sm:h-16">
-                <Image src={logo.src} alt={`${logo.name} logo`} fill sizes="(min-width: 1024px) 180px, 28vw" className="object-contain opacity-70 grayscale" />
+              <li key={logo.id} className="relative h-14 mix-blend-multiply sm:h-16">
+                <Image src={logo.src} alt={`${logo.name} logo`} fill sizes="(min-width: 1024px) 180px, 28vw" className="object-contain" />
               </li>
             ))}
           </ul>

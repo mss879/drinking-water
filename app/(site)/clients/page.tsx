@@ -176,7 +176,7 @@ export default async function ClientsPage() {
             title={marked(logos.title)}
           />
           {clientLogos.length > 0 ? (
-            // Any number of logos: the grid simply grows, row by row. Shown in greyscale, so the page keeps to the brand colours.
+            // Any number of logos: the grid simply grows, row by row. Shown in each client's own colours.
             <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {clientLogos.map((logo) => {
                 const image = (
@@ -186,7 +186,7 @@ export default async function ClientsPage() {
                       alt={`${logo.name} logo`}
                       fill
                       sizes="(min-width: 1024px) 200px, 40vw"
-                      className="object-contain opacity-80 grayscale transition-opacity duration-300 hover:opacity-100"
+                      className="object-contain"
                     />
                   </span>
                 );

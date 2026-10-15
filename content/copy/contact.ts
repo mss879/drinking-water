@@ -3,7 +3,7 @@ import { defineBlock, seoBlock, type AnyBlock } from "./schema";
 /** Contact: its editable text. Every block's defaults are the page's wording as designed. */
 
 export const contactSeo = seoBlock("contact", {
-  title: "Contact / Get a Quote",
+  title: "Contact Us – Water Purifier Quotes & Service",
   description:
     "Call, WhatsApp or email LUSAKO, reach the breakdown hotline, or get a quote to buy or rent a water purifier, plan corporate hydration or book a service.",
 });

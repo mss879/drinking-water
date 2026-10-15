@@ -9,7 +9,7 @@ import type { productOptions } from "@/content/copy/product";
 import { fill, pieces } from "@/content/copy/schema";
 import type { ProductVariant } from "@/content/products";
 import { cn } from "@/lib/cn";
-import { formatLKR, formatLKRCents } from "@/lib/format";
+import { formatLKR } from "@/lib/format";
 
 const rentalSolution: Record<ProductVariant["filtration"], string> = { UF: "pureflow-uf", RO: "pureflow-ro" };
 
@@ -17,7 +17,7 @@ const rentalSolution: Record<ProductVariant["filtration"], string> = { UF: "pure
  * Buy UF, buy RO or rent, without the confusion (client request): each purification option is a card, and picking
  * one points the Buy and Rent buttons at it. Both ask for a quote. While LUSAKO hides its prices (client, October
  * 2026) that is all the card shows; once a price of the product is shown (Prices & quotes), every option carries its
- * buy price and its rental-from price, so they can be compared at a glance. The Buy side carries KOKO's pay-in-3 badge
+ * buy price and its rental-from price, so they can be compared at a glance. The Buy side carries KOKO's instalments badge
  * while it is switched on. A product with one option shows that option on its own. The wording is the product.options
  * block, passed in by the product page.
  */
@@ -171,7 +171,7 @@ export function PurchaseOptions({
           </p>
           {koko && (
             <KokoBadge className="self-start">
-              {chosen.price ? pieces(copy.kokoWithPrice, { amount: formatLKRCents(chosen.price / 3) }) : copy.koko}
+              {copy.koko}
             </KokoBadge>
           )}
           <ButtonLink href={buyHref} variant="white" arrow className="mt-auto w-full">

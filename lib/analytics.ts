@@ -8,7 +8,8 @@ export type AnalyticsEvent =
   | "generate_lead"
   | "rental_quote_calculated"
   | "find_solution_completed"
-  | "page_not_found";
+  | "page_not_found"
+  | "chat_open";
 
 export type LeadSource = "direct-purchase" | "rental" | "corporate-hydration" | "service";
 

@@ -2,6 +2,7 @@ import type { ActivityKind, LeadPriority, LeadSourceKind, StageOutcome } from "@
 
 export const sourceLabels: Record<LeadSourceKind, string> = {
   website: "Website",
+  chat: "Website chat",
   manual: "Added by hand",
   phone: "Phone call",
   whatsapp: "WhatsApp",

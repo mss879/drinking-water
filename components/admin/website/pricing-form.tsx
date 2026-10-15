@@ -198,8 +198,8 @@ export function PricingForm({
               className="mt-1 size-4 accent-[var(--color-deep)]"
             />
             <span>
-              Show KOKO’s “Pay in 3 instalments” badge on product pages
-              <span className="block text-[13px] text-muted">Beside the Buy option. With a buy price shown, it also shows the instalment amount.</span>
+              Show KOKO’s “Pay in instalments” badge on product pages
+              <span className="block text-[13px] text-muted">Beside the Buy option.</span>
             </span>
           </label>
           <label className="flex cursor-pointer items-start gap-3 text-[15px] text-ink">
